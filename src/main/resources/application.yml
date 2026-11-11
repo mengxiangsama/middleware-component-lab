@@ -1,0 +1,25 @@
+server:
+  port: ${SERVER_PORT:8088}
+
+spring:
+  application:
+    name: rocketmq-transaction-lab
+  datasource:
+    url: jdbc:h2:file:./data/rocketmq-transaction-lab;AUTO_SERVER=TRUE
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+
+app:
+  rocketmq:
+    enabled: ${ROCKETMQ_ENABLED:true}
+    name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+    topic: ${ROCKETMQ_TOPIC:order-transaction-topic}
+    producer-group: ${ROCKETMQ_PRODUCER_GROUP:order-transaction-producer}
+    consumer-group: ${ROCKETMQ_CONSUMER_GROUP:order-created-consumer}
+
+logging:
+  level:
+    io.github.rocketmqtx: INFO
