@@ -1,5 +1,8 @@
 # RocketMQ Transaction Lab
 
+[![CI](https://github.com/mengxiangsama/rocketmq-transaction-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/rocketmq-transaction-lab/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 A small, production-minded Spring Boot example that demonstrates the complete Apache RocketMQ transactional-message lifecycle:
 
 1. the producer sends a half message;
@@ -87,7 +90,7 @@ Use the returned `orderId` to inspect local state:
 curl -sS http://localhost:8088/api/orders/<orderId>
 ```
 
-Watch the transaction and consumer logs:
+Watch transaction and consumer activity in the application console. To inspect the broker separately:
 
 ```bash
 docker compose logs -f broker
