@@ -78,7 +78,7 @@
 | [Docker BuildKit](docker-build.md#docker-buildkit) | Dockerfile、JAR 打包、构建上下文、多阶段构建和镜像检查 |
 | [Docker Compose](docker-build.md#docker-compose) | 多容器启动、健康检查、依赖顺序和日志 |
 
-## 灰度流量路由
+## 全链路灰度路由
 
 | 组件 | 常见用法 |
 | --- | --- |

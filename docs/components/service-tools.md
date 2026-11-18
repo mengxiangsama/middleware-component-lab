@@ -8,6 +8,8 @@
 - **实例元数据**。注册同一服务的稳定实例和灰度实例，分别给 metadata 写入示例值 `version=stable` 与 `version=canary`，通过订阅或查询确认两个版本都被正确发现。调用方实际选择哪个实例取决于使用的客户端负载均衡或路由器。单独验证标签缺失、灰度实例下线和订阅更新，检查调用方是否按照所用路由规则选中目标版本。 [服务发现](https://nacos.io/en/docs/latest/manual/user/naming/overview/) · [订阅和推送](https://nacos.io/en/docs/latest/manual/user/naming/subscription-and-ops/)
 - **验证**：下线测试实例，观察订阅者何时移除它。更新一项测试配置并观察通知与应用生效时间。断开客户端到服务端的连接，检查当前集成使用本地缓存还是启动失败。
 
+请求标记、实例匹配和全链路验证见 [灰度路由组件](traffic-routing.md)。
+
 ## Sentinel
 
 - **常用功能**：按资源限流、热点参数限流、熔断和系统保护。Sentinel 会根据规则拒绝进入资源的请求，框架适配器或调用方负责返回降级结果。
