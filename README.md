@@ -3,11 +3,24 @@
 [![CI](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-第三方中间件组件手册，收录组件用途、常见操作、接入步骤和验证方法。Apache RocketMQ 事务消息提供可运行的 Spring Boot 实验。
-
-从[组件目录](docs/components/README.md)进入消息、搜索与缓存、任务调度、SQL 同步、分布式日志、Dockerfile 构建、灰度发布与探针等分册。代码与架构设计放在独立仓库 [design-patterns-refactor](https://github.com/mengxiangsama/design-patterns-refactor)。
+第三方中间件组件手册，收录组件的常见操作、接入步骤、验证方法和官方文档。Apache RocketMQ 事务消息附可运行的 Spring Boot 实验。
 
 Reference guides for third-party middleware, plus a runnable Apache RocketMQ experiment.
+
+## 组件入口
+
+| 想查什么 | 分册与常见组件 |
+| --- | --- |
+| 消息发布、重试和重放 | [消息与事件流](docs/components/messaging.md) · RabbitMQ、RocketMQ、Kafka、Pulsar、NATS JetStream |
+| 全文检索、缓存和分析 | [搜索与缓存](docs/components/search-cache.md) · Elasticsearch、Redis、Redisson、Lettuce、ClickHouse |
+| 定时、分片和补跑 | [任务调度](docs/components/scheduling.md) · XXL-JOB、PowerJob、Quartz、ElasticJob、DolphinScheduler |
+| 全量、增量和对账 | [SQL 数据同步](docs/components/data-pipelines.md#sql-数据同步) · MySQL Replication、Canal、DTS、Flink CDC、Debezium、Kafka Connect |
+| 日志采集、解析和查询 | [分布式日志](docs/components/distributed-logging.md) · Fluent Bit、Logstash、Grafana Loki |
+| 优雅上线、探针和灰度 | [发布与探针](docs/components/release-tools.md) · Kubernetes、Spring Boot Actuator、Argo Rollouts；[全链路灰度](docs/components/traffic-routing.md) · Istio、Dubbo、Spring Cloud Gateway |
+| 配置灰度、服务发现和观测 | [服务治理与可观测性](docs/components/service-tools.md) · Nacos、Sentinel、Seata、OpenTelemetry、Prometheus |
+| 打包和构建镜像 | [Dockerfile 与 Compose](docs/components/docker-build.md) · Maven Wrapper、BuildKit、镜像和容器检查 |
+
+完整清单见[组件目录](docs/components/README.md)，本地运行见 [RocketMQ 事务实验](#run-locally)。代码和架构重构的指导见 [design-patterns-refactor](https://github.com/mengxiangsama/design-patterns-refactor)。
 
 ## RocketMQ transaction experiment
 
@@ -107,12 +120,13 @@ docker compose logs -f broker
 ## Test and build
 
 ```bash
-./mvnw verify
-./mvnw clean package
+./mvnw clean verify
 docker build -t rocketmq-transaction-lab:local .
 ```
 
-See the [Dockerfile build guide](docs/components/docker-build.md) for the build context, image inspection, and local startup check.
+`clean verify` runs the tests and packages the JAR used by the Dockerfile. See the [Dockerfile build guide](docs/components/docker-build.md) for the build context and image checks.
+
+需要审查 Java 项目的无用依赖、插件或 POM 声明时，参考重构库的 [Maven 检测与清理指南](https://github.com/mengxiangsama/design-patterns-refactor/blob/main/skills/design-patterns-refactor/references/maven-cleanup.md)。
 
 ## Configuration
 
