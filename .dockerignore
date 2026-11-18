@@ -1,4 +1,5 @@
-target
+target/*
+!target/rocketmq-transaction-lab-*.jar
 .git
 .idea
 data
