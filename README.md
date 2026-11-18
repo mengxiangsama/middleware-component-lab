@@ -1,9 +1,17 @@
-# RocketMQ Transaction Lab
+# Middleware Component Lab
 
-[![CI](https://github.com/mengxiangsama/rocketmq-transaction-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/rocketmq-transaction-lab/actions/workflows/ci.yml)
+[![CI](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A small, production-minded Spring Boot example that demonstrates the complete Apache RocketMQ transactional-message lifecycle:
+第三方中间件组件手册，收录组件用途、常见操作、接入步骤和验证方法。Apache RocketMQ 事务消息提供可运行的 Spring Boot 实验。
+
+从[组件目录](docs/components/README.md)进入消息、搜索与缓存、任务调度、SQL 同步、分布式日志、Dockerfile 构建、灰度发布与探针等分册。代码与架构设计放在独立仓库 [design-patterns-refactor](https://github.com/mengxiangsama/design-patterns-refactor)。
+
+Reference guides for third-party middleware, plus a runnable Apache RocketMQ experiment.
+
+## RocketMQ transaction experiment
+
+The Spring Boot example demonstrates the Apache RocketMQ transactional-message lifecycle:
 
 1. the producer sends a half message;
 2. the broker asks the producer to execute a local transaction;
@@ -13,7 +21,7 @@ A small, production-minded Spring Boot example that demonstrates the complete Ap
 
 The project intentionally uses the native RocketMQ client so the transaction boundary and checkback mechanism remain visible.
 
-## Architecture
+### Transaction flow
 
 ```text
 POST /api/orders
@@ -100,9 +108,11 @@ docker compose logs -f broker
 
 ```bash
 ./mvnw verify
-./mvnw package
+./mvnw clean package
 docker build -t rocketmq-transaction-lab:local .
 ```
+
+See the [Dockerfile build guide](docs/components/docker-build.md) for the build context, image inspection, and local startup check.
 
 ## Configuration
 
