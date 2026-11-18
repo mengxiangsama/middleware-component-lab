@@ -14,11 +14,13 @@ Reference guides for third-party middleware, plus a runnable Apache RocketMQ exp
 | 消息发布、重试和重放 | [消息与事件流](docs/components/messaging.md) · RabbitMQ、RocketMQ、Kafka、Pulsar、NATS JetStream |
 | 全文检索、缓存和分析 | [搜索与缓存](docs/components/search-cache.md) · Elasticsearch、Redis、Redisson、Lettuce、ClickHouse |
 | 定时、分片和补跑 | [任务调度](docs/components/scheduling.md) · XXL-JOB、PowerJob、Quartz、ElasticJob、DolphinScheduler |
-| 全量、增量和对账 | [SQL 数据同步](docs/components/data-pipelines.md#sql-数据同步) · MySQL Replication、Canal、DTS、Flink CDC、Debezium、Kafka Connect |
-| 日志采集、解析和查询 | [分布式日志](docs/components/distributed-logging.md) · Fluent Bit、Logstash、Grafana Loki |
+| 全量、增量和对账 | [SQL 数据同步与处理](docs/components/data-pipelines.md) · MySQL、PostgreSQL 逻辑复制、Canal、DTS、Flink CDC、Debezium、Kafka Connect、Apicurio Registry |
+| 日志采集、解析和查询 | [分布式日志](docs/components/distributed-logging.md) · Fluent Bit、Logstash、Grafana Loki、[Kibana](docs/components/observability-tools.md#kibana) |
 | 优雅上线、探针和灰度 | [发布与探针](docs/components/release-tools.md) · Kubernetes、Spring Boot Actuator、Argo Rollouts；[全链路灰度](docs/components/traffic-routing.md) · Istio、Dubbo、Spring Cloud Gateway |
-| 配置灰度、服务发现和观测 | [服务治理与可观测性](docs/components/service-tools.md) · Nacos、Sentinel、Seata、OpenTelemetry、Prometheus |
+| 配置灰度、服务发现和容错 | [服务治理](docs/components/service-tools.md) · Nacos、Sentinel、Resilience4j、Seata |
+| 指标、告警和链路 | [采集与指标](docs/components/service-tools.md#opentelemetry) · OpenTelemetry、Prometheus。 [查询与告警](docs/components/observability-tools.md) · Grafana、Alertmanager、Tempo |
 | 打包和构建镜像 | [Dockerfile 与 Compose](docs/components/docker-build.md) · Maven Wrapper、BuildKit、镜像和容器检查 |
+| 镜像仓库、部署模板和 Git 同步 | [制品与持续交付](docs/components/delivery-tools.md) · Harbor、Helm、Argo CD |
 
 完整清单见[组件目录](docs/components/README.md)，本地运行见 [RocketMQ 事务实验](#run-locally)。代码和架构重构的指导见 [design-patterns-refactor](https://github.com/mengxiangsama/design-patterns-refactor)。
 
@@ -108,7 +110,8 @@ The local database transaction commits, but the listener deliberately returns `U
 Use the returned `orderId` to inspect local state:
 
 ```bash
-curl -sS http://localhost:8088/api/orders/<orderId>
+ORDER_ID=replace-with-returned-order-id
+curl -sS "http://localhost:8088/api/orders/$ORDER_ID"
 ```
 
 Watch transaction and consumer activity in the application console. To inspect the broker separately:

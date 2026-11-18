@@ -5,12 +5,14 @@
 | 常见需求 | 组件 | 接入条件 |
 | --- | --- | --- |
 | 将 MySQL 数据持续复制到 MySQL 副本 | MySQL Replication | 同构实例，可维护一致的初始数据、binlog 保留及复制位点 |
+| 将指定表同步到另一 PostgreSQL 数据库 | PostgreSQL Logical Replication | 发布端可开启逻辑 WAL，订阅端已建表，可维护复制槽和结构变更 |
 | 从已有 MySQL 表提取变更，接入自有消费者 | Canal | 源库能保留 binlog，团队愿意维护位点、补数和消费端 |
 | 捕获不同数据库的变更，由多个独立下游消费 | Debezium | 每种源库都有合适的连接器，需要持久化位点和可重放的下游通道 |
 | 数据库搬迁或持续同步，由云服务管理任务 | 阿里云 DTS | 源端、目标端、地域和网络接入受支持，切流方案可核对 |
 | 数据库全量加增量已进入 Flink 体系 | Flink CDC | 可维护 Flink 作业状态，所选连接器支持所需 DML 与 DDL |
 | 对事件做窗口聚合、关联和有状态计算 | Apache Flink | 有可重放输入，确实需要事件时间或长期状态 |
 | 在 Kafka 与外部系统之间运行标准连接器 | Apache Kafka Connect | 已有 Kafka，所需 source 或 sink 插件支持目标版本和数据格式 |
+| 注册 Kafka 消息 Schema 并检查版本兼容 | Apicurio Registry | 生产端和消费端使用兼容的序列化格式与 Schema ID 编码 |
 | 用统一管道对接多种数据源，做搬运和常见转换 | Apache SeaTunnel | 目标端连接器支持实际主键、更新、删除及恢复语义 |
 
 ## SQL 数据同步
@@ -39,6 +41,27 @@ ORDER BY id;
 - MySQL 原生复制通过源实例的 binlog 向 MySQL 副本传输变更。可以用 binlog 文件和位置，也可以用 GTID 自动定位。默认异步，源端提交时副本可能尚未接收或应用，读副本可能看到旧值。 [MySQL 复制概述](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/replication.html) · [GTID 自动定位](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/replication-gtids-auto-positioning.html)
 - **常用用法**。以带存量数据的 GTID 复制为例，确认源和副本的 `server_id` 唯一，源启用 binlog，按版本启用 GTID 并准备复制账户。在副本恢复与 GTID 集合匹配的一致性备份。通过 `CHANGE REPLICATION SOURCE TO` 设置来源和 `SOURCE_AUTO_POSITION = 1`，再执行 `START REPLICA`。采用文件位点时，从一致性快照记录的文件和位置开始。 [GTID 初始化与备份](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/replication-gtids-failover.html) · [开始 GTID 复制](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/replication-gtids-howto.html)
 - 在副本执行 `SHOW REPLICA STATUS`，查看 `Replica_IO_Running`、`Replica_SQL_Running`、`Last_IO_Error` 和 `Last_SQL_Error`。GTID 模式可以在测试变更提交后记录源端 `@@GLOBAL.gtid_executed`，在副本带超时调用 `WAIT_FOR_EXECUTED_GTID_SET`，返回 `0` 后用上述 SQL 核对记录。`Seconds_Behind_Source` 为 `0` 也可能存在接收端落后。再暂停并恢复测试副本，验证从原位点追平。源日志已清理时，按手册重新准备一致性基线。 [复制状态](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/show-replica-status.html) · [GTID 等待函数](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/gtid-functions.html) · [GTID 恢复边界](https://docs.oracle.com/cd/E17952_01/mysql-8.4-en/replication-gtids-auto-positioning.html)
+
+## PostgreSQL Logical Replication
+
+- **常用用法**。发布库用 publication 选择复制的表，订阅库用 subscription 接收数据。发布端设置 `wal_level=logical` 并预留 WAL sender 和复制槽，订阅端预留逻辑复制 worker。复制账号需要连接和复制权限，首次复制需要源表的 `SELECT` 权限。目标库先建同名且兼容的表。默认复制初始存量，再追增量。下面的连接值按测试环境填写，认证信息从所在环境安全提供。 [快速设置](https://www.postgresql.org/docs/current/logical-replication-quick-setup.html) · [复制参数](https://www.postgresql.org/docs/current/logical-replication-config.html) · [账号权限](https://www.postgresql.org/docs/current/logical-replication-security.html)
+
+```sql
+-- 两端均执行
+CREATE TABLE public.repl_orders (id bigint PRIMARY KEY, status text NOT NULL);
+
+-- 发布库执行，保留一条存量数据验证初始复制
+INSERT INTO public.repl_orders VALUES (1001, 'pending');
+CREATE PUBLICATION lab_orders_pub FOR TABLE public.repl_orders;
+
+-- 订阅库执行，将连接参数替换为测试发布库
+CREATE SUBSCRIPTION lab_orders_sub
+  CONNECTION 'host=publisher.example.com dbname=lab user=replicator'
+  PUBLICATION lab_orders_pub;
+```
+
+- **复制边界**。发布 `UPDATE` 和 `DELETE` 时，通常用主键作为 replica identity。无主键时可指定满足条件的唯一索引，或在验证定位成本后用 `REPLICA IDENTITY FULL`。DDL 和序列值需分别处理。增列时可先更新订阅端再更新发布端，切到目标端写入前检查序列位置。消费者停滞时复制槽会保留 WAL，需关注源库磁盘和 `pg_replication_slots.restart_lsn`。若达到 `max_slot_wal_keep_size` 后所需 WAL 已被清理，应核对水位并重新建立一致性基线。 [发布与 replica identity](https://www.postgresql.org/docs/current/logical-replication-publication.html) · [复制限制](https://www.postgresql.org/docs/current/logical-replication-restrictions.html) · [WAL 保留参数](https://www.postgresql.org/docs/current/runtime-config-replication.html)
+- **验证**。先在订阅端读到 `1001`，然后在发布端新增 `1002`、更新 `1001`，确认目标追平后再删除 `1002`。用同一主键范围核对结果。暂停订阅后再提交一条变更，观察发布端 slot 保留和订阅端 `pg_stat_subscription`，恢复后检查变更追平。 [监控](https://www.postgresql.org/docs/current/logical-replication-monitoring.html) · [订阅管理](https://www.postgresql.org/docs/current/sql-altersubscription.html)
 
 ## Canal
 
@@ -74,6 +97,12 @@ ORDER BY id;
 - **常用用法**。给 worker 安装兼容插件，用 `GET /connector-plugins` 检查所在 worker 的插件。配置 `connector.class`、转换器以及插件所需的源或目标参数，sink 指定 `topics` 或 `topics.regex`。用包含 `name` 和 `config` 的 JSON 调用 `POST /connectors`，再通过 `GET /connectors/{name}/status` 同时检查 connector 和各 task 的状态。单 worker 可用 FileStream source 和 sink 把一行文本经测试 topic 送到目标文件。 [Kafka Connect REST API 与示例](https://kafka.apache.org/44/kafka-connect/user-guide/)
 - 支持位点管理接口的版本可用 `GET /connectors/{name}/offsets` 查看位点。Source 位点由插件定义，sink 使用 Kafka 消费位点。调整或重置位点前先停任务，并核对回放范围和外部目标已有数据。按错误阶段配置重试和容忍策略，在支持的 sink 错误路径配置 DLQ。跳过坏记录会使主目标缺少该记录，需核对 DLQ 及处理结果。Exactly-once 依赖连接器和 worker 配置，source 需要支持此机制的 distributed worker，sink 还需验证外部写入与恢复。 [Kafka Connect 位点、错误及交付语义](https://kafka.apache.org/44/kafka-connect/user-guide/)
 - 写入可识别的记录后重启 worker，记录任务迁移与恢复前后的位点和目标内容。再投递一条无法转换的测试记录，观察任务停止或记录进入 DLQ 是否符合配置。在 sink 已落地、消费位点尚未提交时中断任务，核对恢复后是否产生额外写入。
+
+## Apicurio Registry
+
+- **常用用法**。集中登记 Avro、JSON Schema 或 Protobuf 等消息 Schema。用 `groupId` 归类、用 `artifactId` 标识 Schema，按 version 管理演进。每个版本有独立的 `globalId`，内容相同的多个版本可共享 `contentId`。在控制台创建一项 Avro artifact 并上传首版，例如 `lab/orders-value` 的版本 `1`，Schema 可使用含 `id: long` 和 `status: string` 的 `OrderStatus` record。 [核心概念](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-registry-concepts-glossary.html) · [控制台注册](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-managing-registry-artifacts-ui.html)
+- **Kafka 接入**。以 3.3 系列的 Avro Java SerDes 为例，生产端配置 `AvroKafkaSerializer`，消费端配置 `AvroKafkaDeserializer`，两端指向同一 Registry API（`apicurio.registry.url`，例如 `https://registry.example.com/apis/registry/v3`）。生产端通过 `apicurio.registry.artifact.group-id`、`apicurio.registry.artifact.artifact-id`、`apicurio.registry.artifact.version` 选择预注册版本。序列化器把 Schema ID 写入消息载荷前缀，或按配置写入 header。反序列化器据该 ID 查到写入 Schema。两端需匹配 ID 类型、存放位置和编码长度。3.3 默认用 4 字节 `contentId`，升级旧客户端前验证历史消息回放。 [Kafka SerDes 配置](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-configuring-kafka-client-serdes.html) · [2.x 到 3.x 的 ID 编码变更](https://www.apicur.io/registry/docs/apicurio-registry/3.1.x/getting-started/assembly-migrating-registry-v2-v3.html)
+- **兼容规则和验证**。在 artifact 上启用 `COMPATIBILITY`，例如 `BACKWARD_TRANSITIVE` 要求新 Schema 能读取所有旧版本写入的数据。相同规则按 artifact、group、全局的顺序生效。在版本 2 加一个默认值为 `null` 的 Avro 可选字段，验证能注册且新消费者能回放旧消息。再尝试把 `status` 从字符串改为整数，检查上传被拒绝且原版本仍可读取。用未缓存 Schema 的消费者模拟 Registry 不可用，核对查找失败、重试与恢复。 [规则与优先级](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-intro-to-registry-rules.html) · [兼容模式](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-rule-reference.html)
 
 ## Debezium
 

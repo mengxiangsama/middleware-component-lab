@@ -44,12 +44,14 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [MySQL Replication](data-pipelines.md#mysql-replication) | 原生主从复制、binlog、GTID、延迟和状态检查 |
+| [PostgreSQL Logical Replication](data-pipelines.md#postgresql-logical-replication) | Publication、Subscription、行标识、复制槽和 WAL |
 | [Canal](data-pipelines.md#canal) | MySQL binlog 订阅、获取批次与确认 |
 | [阿里云 DTS](data-pipelines.md#阿里云-dts) | 托管迁移、全量和增量同步、订阅与任务监控 |
 | [Apache Flink](data-pipelines.md#apache-flink) | DataStream 或 SQL、事件时间、窗口和状态恢复 |
 | [Flink CDC](data-pipelines.md#flink-cdc) | 数据库快照、增量捕获、Schema 演进和 Pipeline |
 | [Debezium](data-pipelines.md#debezium) | 数据库连接器、变更事件、快照和 offset 恢复 |
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 管理与错误处理 |
+| [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
 | [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和 |
 | [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览与结构变更 |
@@ -61,6 +63,7 @@
 | [Fluent Bit](distributed-logging.md#fluent-bit) | Tail、多行合并、解析、过滤和输出缓冲 |
 | [Logstash](distributed-logging.md#logstash) | Input、Filter、Output，日志解析、字段处理与持久队列 |
 | [Grafana Loki](distributed-logging.md#grafana-loki) | 按标签写入与索引、LogQL 查询 |
+| [Kibana](observability-tools.md#kibana) | Elasticsearch Data View、Discover 与 KQL |
 
 ## 优雅上线、灰度发布与探针
 
@@ -78,6 +81,14 @@
 | [Docker BuildKit](docker-build.md#docker-buildkit) | Dockerfile、JAR 打包、构建上下文、多阶段构建和镜像检查 |
 | [Docker Compose](docker-build.md#docker-compose) | 多容器启动、健康检查、依赖顺序和日志 |
 
+## 制品与持续交付
+
+| 组件 | 常见用法 |
+| --- | --- |
+| [Helm](delivery-tools.md#helm) | Chart 渲染、values、安装、升级与回滚 |
+| [Harbor](delivery-tools.md#harbor) | 镜像推拉、Digest、机器人账号与扫描 |
+| [Argo CD](delivery-tools.md#argo-cd) | Git 同步、资源健康、漂移和自动同步 |
+
 ## 全链路灰度路由
 
 | 组件 | 常见用法 |
@@ -92,6 +103,10 @@
 | --- | --- |
 | [Nacos](service-tools.md#nacos) | 服务发现、实例元数据、配置监听与配置灰度 |
 | [Sentinel](service-tools.md#sentinel) | 流控、熔断和降级 |
+| [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、重试、并发隔离与异步超时 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
 | [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出 |
 | [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警 |
+| [Alertmanager](observability-tools.md#alertmanager) | 告警路由、分组、抑制、静默与通知 |
+| [Grafana](observability-tools.md#grafana) | 数据源、Explore 和仪表盘 |
+| [Grafana Tempo](observability-tools.md#grafana-tempo) | OTLP 链路存储、Trace ID 与 TraceQL 查询 |
