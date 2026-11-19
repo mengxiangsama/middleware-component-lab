@@ -24,6 +24,10 @@ Reference guides for third-party middleware, plus a runnable Apache RocketMQ exp
 
 完整清单见[组件目录](docs/components/README.md)，本地运行见 [RocketMQ 事务实验](#run-locally)。代码和架构重构的指导见 [design-patterns-refactor](https://github.com/mengxiangsama/design-patterns-refactor)。
 
+## 学习路线
+
+[按场景学习](docs/learning-path.md)覆盖事务消息、缓存与检索、任务补跑、数据同步、服务保护和故障定位。每条路线都列出阅读顺序、练习步骤和验证结果。
+
 ## RocketMQ transaction experiment
 
 The Spring Boot example demonstrates the Apache RocketMQ transactional-message lifecycle:
