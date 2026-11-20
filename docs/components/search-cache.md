@@ -23,7 +23,8 @@
 | --- | --- | --- |
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
 | 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系，有序集合按分值排序。 |
-| 键过期与内存淘汰 | 待补 | 用 `SET key value EX seconds` 设定 TTL，用 `TTL` 查剩余时间。容量不足时由 maxmemory 策略决定淘汰或拒绝写入。 |
+| 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
+| 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 待补 | 用 `PUBLISH` 和 `SUBSCRIBE` 向在线订阅者广播。 |
@@ -33,6 +34,56 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 键过期与缓存更新
+
+**适用场景**　商品详情以数据库为准，Redis 缓存允许短期陈旧。首次写缓存时设置 TTL，读到缺失时由应用查数据库并回填。如果更新缓存值时仍须沿用原来的失效时间，用 `SET ... XX KEEPTTL` 更新已有键。若键在更新前已过期，`XX` 会阻止这次写入重新建键。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 镜像内的 Redis 服务端和 `redis-cli`，容器不映射宿主机端口。确认两者版本均为 7.4.2，且 `PING` 返回 `"PONG"` 后继续。若刚启动时连接失败，稍后重试 `PING`。
+
+```bash
+redis_ttl_lab=$(docker run -d --rm redis:7.4.2)
+redis_ttl_cli() {
+  docker exec "$redis_ttl_lab" redis-cli --json "$@"
+}
+docker exec "$redis_ttl_lab" redis-server --version
+docker exec "$redis_ttl_lab" redis-cli --version
+redis_ttl_cli PING
+```
+
+把下面整段复制到同一终端运行。先观察普通 `SET` 覆盖带 TTL 的键时如何清除过期时间。再重新为缓存设定 TTL，更新值时保留原过期时间。最后用 `EXPIRE` 缩短等待时间，验证缓存缺失和条件更新。
+
+```bash
+redis_ttl_cli SET cache:product:1001 v1 EX 60
+redis_ttl_cli TTL cache:product:1001
+redis_ttl_cli SET cache:product:1001 v2
+redis_ttl_cli TTL cache:product:1001
+
+redis_ttl_cli SET cache:product:1001 v1 EX 60
+redis_ttl_cli SET cache:product:1001 v2 XX KEEPTTL
+redis_ttl_cli GET cache:product:1001
+redis_ttl_cli TTL cache:product:1001
+
+redis_ttl_cli EXPIRE cache:product:1001 2
+sleep 3
+redis_ttl_cli GET cache:product:1001
+redis_ttl_cli SET cache:product:1001 v3 XX KEEPTTL
+redis_ttl_cli TTL cache:product:1001
+```
+
+**验证方法**　按下表核对返回值。正数 TTL 会随命令执行时间变化。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 写入并设置 TTL，随后普通覆盖 | 两次 `SET` 均返回 `"OK"`，两次 `TTL` 分别返回不超过 60 的正数和 `-1`。 |
+| 重新设置 TTL 后更新已有键 | 两次 `SET` 均返回 `"OK"`，`GET` 返回 `"v2"`，`TTL` 仍为不超过 60 的正数。 |
+| 缩短 TTL 后等待过期 | `EXPIRE` 返回 `1`。等待后 `GET` 和条件 `SET` 均返回 `null`，`TTL` 返回 `-2`，表示键不存在。 |
+
+验证完毕后用 `docker stop "$redis_ttl_lab"` 停止实验容器。启动时的 `--rm` 会删除容器和匿名卷。
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 执行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `"PONG"`。三次 `TTL` 查询依次返回 60、-1 和 60，保留 TTL 的更新后读到 `"v2"`。缩短 TTL 后等待 3 秒，读取和条件更新均返回 `null`，TTL 返回 -2。停止后确认容器已自动删除。
+
+**官方文档**　`SET` 文档列出 `EX`、`XX` 和 `KEEPTTL` 的语法，其中 `KEEPTTL` 自 6.0.0 起可用。7.4.2 版过期测试包含 TTL 和过期行为的断言。 [SET](https://redis.io/docs/latest/commands/set/) · [TTL](https://redis.io/docs/latest/commands/ttl/) · [EXPIRE](https://redis.io/docs/latest/commands/expire/) · [GET](https://redis.io/docs/latest/commands/get/) · [7.4.2 版过期测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/expire.tcl)
 
 ### Streams 消费组确认与接管
 
