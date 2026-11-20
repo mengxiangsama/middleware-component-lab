@@ -22,7 +22,9 @@
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
-| 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系。 |
+| 哈希 | 已有教程 | [按 SKU 保存和更新购物车商品数量](#哈希购物车数量更新)。 |
+| 列表 | 待补 | 用列表处理有序队列。 |
+| 集合 | 待补 | 用集合判断成员关系。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
 | HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
@@ -36,6 +38,49 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 哈希购物车数量更新
+
+**适用场景**　购物车条目较少，应用需要按 SKU 设置或增减数量，也需要一次读取整车。每个购物车用一个 Redis Hash，字段名是 SKU，字段值是数量。`HINCRBY` 在服务端原子增减单个字段，适合并发修改同一 SKU。它允许负数，也会在重复请求时重复累加。需要数量下限或请求幂等时，应用须在写入流程中另外处理这些约束。`HGETALL` 的开销随字段数线性增长，适合这里的小购物车。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。用 `redis:7.4.2` 启动独立容器，服务端与 `redis-cli` 均为 7.4.2，无需映射宿主机端口。若刚启动时连接失败，稍后重试 `PING`，直到返回 `PONG`。
+
+```bash
+redis_cart_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_cart_lab" redis-server --version
+docker exec "$redis_cart_lab" redis-cli --version
+docker exec "$redis_cart_lab" redis-cli PING
+```
+
+初始化两个 SKU，将键盘数量覆盖为 3，再移出一件。给尚未出现的集线器增加 1 件，最后读取整车。
+
+```bash
+docker exec "$redis_cart_lab" redis-cli HSET lab:cart:42 sku:keyboard 2 sku:mouse 1
+docker exec "$redis_cart_lab" redis-cli HSET lab:cart:42 sku:keyboard 3
+docker exec "$redis_cart_lab" redis-cli HINCRBY lab:cart:42 sku:keyboard -1
+docker exec "$redis_cart_lab" redis-cli HINCRBY lab:cart:42 sku:hub 1
+docker exec "$redis_cart_lab" redis-cli HGETALL lab:cart:42
+```
+
+**验证方法**　按执行顺序核对结果。`HGETALL` 按字段与值配对检查，字段顺序可以不同。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 初始化两个 SKU | `HSET` 返回 `2`，表示新增两个字段。 |
+| 覆盖键盘数量 | `HSET` 返回 `0`，表示没有新增字段。 |
+| 键盘减 1 | `HINCRBY` 返回更新后的数量 `2`。 |
+| 添加集线器 | 缺失字段从 `0` 起算，`HINCRBY` 返回 `1`。 |
+| 读取整车 | `sku:keyboard` 为 `2`，`sku:mouse` 和 `sku:hub` 均为 `1`。 |
+
+验证后停止容器，`--rm` 会自动删除容器和匿名卷。
+
+```bash
+docker stop "$redis_cart_lab"
+```
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 运行了上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。两次 `HSET` 分别返回 `2` 和 `0`，两次 `HINCRBY` 分别返回 `2` 和 `1`。`HGETALL` 返回键盘 2 件、鼠标 1 件、集线器 1 件。停止后用 `docker container inspect "$redis_cart_lab"` 确认容器已删除。
+
+**官方文档**　`HINCRBY` 支持有符号 64 位整数，7.4.2 标签下的官方测试覆盖 `HSET` 新增与覆盖、`HINCRBY` 增减和 `HGETALL` 读取。 [Redis Hash](https://redis.io/docs/latest/develop/data-types/hashes/) · [HSET](https://redis.io/docs/latest/commands/hset/) · [HINCRBY](https://redis.io/docs/latest/commands/hincrby/) · [HGETALL](https://redis.io/docs/latest/commands/hgetall/) · [7.4.2 版哈希测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/type/hash.tcl)
 
 ### HyperLogLog 独立访客估算
 
