@@ -27,7 +27,8 @@
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 待补 | 用 `PUBLISH` 和 `SUBSCRIBE` 向在线订阅者广播。 |
-| 事务、脚本与函数 | 待补 | 用 `MULTI` / `EXEC` 批量执行命令，用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
+| 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
+| 脚本与函数 | 待补 | 用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
 | 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
@@ -142,6 +143,78 @@ redis_history_cli XRANGE order-history - +
 ```bash
 docker stop "$redis_history_lab"
 ```
+
+### 事务与乐观锁
+
+**适用场景**　预留商品时，应用先检查可用库存，再扣减可用量并增加预留量。两个键都保存在同一个 Redis 实例中，库存冲突较少，应用可以在冲突后重新读取再作决定。示例使用初始化为整数且不会过期的两个测试键。
+
+**接入步骤**　需要 Docker 和两个运行 Bash 或 Zsh 的终端。使用 Redis Open Source 7.4.2 和镜像内同版本的 `redis-cli`，无需映射端口。在终端 A 启动容器，确认 `PING` 返回 `PONG`，将容器 ID 记下来供终端 B 使用。
+
+```bash
+redis_tx_lab=$(docker run -d --rm redis:7.4.2)
+echo "$redis_tx_lab"
+docker exec "$redis_tx_lab" redis-server --version
+docker exec "$redis_tx_lab" redis-cli --version
+docker exec "$redis_tx_lab" redis-cli PING
+```
+
+初始化库存和预留量，再打开交互式客户端。
+
+```bash
+docker exec "$redis_tx_lab" redis-cli MSET stock:sku-42 5 reserved:sku-42 0
+docker exec -it "$redis_tx_lab" redis-cli --json
+```
+
+在 A 的 `redis-cli` 提示符下逐条输入以下命令。先用 `WATCH` 监视可用库存，再用 `GET` 读取。确认库存至少为 2 后再开启事务。两条写命令返回 `"QUEUED"` 后，保留当前连接。
+
+```text
+WATCH stock:sku-42
+GET stock:sku-42
+MULTI
+DECRBY stock:sku-42 2
+INCRBY reserved:sku-42 2
+```
+
+在终端 B 将变量值换成 A 打印的容器 ID，通过另一条连接模拟补货。
+
+```bash
+redis_tx_lab=replace-with-container-id
+docker exec "$redis_tx_lab" redis-cli --json INCR stock:sku-42
+```
+
+回到 A 的同一个 `redis-cli` 会话，先提交并查询两个值。监视状态会在 `EXEC` 后清除，因此重试时要重新执行 `WATCH`，并用新库存检查是否还够预留 2 件。
+
+```text
+EXEC
+MGET stock:sku-42 reserved:sku-42
+WATCH stock:sku-42
+GET stock:sku-42
+MULTI
+DECRBY stock:sku-42 2
+INCRBY reserved:sku-42 2
+EXEC
+MGET stock:sku-42 reserved:sku-42
+```
+
+**验证方法**　对照两次提交及各自的查询结果。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 首次读取与补货 | A 的 `GET` 返回 `"5"`，B 的 `INCR` 返回 `6`。 |
+| 冲突时提交 | `EXEC` 返回 `null`，`MGET` 返回 `["6","0"]`，两条预留命令都未执行。 |
+| 读取新库存并重试 | `GET` 返回 `"6"`，`EXEC` 返回 `[4,2]`，`MGET` 返回 `["4","2"]`。 |
+
+应用需要在同一条连接完成从 `WATCH` 到 `EXEC` 的操作。遇到冲突时限制重试次数，每次重新检查业务条件。若读到库存不足且尚未执行 `MULTI`，可用 `UNWATCH` 清除监视。提交成功时也要检查返回数组中的每条回复，运行时出错的命令不会让其他已执行的命令回滚。
+
+在 A 的客户端输入 `QUIT` 退出，再停止容器。启动时指定的 `--rm` 会删除容器和匿名卷。
+
+```bash
+docker stop "$redis_tx_lab"
+```
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。补货后首次提交返回 `null`，库存和预留量为 6 和 0。重试返回 `[4,2]`，查询确认库存为 4、预留量为 2。停止后确认实验容器已自动删除。
+
+**官方文档**　命令文档和 7.4.2 版事务测试可用于核对命令语法及提交结果。 [Redis 事务](https://redis.io/docs/latest/develop/using-commands/transactions/) · [WATCH](https://redis.io/docs/latest/commands/watch/) · [MULTI](https://redis.io/docs/latest/commands/multi/) · [EXEC](https://redis.io/docs/latest/commands/exec/) · [7.4.2 版事务测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/multi.tcl)
 
 ## Redisson
 
