@@ -17,10 +17,75 @@
 
 ## Redis
 
-- 选择支持当前部署拓扑的客户端，配置认证、超时和序列化。字符串用 `SET` / `GET` 存缓存、`INCR` 计数，哈希存字段，列表处理有序队列，集合处理成员关系，有序集合按分值排序。用 `SET key value EX seconds` 在写入时指定 TTL，`TTL` 查看剩余时间，`DEL` 删除键。
-- Streams 用 `XADD` 追加，`XRANGE` 按 ID 范围读取。通过 `XGROUP CREATE` 建组，`XREADGROUP` 消费，`XACK` 确认，`XPENDING` 查询未确认项，`XAUTOCLAIM` 接手空闲的待处理项。核对裁剪策略和消息保留期，领取与重试可能带来重复处理。[数据结构](https://redis.io/docs/latest/develop/data-types/) · [Streams](https://redis.io/docs/latest/develop/data-types/streams/)
-- 键可能按过期或内存策略被移除，`noeviction` 在容量用尽时可能拒绝新增内存的写入。主从复制默认异步，故障转移可能丢失最近确认的写入。缓存删除与数据库提交各自执行，任一步骤失败或并发回填都可能留下旧值。
-- 验证过期、内存满、故障转移后读写、缓存删除失败后旧值的存活时间，以及 Streams 消费者退出后待确认消息的接管。[Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 为例，使用 Docker 镜像 `redis:7.4.2` 内的同版本 `redis-cli`。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
+
+| 功能 | 教程状态 | 用法 |
+| --- | --- | --- |
+| 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
+| 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系，有序集合按分值排序。 |
+| 键过期与内存淘汰 | 待补 | 用 `SET key value EX seconds` 设定 TTL，用 `TTL` 查剩余时间。容量不足时由 maxmemory 策略决定淘汰或拒绝写入。 |
+| Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
+| Streams 历史读取与裁剪 | 待补 | 用 `XRANGE` 按 ID 读取保留记录，用 `XTRIM` 管理保留量。 |
+| 发布订阅 | 待补 | 用 `PUBLISH` 和 `SUBSCRIBE` 向在线订阅者广播。 |
+| 事务、脚本与函数 | 待补 | 用 `MULTI` / `EXEC` 批量执行命令，用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
+| 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
+| Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
+
+[Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### Streams 消费组确认与接管
+
+**适用场景**　多个发货 worker 共用一个消费组。某个 worker 领取订单后退出，其他 worker 需要重新处理这条已投递但未确认的事件。前提是事件仍保留在 Stream 中，且业务允许重投。用稳定的业务事件 ID 做幂等，业务写入成功后再确认。生产环境的接管阈值应覆盖正常处理耗时，因为接管时原 worker 仍可能在处理。
+
+**接入步骤**　需要 Docker 和可运行 Bash 或 Zsh 的终端。启动一个不映射宿主机端口的独立容器，使用容器内的客户端。等待 `PING` 返回 `PONG` 后执行后续步骤。
+
+```bash
+redis_lab=$(docker run -d --rm redis:7.4.2)
+redis_lab_cli() {
+  docker exec "$redis_lab" redis-cli --json "$@"
+}
+docker exec "$redis_lab" redis-server --version
+docker exec "$redis_lab" redis-cli --version
+redis_lab_cli PING
+```
+
+先以 `0-0` 建组，让消费组从流的开头读取。`MKSTREAM` 会在键不存在时创建空 Stream。worker-a 用 `>` 读取尚未投递给该组的消息，省略 ACK 以模拟退出。worker-b 先读取新消息，再用 `XAUTOCLAIM` 接管待确认消息。`1000` 是最短空闲毫秒数，`0-0` 是扫描起点。
+
+```bash
+redis_lab_cli XGROUP CREATE orders shipping 0-0 MKSTREAM
+order_event_id=$(docker exec "$redis_lab" redis-cli --raw XADD orders '*' orderId 1001)
+redis_lab_cli XREADGROUP GROUP shipping worker-a COUNT 1 STREAMS orders '>'
+redis_lab_cli XPENDING orders shipping - + 10
+redis_lab_cli XREADGROUP GROUP shipping worker-b COUNT 1 STREAMS orders '>'
+
+sleep 2
+redis_lab_cli XAUTOCLAIM orders shipping worker-b 1000 0-0 COUNT 10
+redis_lab_cli XPENDING orders shipping - + 10
+redis_lab_cli XACK orders shipping "$order_event_id"
+redis_lab_cli XPENDING orders shipping
+redis_lab_cli XRANGE orders "$order_event_id" "$order_event_id"
+```
+
+**验证方法**　按顺序核对输出，同一条消息的 ID 应始终与 `order_event_id` 一致。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| worker-a 读取并退出 | 读到 `orderId=1001`，第一条 `XPENDING` 明细显示归 worker-a，投递次数为 1。 |
+| worker-b 读取新消息 | 返回 `null`。消息已投递给该组，仍留在待确认列表。 |
+| worker-b 接管 | 返回游标 `0-0`、原消息的 ID 和字段，以及空的已删除 ID 列表。第二条 `XPENDING` 明细显示归 worker-b，投递次数为 2。 |
+| 确认后检查 | `XACK` 返回 `1`，`XPENDING` 摘要首项为 `0`，`XRANGE` 仍能读到原消息。 |
+
+批量接管时用返回的游标继续扫描，遇到 `0-0` 时本轮扫描结束。下一轮可再次从 `0-0` 开始，检查后来达到空闲阈值的消息。Redis 7.4 的 `XAUTOCLAIM` 还会返回扫描到的已删除消息 ID，并移除它们在待确认列表中的引用。设置裁剪策略时要留出足够时间完成重投。
+
+2026-11-20 实测环境为 macOS 26.5 arm64 和 Docker Engine 27.3.1。运行上方命令，服务端和客户端均报告 7.4.2，建组返回 `OK`。订单 1001 的消息在待确认列表中从 worker-a 转到 worker-b，投递次数从 1 增至 2。worker-b 尝试读新消息时返回 `null`，接管返回 `0-0` 和空的已删除 ID 列表。确认返回 `1`，待确认数降至 0，原消息仍可读。
+
+**官方文档**　下列命令文档中的参数和返回结构适用于本例的 7.4.2。 [Streams](https://redis.io/docs/latest/develop/data-types/streams/) · [XGROUP CREATE](https://redis.io/docs/latest/commands/xgroup-create/) · [XADD](https://redis.io/docs/latest/commands/xadd/) · [XREADGROUP](https://redis.io/docs/latest/commands/xreadgroup/) · [XPENDING](https://redis.io/docs/latest/commands/xpending/) · [XAUTOCLAIM](https://redis.io/docs/latest/commands/xautoclaim/) · [XACK](https://redis.io/docs/latest/commands/xack/) · [XRANGE](https://redis.io/docs/latest/commands/xrange/)
+
+完成后停止容器，`--rm` 会删除该实验容器和匿名卷。
+
+```bash
+docker stop "$redis_lab"
+```
 
 ## Redisson
 

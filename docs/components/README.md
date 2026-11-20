@@ -27,6 +27,8 @@
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载、刷新和淘汰 |
 | [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合 |
 
+试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，用 Docker 和 `redis-cli` 核对未确认消息的归属和投递次数。
+
 ## 任务调度
 
 | 组件 | 常见用法 |
