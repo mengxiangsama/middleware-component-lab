@@ -1,5 +1,6 @@
 package io.github.modulithlab;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import org.springframework.core.task.SyncTaskExecutor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,6 +51,9 @@ class OrderPaidDeliveryTest {
     IncompleteEventPublications incomplete;
 
     @Autowired
+    CompletedEventPublications completed;
+
+    @Autowired
     TestDelivery delivery;
 
     @BeforeEach
@@ -70,13 +75,7 @@ class OrderPaidDeliveryTest {
 
     @Test
     void replaysFailedDeliveryAndAwardsPointsOnlyOnce() {
-        // Force the balance update to fail after the ledger insert.
-        jdbc.execute("ALTER TABLE loyalty_account ADD CONSTRAINT test_fail_first_award CHECK (points = 0)");
-        try {
-            assertThat(orders.pay(ORDER_ID)).isTrue();
-        } finally {
-            jdbc.execute("ALTER TABLE loyalty_account DROP CONSTRAINT test_fail_first_award");
-        }
+        payWithFailingPointsUpdate();
 
         assertThat(delivery.failures).singleElement().satisfies(failure -> assertThat(failure)
                 .isInstanceOf(DataIntegrityViolationException.class)
@@ -97,13 +96,33 @@ class OrderPaidDeliveryTest {
         assertThat(publications()).containsExactly(new Publication(originalId, true));
 
         // Publish a distinct event for the same order, as a redelivery might do.
-        transactions.executeWithoutResult(status -> events.publishEvent(new OrderPaid(ORDER_ID, CUSTOMER_ID)));
+        publishOrderPaidAgain();
 
         assertPoints(10, 1);
         assertThat(publications()).hasSize(2)
                 .contains(new Publication(originalId, true))
                 .allMatch(Publication::completed);
         assertThat(delivery.failures).hasSize(1);
+    }
+
+    @Test
+    void removesOnlyPublicationsCompletedOutsideRetentionWindow() {
+        payWithFailingPointsUpdate();
+        publishOrderPaidAgain();
+        Publication expired = publications().stream().filter(Publication::completed).findFirst().orElseThrow();
+        jdbc.update("UPDATE event_publication SET completion_date = DATEADD('DAY', -8, CURRENT_TIMESTAMP) WHERE id = ?",
+                expired.id());
+
+        publishOrderPaidAgain();
+        jdbc.update("UPDATE event_publication SET publication_date = DATEADD('DAY', -8, CURRENT_TIMESTAMP)");
+        List<Publication> retained = publications().stream().filter(publication -> !publication.equals(expired)).toList();
+        assertThat(retained).hasSize(2);
+        assertThat(retained).filteredOn(Publication::completed).hasSize(1);
+
+        completed.deletePublicationsOlderThan(Duration.ofDays(7));
+
+        assertThat(publications()).containsExactlyInAnyOrderElementsOf(retained);
+        assertPoints(10, 1);
     }
 
     @Test
@@ -120,6 +139,20 @@ class OrderPaidDeliveryTest {
         assertThat(publications()).isEmpty();
         assertPoints(0, 0);
         assertThat(delivery.failures).isEmpty();
+    }
+
+    private void payWithFailingPointsUpdate() {
+        // Force the balance update to fail after the ledger insert.
+        jdbc.execute("ALTER TABLE loyalty_account ADD CONSTRAINT test_fail_first_award CHECK (points = 0)");
+        try {
+            assertThat(orders.pay(ORDER_ID)).isTrue();
+        } finally {
+            jdbc.execute("ALTER TABLE loyalty_account DROP CONSTRAINT test_fail_first_award");
+        }
+    }
+
+    private void publishOrderPaidAgain() {
+        transactions.executeWithoutResult(status -> events.publishEvent(new OrderPaid(ORDER_ID, CUSTOMER_ID)));
     }
 
     private String orderStatus() {

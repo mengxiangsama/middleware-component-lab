@@ -21,6 +21,25 @@
 
 查看[集成测试](src/test/java/io/github/modulithlab/OrderPaidDeliveryTest.java)中的重投调用，或在[数据库结构](src/main/resources/schema.sql)里查看流水的联合主键 `(order_id, reward_type)`。
 
+## 清理已完成的投递记录
+
+默认 `UPDATE` 模式在监听器执行成功后填写 `event_publication.completion_date`，记录仍保留在表中。需要留出排查窗口时，可以在现有维护任务中注入 `CompletedEventPublications`，按实际保留期清理。下面以保留最近 7 天完成的记录为例。
+
+```java
+completedPublications.deletePublicationsOlderThan(Duration.ofDays(7));
+```
+
+在仓库根目录运行单项测试。
+
+```bash
+./mvnw -f labs/spring-modulith/pom.xml \
+  -Dtest=OrderPaidDeliveryTest#removesOnlyPublicationsCompletedOutsideRetentionWindow test
+```
+
+测试把三条记录的发布时间都设为 8 天前，其中一条也在 8 天前完成，一条刚完成，一条投递失败等待重投。清理后只删除 8 天前完成的记录，保留其余两条原记录，积分余额仍为 10，流水仍为 1 条。
+
+- [Spring Modulith 1.4.14 的投递清理 API](https://github.com/spring-projects/spring-modulith/blob/1.4.14/spring-modulith-events/spring-modulith-events-api/src/main/java/org/springframework/modulith/events/CompletedEventPublications.java)
+
 ## 积分幂等与适用范围
 
 积分监听器先插入流水，再在同一事务里更新余额。对于同一订单的 `ORDER_PAID` 奖励，只有成功插入流水的投递才会增加余额。Spring Modulith 可重投尚未完成的记录，监听器可能多次执行。积分事务提交后，如果登记完成时间前发生故障，同一个业务键仍能挡住重复入账。
