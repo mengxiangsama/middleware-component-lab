@@ -12,7 +12,7 @@
 | [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递 |
 | [NATS JetStream](messaging.md#nats-jetstream) | Subject 过滤、Stream 保留、持久 Consumer 和 ACK |
 
-**可运行** · [RocketMQ 事务消息实验](../../README.md#run-locally)，包含提交、回滚、事务回查和消费去重。
+**可运行** · [RocketMQ 事务消息实验](../../README.md#run-locally)，包含提交、回滚、事务回查和消费去重。 [RocketMQ 顺序消息实验](messaging.md#订单顺序消息)按订单核对创建、支付和发货的事件序列。
 
 ## 搜索、缓存与分析
 

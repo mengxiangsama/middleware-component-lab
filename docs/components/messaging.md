@@ -12,11 +12,64 @@
 
 ## Apache RocketMQ
 
-- **适用与代价**｜适合需要事务消息回查、延迟投递或按业务键处理顺序消息的服务。事务消息需要可持久查询的本地事务结果，并承担未决事务和超时恢复的成本。 [事务消息](https://rocketmq.apache.org/docs/featureBehavior/04transactionmessage/) · [顺序消息](https://rocketmq.apache.org/docs/featureBehavior/03fifomessage/)
-- **接入用法**｜按 Broker 和 SDK 版本创建匹配消息类型的 Topic。普通消息由 producer 发送，consumer 以消费组订阅 Topic，可按 Tag 过滤。延迟消息用 SDK 支持的参数设定可投递时间。FIFO 消息按 SDK 指定消息组或选择队列。事务消息可按本仓库的 Java 客户端示例注册事务监听器，通过 `sendMessageInTransaction` 发送，由监听器执行本地事务并实现回查。 [快速开始](https://rocketmq.apache.org/docs/quickStart/01quickstart/) · [延迟消息](https://rocketmq.apache.org/docs/featureBehavior/02delaymessage/) · [事务消息实验](../../README.md#run-locally)
-- **确认与重试**｜事务消息经半消息、本地事务、提交或回滚。结果未知时由 Broker 回查，消费端仅看到提交的消息。回查应读取本地已提交的事务证据，其保留期要覆盖回查与恢复窗口。消费确认是单独的边界，按客户端类型检查重试条件、间隔和死信策略。 [事务回查与限制](https://rocketmq.apache.org/docs/featureBehavior/04transactionmessage/) · [消费重试](https://rocketmq.apache.org/docs/featureBehavior/10consumerretrypolicy/)
-- **顺序与重放**｜顺序消息需按业务键和对应客户端的顺序机制设计，检查发送并发、消费并发与失败重试。事务消息类型与 FIFO 消息类型需要分别核对。消费位置可在仍保留、可见的消息上调整或重放，先确认保留窗口、积压和下游写入容量。 [顺序消息](https://rocketmq.apache.org/docs/featureBehavior/03fifomessage/) · [消费进度](https://rocketmq.apache.org/docs/featureBehavior/09consumerprogress/) · [消息存储](https://rocketmq.apache.org/docs/featureBehavior/11messagestorepolicy/)
-- **实验与验证**｜仓库现有实验覆盖 COMMIT、ROLLBACK、UNKNOWN 回查与消费去重。应用到业务时测试生产者在本地提交后、Broker 得知结果前退出，以及消费提交后重投。真实系统应使用可跨重启查询的事务记录和业务事件 ID。 [运行事务消息实验](../../README.md#run-locally)
+本仓库的 NameServer 和 Broker 使用 [Compose 镜像 `apache/rocketmq:5.5.0`](../../compose.yaml)，Java 客户端使用 [`org.apache.rocketmq:rocketmq-client:5.5.1`](../../pom.xml)，通过 Remoting 连接 NameServer 和 Broker。以下清单以这组版本为准。 [5.5.0 与 5.5.1 发布记录](https://github.com/apache/rocketmq/releases)
+
+| 功能 | 教程状态 | 用法与官方资料 |
+| --- | --- | --- |
+| 普通消息 | 待补 | 用 `DefaultMQProducer` 发布可独立处理的事件，由消费组订阅。 [普通消息](https://rocketmq.apache.org/docs/featureBehavior/01normalmessage/) |
+| 顺序消息 | 已有教程 | Remoting 客户端将同一业务键路由到同一队列，消费端在队列内串行处理。 [订单顺序消息](#订单顺序消息) |
+| 延时或定时消息 | 待补 | 可用 `setDelayTimeLevel` 选择延时等级，或用 `setDeliverTimeMs` 设置投递时间戳。 [延时等级](https://rocketmq.apache.org/docs/4.x/producer/04message3/) · [定时投递](https://rocketmq.apache.org/docs/featureBehavior/02delaymessage/) · [5.5.1 Remoting Message API](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/common/src/main/java/org/apache/rocketmq/common/message/Message.java) |
+| 事务消息 | 已有教程 | 半消息、本地事务和回查协调订单落库与消息发布。 [订单事务消息](#订单事务消息) |
+| 消息过滤 | 待补 | 在 Broker 按 Tag 或在启用属性过滤后按 SQL92 表达式匹配订阅。 [消息过滤](https://rocketmq.apache.org/docs/featureBehavior/07messagefilter/) |
+| 消费重试与死信 | 待补 | 根据消费方式配置重试次数和间隔，检查重试耗尽后的死信。 [消费重试](https://rocketmq.apache.org/docs/featureBehavior/10consumerretrypolicy/) |
+| 消费进度与重放 | 待补 | 在仍保留的消息范围内重置消费位点，用独立消费组验证重放。 [消费进度](https://rocketmq.apache.org/docs/featureBehavior/09consumerprogress/) |
+
+### 订单顺序消息
+
+**适用场景**　下游订单状态投影需依次处理同一笔订单的 `CREATED → PAID → SHIPPED`，不同订单可以并行。上游先按业务顺序串行发送，同一订单的上一条收到 `SEND_OK` 后再发下一条。多实例同时发布同一订单时，需要先在上游协调发送顺序。
+
+**接入步骤**　使用上述服务端和 Remoting 客户端版本。从仓库根目录执行，需 Java 17+、Docker Compose，以及可用的本地端口 9876、10909、10911 和 10912。以下命令创建一个新的实验主题，配置两个读队列和两个写队列。
+
+```bash
+docker compose -p middleware-daily-fifo up -d
+docker compose -p middleware-daily-fifo ps -a
+```
+
+确认 Broker 为 `healthy`、`topic-init` 以状态码 0 退出，再创建主题。
+
+```bash
+export ROCKETMQ_FIFO_TOPIC="order-fifo-$(date +%s)"
+docker compose -p middleware-daily-fifo exec -T broker sh mqadmin updateTopic \
+  -n namesrv:9876 -b 127.0.0.1:10911 -t "$ROCKETMQ_FIFO_TOPIC" \
+  -r 2 -w 2 -a +message.type=NORMAL
+```
+
+创建主题应返回 `success`。 [5.5.0 的 updateTopic 参数](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.0/tools/src/main/java/org/apache/rocketmq/tools/command/topic/UpdateTopicSubCommand.java)
+
+[实验代码](../../src/test/java/io/github/rocketmqtx/OrderFifoLabTest.java)交错发送订单 1001 与 1002 的事件。发送端用 `DefaultMQProducer.send(message, selector, orderId)`，对候选队列排序后按订单号取模。消费组从首个可用位点开始，通过 `DefaultMQPushConsumer` 的 `MessageListenerOrderly` 在回调内顺序处理同一队列的消息，处理完成才返回 `SUCCESS`。主题使用 `NORMAL`，顺序来自生产者选队列和消费者按队列串行处理。 [队列顺序用法](https://rocketmq.apache.org/docs/4.x/producer/03message2/) · [5.5.1 生产者示例](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/example/src/main/java/org/apache/rocketmq/example/ordermessage/Producer.java) · [5.5.1 消费者示例](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/example/src/main/java/org/apache/rocketmq/example/ordermessage/Consumer.java)
+
+**顺序边界**　同一订单保持在同一队列时，下游按该队列的存储顺序处理。跨队列的日志可交错，扩缩队列或路由变化可能让取模重新映射。生产遇到失败或结果不明时应暂停推进同一订单并核对发送状态。消费端在回调内完成业务写入，避免把同一队列的事件异步并行处理。临时失败可返回 `SUSPEND_CURRENT_QUEUE_A_MOMENT` 让当前队列稍后重试，同队列的其他订单也可能等待。用订单 ID 与事件序号作为幂等键，处理重投。
+
+使用 RocketMQ 5.x gRPC Java SDK `rocketmq-client-java` 时，创建 `message.type=FIFO` 的主题，并在消息上用 `setMessageGroup(orderId)` 声明消息组。该接口的顺序范围是同一消息组。当前 Compose 实验走 Remoting 队列机制。 [5.x 消息组与 FIFO 主题](https://rocketmq.apache.org/docs/featureBehavior/03fifomessage/)
+
+**验证方法**　沿用刚设置的主题环境变量执行。重跑时先创建新主题，确保位点从 0 开始。
+
+```bash
+./mvnw -B -Dmaven.repo.local=target/maven-repository \
+  -Drocketmq.log.root=target/rocketmq-logs -Dtest=OrderFifoLabTest test
+```
+
+预期 6 条发送均返回 `SEND_OK`。测试按订单检查消费回调收到的事件顺序、队列号和位点。订单 1001 在队列 1，订单 1002 在队列 0，每笔都依次收到 `CREATED`、`PAID`、`SHIPPED`，各自的位点为 0、1、2。
+
+2026-11-20 实测环境为 macOS arm64、OpenJDK 17.0.16、Maven 3.9.11、Docker Engine 27.3.1 和 Compose 2.30.3。按上方命令启动服务、创建主题并运行测试，`topic-init` 以状态码 0 退出，6 条发送均成功，1 项测试通过。消费日志中，订单 1001 在队列 1，订单 1002 在队列 0，两笔订单的位点均为 0、1、2，对应创建、支付和发货。
+
+实验完成后可用 `docker compose -p middleware-daily-fifo down -v` 删除本教程专用的 Compose 服务和数据卷。
+
+### 订单事务消息
+
+需要在本地订单事务提交后可靠地发布事件时，使用 `TransactionMQProducer.sendMessageInTransaction` 先发半消息，再由事务监听器执行本地事务。结果未知时由 Broker 回查，消费端只看到提交后的消息。回查应读取可跨重启查询的事务结果，消费端仍需独立处理重试和幂等。 [Remoting 事务监听器](https://rocketmq.apache.org/docs/4.x/producer/06message5/) · [事务回查与限制](https://rocketmq.apache.org/docs/featureBehavior/04transactionmessage/)
+
+使用上述版本，按 [仓库事务消息实验](../../README.md#run-locally) 启动 Java 应用和 Compose，分别发送 `COMMIT`、`ROLLBACK`、`UNKNOWN` 请求。用订单 ID 关联 HTTP 查询和日志，核对已提交订单被消费、回滚订单查询返回 404、未知结果经回查确认提交后再消费。
 
 ## Apache Kafka
 

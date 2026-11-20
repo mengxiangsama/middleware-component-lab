@@ -14,7 +14,7 @@
 
 ## 消息投递与事务
 
-先读 [RocketMQ 事务消息](components/messaging.md#apache-rocketmq)，弄清半消息、本地事务和回查的先后关系。需要比较消费确认与历史重放时，再看 [RabbitMQ](components/messaging.md#rabbitmq) 和 [Kafka](components/messaging.md#apache-kafka)。选型时分别记录顺序约束的范围、失败后的重试方式和允许回放的时间窗口。
+先读 [RocketMQ 事务消息](components/messaging.md#订单事务消息)，弄清半消息、本地事务和回查的先后关系。需要比较消费确认与历史重放时，再看 [RabbitMQ](components/messaging.md#rabbitmq) 和 [Kafka](components/messaging.md#apache-kafka)。选型时分别记录顺序约束的范围、失败后的重试方式和允许回放的时间窗口。
 
 按[本地实验步骤](../README.md#run-locally)启动服务。用 `docker compose ps -a` 查看 `broker` 和 `topic-init` 的状态，确认 Broker 健康且主题初始化以状态码 0 退出，再分别发出三种请求。每次保存响应中的 `orderId`，用它关联查询结果和应用日志。
 
@@ -25,6 +25,8 @@
 | `UNKNOWN` | 查询订单返回 200。等待应用记录回查结果为 `COMMIT`，随后核对该订单的消费记录。 |
 
 对照[事务监听器](../src/main/java/io/github/rocketmqtx/transaction/OrderTransactionListener.java)看回查如何读取本地事务结果，再看[消费实现](../src/main/java/io/github/rocketmqtx/consumer/OrderMessageConsumer.java)如何用消息 ID 和 `consumed_event` 的主键处理重复投递。如果还需要处理生产者重复发出的同一业务事件，练习为该事件选择稳定的业务幂等键。关单或对账任务也可以复用这个思路。
+
+需要按订单依次处理创建、支付和发货时，运行 [RocketMQ 订单顺序消息实验](components/messaging.md#订单顺序消息)，按订单核对事件序列、队列号和队列位点。
 
 ## 缓存与检索
 
