@@ -3,9 +3,9 @@
 [![CI](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-第三方中间件组件手册，收录组件的常见操作、接入步骤、验证方法和官方文档。Apache RocketMQ 事务消息附可运行的 Spring Boot 实验。
+第三方中间件组件手册，收录组件的常见操作、接入步骤、验证方法和官方文档。附有 Apache RocketMQ 事务消息和 Spring Modulith 模块事件实验。
 
-Reference guides for third-party middleware, plus a runnable Apache RocketMQ experiment.
+Reference guides for third-party middleware, plus runnable Apache RocketMQ and Spring Modulith experiments.
 
 ## 组件入口
 
@@ -27,6 +27,8 @@ Reference guides for third-party middleware, plus a runnable Apache RocketMQ exp
 ## 学习路线
 
 [按场景学习](docs/learning-path.md)覆盖事务消息、缓存与检索、任务补跑、数据同步、服务保护和故障定位。每条路线都列出阅读顺序、练习步骤和验证结果。
+
+- 同一服务内的模块事件：[Spring Modulith 订单积分实验](labs/spring-modulith/README.md)，验证支付提交、积分失败重投和业务幂等。
 
 ## RocketMQ transaction experiment
 
