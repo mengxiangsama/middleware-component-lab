@@ -22,7 +22,8 @@
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
-| 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系，有序集合按分值排序。 |
+| 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系。 |
+| 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
 | 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
@@ -34,6 +35,50 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 有序集合积分排行
+
+**适用场景**　活动积分榜需要按分数取前几名，也需要按用户查询名次。用用户 ID 作为有序集合的成员，积分作为分值。重复提交同一加分事件会重复累加，应用应按事件 ID 去重。如果业务规定同分时按达成时间排序，需要另外设计排序规则。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。用 `redis:7.4.2` 镜像内同版本的服务端和 `redis-cli`，容器无需映射端口。启动后确认两者均为 7.4.2，并等待 `PING` 返回 `PONG`。
+
+```bash
+redis_rank_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_rank_lab" redis-server --version
+docker exec "$redis_rank_lab" redis-cli --version
+docker exec "$redis_rank_lab" redis-cli PING
+```
+
+用 `ZADD` 写入三个成员的初始积分。用 `ZRANGE ... REV WITHSCORES` 查前两名，区间的下标从 0 开始，且包含结束位置。积分相同时，`REV` 按成员字符串的逆字典序返回。随后用 `ZINCRBY` 给 alice 加 15 分，再查榜单和个人名次。
+
+```bash
+docker exec "$redis_rank_lab" redis-cli --json ZADD lab:leaderboard 90 alice 100 bob 100 carol
+docker exec "$redis_rank_lab" redis-cli --json ZRANGE lab:leaderboard 0 1 REV WITHSCORES
+docker exec "$redis_rank_lab" redis-cli --json ZINCRBY lab:leaderboard 15 alice
+docker exec "$redis_rank_lab" redis-cli --json ZRANGE lab:leaderboard 0 1 REV WITHSCORES
+docker exec "$redis_rank_lab" redis-cli --json ZREVRANK lab:leaderboard alice
+docker exec "$redis_rank_lab" redis-cli --json ZREVRANK lab:leaderboard dave
+```
+
+**验证方法**　按顺序核对下表。将 `ZREVRANK` 返回的下标加 1 即可得到面向用户展示的名次，缺少成员时按未上榜处理。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 初始化 | `3`，表示新增三个成员 |
+| 查询前两名 | `[["carol",100],["bob",100]]` |
+| alice 加分 | `105`，表示更新后的积分 |
+| 再查前两名 | `[["alice",105],["carol",100]]` |
+| 查询 alice 和 dave 的名次 | 分别返回 `0` 和 `null` |
+
+验证结束后停止容器，`--rm` 会自动清理容器和匿名卷。
+
+```bash
+docker stop "$redis_rank_lab"
+```
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。初次查询中同为 100 分的 carol 排在 bob 前面。alice 加分后以 105 分升至榜首，个人名次查询返回下标 0，dave 返回 `null`。停止后确认容器已自动删除。
+
+**官方文档**　[有序集合](https://redis.io/docs/latest/develop/data-types/sorted-sets/) · [ZADD](https://redis.io/docs/latest/commands/zadd/) · [ZINCRBY](https://redis.io/docs/latest/commands/zincrby/) · [ZRANGE](https://redis.io/docs/latest/commands/zrange/) · [ZREVRANK](https://redis.io/docs/latest/commands/zrevrank/)。这些命令均适用于 7.4.2，其中 `ZRANGE` 的 `REV` 选项从 6.2 起可用。
 
 ### 键过期与缓存更新
 
