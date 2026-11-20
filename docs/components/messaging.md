@@ -18,7 +18,7 @@
 | --- | --- | --- |
 | 普通消息 | 待补 | 用 `DefaultMQProducer` 发布可独立处理的事件，由消费组订阅。 [普通消息](https://rocketmq.apache.org/docs/featureBehavior/01normalmessage/) |
 | 顺序消息 | 已有教程 | Remoting 客户端将同一业务键路由到同一队列，消费端在队列内串行处理。 [订单顺序消息](#订单顺序消息) |
-| 延时或定时消息 | 待补 | 可用 `setDelayTimeLevel` 选择延时等级，或用 `setDeliverTimeMs` 设置投递时间戳。 [延时等级](https://rocketmq.apache.org/docs/4.x/producer/04message3/) · [定时投递](https://rocketmq.apache.org/docs/featureBehavior/02delaymessage/) · [5.5.1 Remoting Message API](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/common/src/main/java/org/apache/rocketmq/common/message/Message.java) |
+| 延时或定时消息 | 已有教程 | 到期后触发订单支付状态检查。 [订单定时消息](#订单定时消息) |
 | 事务消息 | 已有教程 | 半消息、本地事务和回查协调订单落库与消息发布。 [订单事务消息](#订单事务消息) |
 | 消息过滤 | 待补 | 在 Broker 按 Tag 或在启用属性过滤后按 SQL92 表达式匹配订阅。 [消息过滤](https://rocketmq.apache.org/docs/featureBehavior/07messagefilter/) |
 | 消费重试与死信 | 待补 | 根据消费方式配置重试次数和间隔，检查重试耗尽后的死信。 [消费重试](https://rocketmq.apache.org/docs/featureBehavior/10consumerretrypolicy/) |
@@ -64,6 +64,43 @@ docker compose -p middleware-daily-fifo exec -T broker sh mqadmin updateTopic \
 2026-11-20 实测环境为 macOS arm64、OpenJDK 17.0.16、Maven 3.9.11、Docker Engine 27.3.1 和 Compose 2.30.3。按上方命令启动服务、创建主题并运行测试，`topic-init` 以状态码 0 退出，6 条发送均成功，1 项测试通过。消费日志中，订单 1001 在队列 1，订单 1002 在队列 0，两笔订单的位点均为 0、1、2，对应创建、支付和发货。
 
 实验完成后可用 `docker compose -p middleware-daily-fifo down -v` 删除本教程专用的 Compose 服务和数据卷。
+
+### 订单定时消息
+
+**适用场景**　订单创建后，在付款截止时间触发一次支付状态检查。消息携带订单 ID，消费者收到后重新读取订单，只有仍待支付且已到期时才执行关单。用带状态条件的原子更新处理支付与关单的竞争，并让重复投递安全地重试。投递时间用于触发检查，消费积压或重试会使实际处理变晚。
+
+**接入步骤**　使用 NameServer 和 Broker 5.5.0 及 Java Remoting 客户端 5.5.1。从仓库根目录执行，需 Java 17+、Docker Compose，以及可用的本地端口 9876、10909、10911 和 10912。客户端和 Broker 的时钟需同步。
+
+```bash
+docker compose -p middleware-daily-delay up -d
+docker compose -p middleware-daily-delay ps -a
+```
+
+确认 Broker 为 `healthy`、`topic-init` 以状态码 0 退出，再创建一个新的 `DELAY` 主题。重跑时重新执行以下命令，使用新的主题和消费组。
+
+```bash
+export ROCKETMQ_DELAY_TOPIC="order-delay-$(date +%s)"
+docker compose -p middleware-daily-delay exec -T broker sh mqadmin updateTopic \
+  -n namesrv:9876 -b 127.0.0.1:10911 -t "$ROCKETMQ_DELAY_TOPIC" \
+  -r 1 -w 1 -a +message.type=DELAY
+```
+
+[实验代码](../../src/test/java/io/github/rocketmqtx/OrderDelayLabTest.java)用 `DefaultMQProducer` 发送订单 1001 的 `CHECK_PAYMENT_TIMEOUT`，用 `Message#setDeliverTimeMs` 写入 Unix 毫秒时间戳，目标时间取约 10 秒后的整秒。消费者使用 `DefaultMQPushConsumer` 记录实际回调时间。 [定时消息](https://rocketmq.apache.org/docs/featureBehavior/02delaymessage/) · [5.5.1 Remoting Message API](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/common/src/main/java/org/apache/rocketmq/common/message/Message.java) · [5.5.0 updateTopic 参数](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.0/tools/src/main/java/org/apache/rocketmq/tools/command/topic/UpdateTopicSubCommand.java)
+
+Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker 当前时间之后 3 天，超过上限会拒绝发送。已过去的时间戳会走即时投递。旧式的 `setDelayTimeLevel(3)` 按 Broker 的延时等级配置指定相对延时，默认是 10 秒。每条消息只选一种方式，Broker 在设置了延时等级时会清除定时时间戳。 [5.5.0 Broker 定时处理](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.0/broker/src/main/java/org/apache/rocketmq/broker/util/HookUtils.java) · [5.5.0 Broker 存储配置](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.0/store/src/main/java/org/apache/rocketmq/store/config/MessageStoreConfig.java) · [延时等级](https://rocketmq.apache.org/docs/4.x/producer/04message3/)
+
+**验证方法**　创建主题应返回 `success`。在设置了主题变量的同一终端运行测试。
+
+```bash
+./mvnw -B -Dmaven.repo.local=target/maven-repository \
+  -Drocketmq.log.root=target/rocketmq-logs -Dtest=OrderDelayLabTest test
+```
+
+预期发送在目标时间之前返回 `SEND_OK`，消费回调在目标时间到达后才收到订单 1001 的检查事件。测试在发送成功后最多等待 45 秒，断言订单 ID、事件内容，以及目标主题的 Broker 存储时间和消费回调时间均已达到计划时间。即使消费组启动偏慢，Broker 存储时间也能检出消息提前写入目标主题的情况。本实验验证消息触发，业务关单由消费应用实现。
+
+2026-11-20 实测环境为 macOS 26.5 arm64、OpenJDK 17.0.16、Maven 3.9.11、Docker Engine 27.3.1 和 Compose 2.30.3。按上方命令启动服务、创建主题并运行测试，`topic-init` 以状态码 0 退出，主题创建成功，1 项测试通过。日志中的时间均为 UTC，发送于 `10:12:17.606721Z` 返回 `SEND_OK`，计划时间为 `10:12:27Z`。Broker 于 `10:12:27.116Z` 写入目标主题，消费者于 `10:12:27.139543Z` 收到订单 1001 的检查事件。
+
+实验完成后可用 `docker compose -p middleware-daily-delay down -v` 删除本教程专用的 Compose 服务和数据卷。
 
 ### 订单事务消息
 

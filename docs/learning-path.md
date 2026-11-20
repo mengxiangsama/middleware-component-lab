@@ -36,6 +36,8 @@
 
 ## 任务调度与补跑
 
+订单创建后只需在付款截止时触发一次状态检查时，运行 [RocketMQ 订单定时消息实验](components/messaging.md#订单定时消息)，对比分别记录的发送、计划投递和消费时间。
+
 从 [Quartz](components/scheduling.md#quartz) 的触发器和错过触发策略开始，再看 [XXL-JOB](components/scheduling.md#xxl-job) 或 [PowerJob](components/scheduling.md#powerjob) 的执行器和失败重试。需要多个任务按依赖补数时，参考 [DolphinScheduler](components/scheduling.md#apache-dolphinscheduler) 的工作流。
 
 选一个按业务日期执行的测试对账任务，先让其中一批失败，再用相同业务日期补跑。核对失败批次能恢复、已完成批次的业务结果只生效一次，并保留任务参数、批次范围和执行日志。
