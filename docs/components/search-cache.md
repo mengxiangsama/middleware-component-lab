@@ -25,7 +25,7 @@
 | 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系，有序集合按分值排序。 |
 | 键过期与内存淘汰 | 待补 | 用 `SET key value EX seconds` 设定 TTL，用 `TTL` 查剩余时间。容量不足时由 maxmemory 策略决定淘汰或拒绝写入。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
-| Streams 历史读取与裁剪 | 待补 | 用 `XRANGE` 按 ID 读取保留记录，用 `XTRIM` 管理保留量。 |
+| Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 待补 | 用 `PUBLISH` 和 `SUBSCRIBE` 向在线订阅者广播。 |
 | 事务、脚本与函数 | 待补 | 用 `MULTI` / `EXEC` 批量执行命令，用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
 | 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
@@ -85,6 +85,62 @@ redis_lab_cli XRANGE orders "$order_event_id" "$order_event_id"
 
 ```bash
 docker stop "$redis_lab"
+```
+
+### Streams 历史读取与裁剪
+
+**适用场景**　订单事件排查工具需要按 ID 分页查看近期记录，服务也需要定期清理超出保留范围的历史。适用于允许旧事件退出回放窗口的 Stream。若同一 Stream 还有消费组，应在裁剪前确认所有相关消费组都已处理待删除的事件。Redis 7.4 的裁剪可以删除尚未确认的消息正文，影响后续重投。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。用独立容器运行 Redis Open Source 7.4.2 和容器内的同版本 `redis-cli`，无需映射端口。确认 `PING` 返回 `PONG` 后再写入数据。
+
+```bash
+redis_history_lab=$(docker run -d --rm redis:7.4.2)
+redis_history_cli() {
+  docker exec "$redis_history_lab" redis-cli --json "$@"
+}
+docker exec "$redis_history_lab" redis-server --version
+docker exec "$redis_history_lab" redis-cli --version
+redis_history_cli PING
+```
+
+写入四条带固定 ID 的测试事件，让前三条记录共享同一毫秒值。第一页最多读两条，取其最后一条的完整 ID `1000-1`，加上 `(` 作为第二页的排他起点。`-` 和 `+` 分别代表最小和最大 ID。
+
+```bash
+redis_history_cli XADD order-history 1000-0 orderId 1001
+redis_history_cli XADD order-history 1000-1 orderId 1002
+redis_history_cli XADD order-history 1000-2 orderId 1003
+redis_history_cli XADD order-history 1001-0 orderId 1004
+redis_history_cli XRANGE order-history - + COUNT 2
+redis_history_cli XRANGE order-history '(1000-1' + COUNT 2
+```
+
+用 `MINID = 1000-2` 精确删除 ID 小于阈值的记录，阈值本身仍保留。若保留策略按条数制定，可用 `MAXLEN =` 保留最近的指定条数。本例先验证 ID 边界，再把剩余记录裁剪到一条。
+
+```bash
+redis_history_cli XTRIM order-history MINID = 1000-2
+redis_history_cli XRANGE order-history - +
+redis_history_cli XTRIM order-history MAXLEN = 1
+redis_history_cli XRANGE order-history - +
+```
+
+**验证方法**　逐步核对 ID 和删除数量。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 分页 | 第一页为 `1000-0`、`1000-1`，第二页为 `1000-2`、`1001-0`。即便下一条与游标处于同一毫秒，也能继续读取。 |
+| 按 ID 裁剪 | `XTRIM` 返回 `2`，剩余 `1000-2`、`1001-0`。 |
+| 按长度裁剪 | `XTRIM` 返回 `1`，仅剩 `1001-0`。 |
+
+分页期间若有并发追加或裁剪，每页读到的是执行当时仍保留的记录。需要完整回放时，应保证回放结束前所需记录仍在保留范围内。允许暂时多保留一些记录时，可以考虑用 `~` 做近似裁剪。
+
+2026-11-20 在 macOS 26.5 arm64 和 Docker Engine 27.3.1 上运行本节命令。服务端与客户端均报告 7.4.2，`PING` 返回 `PONG`。两页各返回两条记录，第二页从同一毫秒下的 `1000-2` 开始。两次裁剪分别删除 2 条和 1 条，按 ID 裁剪后阈值仍可读，按长度裁剪后仅剩 `1001-0`。停止后容器已自动删除。
+
+**官方文档**　命令历史和 7.4.2 源码可用于核对本例中的参数。 [XADD](https://redis.io/docs/latest/commands/xadd/) · [XRANGE](https://redis.io/docs/latest/commands/xrange/) · [XTRIM](https://redis.io/docs/latest/commands/xtrim/) · [7.4.2 XTRIM 命令定义](https://raw.githubusercontent.com/redis/redis/7.4.2/src/commands/xtrim.json)
+
+完成后停止容器，`--rm` 会删除该实验容器和匿名卷。
+
+```bash
+docker stop "$redis_history_lab"
 ```
 
 ## Redisson
