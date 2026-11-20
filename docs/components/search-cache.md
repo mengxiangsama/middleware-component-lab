@@ -33,11 +33,73 @@
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 已有教程 | [广播缓存失效通知并验证断线期间的消息不会重放](#发布订阅与缓存失效通知)。 |
 | 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
-| 脚本与函数 | 待补 | 用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
+| Lua 脚本 | 已有教程 | [原子检查并更新固定窗口限流计数](#lua-固定窗口限流)。 |
+| Redis Functions | 待补 | 在服务端登记可重复调用的函数库。 |
 | 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### Lua 固定窗口限流
+
+**适用场景**　多个应用实例共享某个用户在同一 API 上的请求额度。窗口从首个请求开始，本例允许 10 秒内通过 2 次。脚本在 Redis 内一次完成读取、限额判断和更新，其他请求无法插入这些操作之间。窗口交界处可能短时间内通过两批请求，适合允许这种突发流量的接口。每个用户和接口组合使用独立的计数键，所有实例使用相同的限额和窗口，计数键由脚本独占。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 启动独立容器，服务端与 `redis-cli` 均为 7.4.2，无需映射宿主机端口。若刚启动时连接失败，稍后重试 `PING`，直到返回 `PONG`。
+
+```bash
+redis_rate_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_rate_lab" redis-server --version
+docker exec "$redis_rate_lab" redis-cli --version
+docker exec "$redis_rate_lab" redis-cli PING
+```
+
+`EVAL` 后的 `1` 表示传入一个键，脚本通过 `KEYS[1]` 访问该键。`ARGV[1]` 和 `ARGV[2]` 分别接收限额和窗口秒数，调用方传入已校验的正整数。首次调用用 `SET ... EX` 一次写入计数及其过期时间，窗口内的 `INCR` 保留原过期时间。返回 `1` 表示放行，`0` 表示拒绝。
+
+```bash
+rate_script=$(cat <<'LUA'
+local key = KEYS[1]
+local count = redis.call('GET', key)
+
+if not count then
+    redis.call('SET', key, '1', 'EX', ARGV[2])
+    return 1
+end
+if tonumber(count) >= tonumber(ARGV[1]) then
+    return 0
+end
+redis.call('INCR', key)
+return 1
+LUA
+)
+rate_key=lab:rate:checkout:user42
+
+rate_request() {
+  docker exec "$redis_rate_lab" redis-cli EVAL "$rate_script" 1 "$rate_key" 2 10
+}
+```
+
+**验证方法**　在同一终端连续运行下面整段命令，避免在前三次调用之间因手工停顿跨过窗口。`EXPIRETIME` 返回绝对过期时间，可检查第二次放行和第三次拒绝是否延长了窗口。
+
+```bash
+rate_request
+docker exec "$redis_rate_lab" redis-cli EXPIRETIME "$rate_key"
+sleep 2
+rate_request
+rate_request
+docker exec "$redis_rate_lab" redis-cli GET "$rate_key"
+docker exec "$redis_rate_lab" redis-cli EXPIRETIME "$rate_key"
+sleep 10
+docker exec "$redis_rate_lab" redis-cli EXPIRETIME "$rate_key"
+rate_request
+docker exec "$redis_rate_lab" redis-cli GET "$rate_key"
+docker stop "$redis_rate_lab"
+```
+
+前三次调用依次返回 `1`、`1`、`0`。两次读取的过期时间是同一个正整数，拒绝后的计数为 `2`。等待后，`EXPIRETIME` 返回 `-2`，表示键已过期。再调用一次返回 `1`，新窗口的计数为 `1`。`docker stop` 触发 `--rm` 清理容器和匿名卷。
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 运行了上述三段命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。前三次调用返回 `1`、`1`、`0`，两次过期时间均为 `1795171902`，计数为 `2`。等待后读到 `-2`，再调用返回 `1`，计数从 `1` 开始。停止后用 `docker container inspect "$redis_rate_lab"` 确认容器已删除。
+
+**官方文档**　Lua 文档说明了脚本的原子执行，Redis 7.4.2 的仓库测试覆盖了 `KEYS` 和 `ARGV` 的传参及脚本内调用命令。 [Lua 脚本](https://redis.io/docs/latest/develop/programmability/eval-intro/) · [EVAL](https://redis.io/docs/latest/commands/eval/) · [INCR 限流示例](https://redis.io/docs/latest/commands/incr/) · [SET](https://redis.io/docs/latest/commands/set/) · [EXPIRETIME](https://redis.io/docs/latest/commands/expiretime/) · [7.4.2 版脚本测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/scripting.tcl)
 
 ### 哈希购物车数量更新
 
