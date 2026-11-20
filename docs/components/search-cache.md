@@ -27,7 +27,7 @@
 | 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
-| 发布订阅 | 待补 | 用 `PUBLISH` 和 `SUBSCRIBE` 向在线订阅者广播。 |
+| 发布订阅 | 已有教程 | [广播缓存失效通知并验证断线期间的消息不会重放](#发布订阅与缓存失效通知)。 |
 | 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
 | 脚本与函数 | 待补 | 用 Lua 脚本或 Redis Functions 封装服务端逻辑。 |
 | 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
@@ -194,6 +194,54 @@ redis_history_cli XRANGE order-history - +
 ```bash
 docker stop "$redis_history_lab"
 ```
+
+### 发布订阅与缓存失效通知
+
+**适用场景**　多个应用实例各自维护进程内的商品缓存。源数据更新后，向在线实例广播商品标识，订阅端收到通知后删除对应的本地缓存，下次读取时重新加载。Redis Pub/Sub 是至多一次投递，适合能用 TTL、重连后清理缓存等措施兜底的通知。需要追踪处理结果或恢复离线期间的消息时，可使用 [Streams 消费组](#streams-消费组确认与接管)。
+
+**接入步骤**　需要 Docker 和两个终端。本例用 `redis:7.4.2` 镜像，服务端和 `redis-cli` 均为 7.4.2。容器不映射宿主机端口。先在终端 A 启动独立实例，确认两个版本输出和 `PONG`。若服务还在启动，稍后重试 `PING`。
+
+```bash
+docker run -d --rm --name redis-pubsub-lab redis:7.4.2
+docker exec redis-pubsub-lab redis-server --version
+docker exec redis-pubsub-lab redis-cli --version
+docker exec redis-pubsub-lab redis-cli PING
+```
+
+在 A 启动订阅，等到客户端显示 `subscribe`、频道名和订阅数 1。
+
+```bash
+docker exec -it redis-pubsub-lab redis-cli SUBSCRIBE lab:cache:invalidate
+```
+
+在终端 B 发布第一条通知。观察 A 收到消息后，在 A 按 Ctrl+C 结束订阅，再在 B 发布第二条通知。
+
+```bash
+# A 在线
+docker exec redis-pubsub-lab redis-cli PUBLISH lab:cache:invalidate product:1001
+# A 退出后
+docker exec redis-pubsub-lab redis-cli PUBLISH lab:cache:invalidate product:1002
+```
+
+在 A 重新运行订阅命令，等到订阅确认，再在 B 发布第三条通知。
+
+```bash
+docker exec redis-pubsub-lab redis-cli PUBLISH lab:cache:invalidate product:1003
+```
+
+**验证方法**　分别核对发布返回值和订阅端输出。`PUBLISH` 在本实验的单机实例上返回服务端发往的客户端数，订阅端的缓存处理结果需要由应用自行记录。
+
+| 阶段 | B 的 `PUBLISH` 返回值 | A 的订阅输出 |
+| --- | --- | --- |
+| 在线 | 1 | 收到 `message`、频道名和 `product:1001`。 |
+| 退出后 | 0 | 此时没有订阅连接。 |
+| 重新订阅并发布 | 1 | 先看到订阅确认，随后收到 `product:1003`，期间没有收到 `product:1002`。 |
+
+在 A 按 Ctrl+C 退出，在 B 执行 `docker stop redis-pubsub-lab`。启动时指定的 `--rm` 会自动删除容器。
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。三次 `PUBLISH` 依次返回 1、0、1，两次 `SUBSCRIBE` 均返回订阅确认，订阅端依次收到 `product:1001` 和 `product:1003`。停止后确认容器已自动删除。
+
+**官方文档**　命令文档列出语法和返回值，Redis 7.4.2 的官方测试包含订阅确认及有无订阅者时的发布断言。 [Redis Pub/Sub](https://redis.io/docs/latest/develop/pubsub/) · [SUBSCRIBE](https://redis.io/docs/latest/commands/subscribe/) · [PUBLISH](https://redis.io/docs/latest/commands/publish/) · [7.4.2 版发布订阅测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/pubsub.tcl)
 
 ### 事务与乐观锁
 
