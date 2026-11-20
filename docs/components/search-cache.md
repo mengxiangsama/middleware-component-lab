@@ -24,6 +24,7 @@
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
 | 哈希、列表和集合 | 待补 | 哈希存对象字段，列表处理有序队列，集合判断成员关系。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
+| HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
 | 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
@@ -35,6 +36,51 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### HyperLogLog 独立访客估算
+
+**适用场景**　活动看板需要统计每日和跨日独立访客，允许结果有统计误差。每天使用一个键，用同一种稳定的访客 ID 上报，跨日汇总时取并集。Redis HyperLogLog 每个键的结构最多约 12 KB，标准误差为 0.81%，实际误差会波动。需要保留成员名单或得到精确人数时，使用 Set 或从原始事件去重。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。启动独立的 `redis:7.4.2` 容器，无需映射端口。确认服务端和 `redis-cli` 均为 7.4.2，等 `PING` 返回 `PONG` 后继续。
+
+```bash
+redis_uv_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_uv_lab" redis-server --version
+docker exec "$redis_uv_lab" redis-cli --version
+docker exec "$redis_uv_lab" redis-cli PING
+```
+
+第一天记录 alice、bob 和 carol，随后重放同一批访客。第二天记录 bob、carol 和 dave。用 `PFCOUNT` 分别查询单日和跨日访客，再用 `PFMERGE` 把两天的并集保存到新键。
+
+```bash
+docker exec "$redis_uv_lab" redis-cli PFADD lab:uv:day1 alice bob carol
+docker exec "$redis_uv_lab" redis-cli PFADD lab:uv:day1 alice bob carol
+docker exec "$redis_uv_lab" redis-cli PFADD lab:uv:day2 bob carol dave
+docker exec "$redis_uv_lab" redis-cli PFCOUNT lab:uv:day1
+docker exec "$redis_uv_lab" redis-cli PFCOUNT lab:uv:day2
+docker exec "$redis_uv_lab" redis-cli PFCOUNT lab:uv:day1 lab:uv:day2
+docker exec "$redis_uv_lab" redis-cli PFMERGE lab:uv:total lab:uv:day1 lab:uv:day2
+docker exec "$redis_uv_lab" redis-cli PFCOUNT lab:uv:total
+```
+
+**验证方法**　按顺序核对这组固定输入的结果。跨日并集只计一次同时出现在两天的 bob 和 carol。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 第一天写入、重放，第二天写入 | 依次返回 `1`、`0`、`1`。`PFADD` 的返回值表示内部状态是否改变。 |
+| 分别查询两个单日键 | 均返回 `3`。 |
+| 同时查询两个单日键 | 返回 `4`。 |
+| 合并并查询汇总键 | 依次返回 `OK`、`4`。 |
+
+验证后停止容器，`--rm` 会自动删除容器和匿名卷。
+
+```bash
+docker stop "$redis_uv_lab"
+```
+
+2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 运行了上述全部命令。服务端与客户端均报告 7.4.2，`PING` 返回 `PONG`。重复写入返回 0，每天均估算出 3 位访客，两种跨日查询均得到 4。停止后用 `docker container inspect "$redis_uv_lab"` 确认容器已删除。
+
+**官方文档**　以下三个命令从 Redis 2.8.9 起可用。7.4.2 标签下的官方测试覆盖重复写入、基数估算和合并。 [HyperLogLog](https://redis.io/docs/latest/develop/data-types/probabilistic/hyperloglogs/) · [PFADD](https://redis.io/docs/latest/commands/pfadd/) · [PFCOUNT](https://redis.io/docs/latest/commands/pfcount/) · [PFMERGE](https://redis.io/docs/latest/commands/pfmerge/) · [7.4.2 版 HyperLogLog 测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/hyperloglog.tcl)
 
 ### 有序集合积分排行
 
