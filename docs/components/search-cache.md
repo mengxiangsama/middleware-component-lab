@@ -24,7 +24,7 @@
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
 | 哈希 | 已有教程 | [按 SKU 保存和更新购物车商品数量](#哈希购物车数量更新)。 |
 | 列表 | 待补 | 用列表处理有序队列。 |
-| 集合 | 待补 | 用集合判断成员关系。 |
+| 集合 | 已有教程 | [按用户 ID 去重、判断成员关系并查询名单交集](#集合成员与交集)。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
 | HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
@@ -39,6 +39,44 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 集合成员与交集
+
+**适用场景**　活动系统用用户 ID 记录报名名单和资格名单。Redis Set 保存无序、不重复的成员，适合需要判定单个用户是否报名，或找出同时报名且具备资格的用户。单次报名查询用 `SISMEMBER`，名单规模可控时用 `SINTER` 批量取交集。交集会返回全部匹配的成员，大名单需要评估计算和响应开销。在 Redis Cluster 上执行多键交集时，各键必须位于同一哈希槽，本例用相同的 `{spring-sale}` 哈希标签。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。启动独立的 Redis Open Source 7.4.2 容器，使用容器内同版本的 `redis-cli`，无需映射端口。若刚启动时连接失败，稍后重试 `PING`，直到返回 `PONG`。
+
+```bash
+redis_set_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_set_lab" redis-server --version
+docker exec "$redis_set_lab" redis-cli --version
+
+set_cli() {
+  docker exec "$redis_set_lab" redis-cli --raw "$@"
+}
+
+set_cli PING
+set_cli SADD 'lab:{spring-sale}:registered' u101 u102 u104
+set_cli SADD 'lab:{spring-sale}:eligible' u102 u103 u104
+```
+
+两次 `SADD` 各返回 `3`，表示各新增三名用户。
+
+**验证方法**　在同一终端依次运行下面的命令。对交集结果排序仅用于核对输出，因为 Redis Set 无固定返回顺序。最后停止容器，由 `--rm` 清理容器及其匿名卷。
+
+```bash
+set_cli SADD 'lab:{spring-sale}:registered' u102
+set_cli SISMEMBER 'lab:{spring-sale}:registered' u102
+set_cli SISMEMBER 'lab:{spring-sale}:registered' u103
+set_cli SINTER 'lab:{spring-sale}:registered' 'lab:{spring-sale}:eligible' | LC_ALL=C sort
+docker stop "$redis_set_lab"
+```
+
+重复报名返回 `0`，因为没有新增成员。两次成员查询依次返回 `1`、`0`，分别表示已报名和未报名。交集结果应逐行输出 `u102`、`u104`。
+
+2026-11-21 在 macOS 26.5 arm64、Docker Engine 27.3.1 和 Bash 3.2.57 上运行了上述命令。服务端与客户端均报告 7.4.2，启动后 `PING` 返回 `PONG`。两份名单各新增 3 人，重复添加返回 `0`，成员查询返回 `1`、`0`，排序后的交集为 `u102`、`u104`。停止后通过 `docker container inspect "$redis_set_lab"` 确认容器已删除。
+
+**官方文档**　[Redis Sets](https://redis.io/docs/latest/develop/data-types/sets/) · [SADD](https://redis.io/docs/latest/commands/sadd/) · [SISMEMBER](https://redis.io/docs/latest/commands/sismember/) · [SINTER](https://redis.io/docs/latest/commands/sinter/) · [Redis 7.4.2 集合测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/type/set.tcl) · [Redis Cluster 哈希标签](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/#hash-tags)
 
 ### Lua 固定窗口限流
 
