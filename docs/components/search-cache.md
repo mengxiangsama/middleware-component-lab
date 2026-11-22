@@ -26,6 +26,8 @@
 | 列表 | 待补 | 用列表处理有序队列。 |
 | 集合 | 已有教程 | [按用户 ID 去重、判断成员关系并查询名单交集](#集合成员与交集)。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
+| Bitmap | 已有教程 | [记录每日签到并统计连续签到人数](#bitmap-每日签到与交集)。 |
+| 地理空间索引 | 待补 | 用 `GEOADD` 保存坐标，用 `GEOSEARCH` 查询附近位置。 |
 | HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
 | 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
@@ -39,6 +41,52 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### Bitmap 每日签到与交集
+
+**适用场景**　每天用一张位图记录用户是否签到，查询单个用户的签到状态、当日人数和连续两天都签到的人数。Redis 在字符串中保存位图。每个用户需要跨日使用同一个稳定、稠密的非负整数偏移。写入很大的偏移会分配中间字节，稀疏的大 ID 应先映射到稠密编号。整张位图的计数和交集需要扫描字节，数据量大时应评估命令耗时。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 内的 Redis 服务端和同版本 `redis-cli`，无需映射宿主机端口。若刚启动时连接失败，重试 `PING` 直至返回 `PONG`，再写入两天的签到数据。每次 `SETBIT` 返回写入前的位值，下面四次都应返回 `0`。
+
+```bash
+redis_bitmap_lab=$(docker run -d --rm redis:7.4.2)
+docker exec "$redis_bitmap_lab" redis-server --version
+docker exec "$redis_bitmap_lab" redis-cli --version
+
+bitmap_cli() {
+  docker exec "$redis_bitmap_lab" redis-cli --raw "$@"
+}
+
+bitmap_cli PING
+day1='lab:{checkin}:2026-11-21'
+day2='lab:{checkin}:2026-11-22'
+both='lab:{checkin}:both'
+bitmap_cli SETBIT "$day1" 2 1
+bitmap_cli SETBIT "$day1" 7 1
+bitmap_cli SETBIT "$day2" 2 1
+bitmap_cli SETBIT "$day2" 9 1
+```
+
+**验证方法**　在同一终端继续执行。Redis Cluster 中，`BITOP` 的源键和目标键必须位于同一哈希槽，本例用共同的 `{checkin}` 哈希标签。交集写入独立的目标键，保留两个日期的原始记录。
+
+```bash
+bitmap_cli SETBIT "$day1" 2 1
+bitmap_cli GETBIT "$day1" 2
+bitmap_cli GETBIT "$day1" 9
+bitmap_cli BITCOUNT "$day1"
+bitmap_cli BITCOUNT "$day2"
+bitmap_cli BITOP AND "$both" "$day1" "$day2"
+bitmap_cli BITCOUNT "$both"
+bitmap_cli GETBIT "$both" 2
+bitmap_cli GETBIT "$both" 9
+docker stop "$redis_bitmap_lab"
+```
+
+重复签到返回旧值 `1`。第一天的两个位查询依次返回 `1` 和 `0`，两天各有 2 人签到。第二天写入了偏移 9，长度为 2 字节。求交集时第一天的位图补零到相同长度，`BITOP AND` 返回结果的字节数 `2`。随后 `BITCOUNT` 返回人数 `1`，目标位图在偏移 2 和 9 的查询分别返回 `1` 和 `0`。停止容器后，`--rm` 会清理容器和匿名卷。
+
+2026-11-22 在 macOS 26.5 arm64、Docker Engine 27.3.1 和 Bash 3.2.57 上执行了上述命令并逐项核对返回值。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。首次写入均返回 0，重复签到返回 1，两日人数均为 2。交集长 2 字节，计数为 1，仅偏移 2 对应的用户两天都签到了。执行 `docker container inspect "$redis_bitmap_lab"` 确认停止后容器已删除。
+
+**官方文档**　[Redis Bitmap](https://redis.io/docs/latest/develop/data-types/strings/bitmaps/) · [SETBIT](https://redis.io/docs/latest/commands/setbit/) · [GETBIT](https://redis.io/docs/latest/commands/getbit/) · [BITCOUNT](https://redis.io/docs/latest/commands/bitcount/) · [BITOP](https://redis.io/docs/latest/commands/bitop/) · [Redis 7.4.2 位操作测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/bitops.tcl) · [Redis Cluster 哈希标签](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/#hash-tags)
 
 ### 集合成员与交集
 
