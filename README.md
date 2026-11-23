@@ -17,6 +17,7 @@
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
+| 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
@@ -26,6 +27,8 @@
 Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `sh labs/helm-values-schema/verify.sh`，无需 Kubernetes 集群。
 
 在仓库根目录运行 `./mvnw -B -f labs/flyway/pom.xml -Dtest=OrderStartupMigrationTest test` 可实测 Spring Boot 启动迁移，使用内嵌 H2。
+
+运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml clean verify` 可验证 Quartz 用同一个 H2 文件库跨重启补跑，无需 Docker。
 
 运行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml test` 可联调商品缓存与数据库事务，使用内嵌 H2。用本地 Redis 验证双实例时，执行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml -Dtest=RedisPriceCacheIT -Dlab.redis.port=16379 test`。
 

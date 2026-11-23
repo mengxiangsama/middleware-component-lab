@@ -90,3 +90,11 @@
 在 macOS arm64 和 OpenJDK 17 上使用经官方 SHA-256 核对后编译的 [Redis 7.4.12](https://github.com/redis/redis/releases/tag/7.4.12)，绑定本机回环端口。两个独立 Spring Boot 上下文各有一个 Caffeine 实例，共用真实 Redis 和内嵌 H2。改价回滚保留两份旧缓存，提交后两份都清商品 101、保留商品 102。24 个并发调用均读取 `24.90`，两份 Caffeine 各成功加载一次。单实例测试也确认事务内读取的未提交价格不会写进缓存。
 
 两实例联调和四项单实例回归均通过。根 README、组件目录和学习路线提供了实验入口和命令。[双实例运行方法](../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。本轮未验证跨进程压测、Redis 断线恢复或全局只回源一次。
+
+## 2026-11-23 · Spring Boot 与 Quartz JDBC 重启补跑
+
+盘点 [`8f9d19c`](https://github.com/mengxiangsama/middleware-component-lab/commit/8f9d19c7aecd478f364c644a563fd74c606b217f) 的组件目录、实验和最近 30 条提交。比较了 Quartz JDBC 持久化与 Prometheus 实际抓取。仓库近期补过指标导出和告警测试，Quartz 仍只有内存调度器的并发教程，本轮补门店对账登记后如何跨重启保留计划。[Spring Boot Quartz 文档](https://docs.spring.io/spring-boot/3.5/reference/io/quartz.html) · [Prometheus 抓取配置](https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html#actuator.metrics.export.prometheus)
+
+使用 OpenJDK 17.0.16、Spring Boot 3.5.16、Quartz 2.5.2 和文件 H2 2.3.232 运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml clean verify`，集成测试通过。原应用上下文关闭后保留了 H2 文件，第二个上下文从同库读回原计划时间和 `FireNow` 策略。启动调度后收到一次性触发器的 misfire 回调，补写一条 `store-a / 2026-11-22` 对账执行记录，触发器已清除。
+
+教程已链接根 README、组件目录和学习路线。[实验与验证命令](../labs/quartz-jdbc/README.md)。已过去的触发时刻用于模拟错过计划，实验未验证运行中强制中断恢复或多实例故障转移。

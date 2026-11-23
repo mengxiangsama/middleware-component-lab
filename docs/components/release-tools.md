@@ -35,6 +35,8 @@ livenessProbe:
 
 Spring Boot 用 starter 集中接入数据源等基础设施，通过自动配置完成应用初始化。应用配置 JDBC 数据源时，可让 Flyway 在启动阶段检查迁移历史并执行版本化 SQL。需要让新版应用就绪后能直接读取升级过的订单表时，见 [搭配 Flyway 启动时迁移](#搭配-spring-boot-启动时迁移)。[Spring Boot 启动说明](https://docs.spring.io/spring-boot/3.5/reference/features/spring-application.html)。
 
+定时任务也能使用 Spring Boot 配好的数据源。见 [搭配 Quartz 用 JDBC 保存并恢复对账任务](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。
+
 ## Spring Boot Actuator
 
 - **常用功能**。Actuator 可暴露 `/actuator/health/liveness` 与 `/actuator/health/readiness`。在 Kubernetes 之外验证时可用 `management.endpoint.health.probes.enabled=true` 启用。若管理端口独立，设置 `management.endpoint.health.probes.add-additional-paths=true` 可在主服务端口加 `/livez` 与 `/readyz`，用实际承载请求的端口做检查。 [Actuator 探针](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)

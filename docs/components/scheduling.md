@@ -16,15 +16,15 @@
 
 ## Quartz
 
-Quartz 是嵌入 Java 应用的调度库。仓库原有应用 POM、容器镜像和实验未固定 Quartz 版本。本例使用 `org.quartz-scheduler:quartz:2.5.0`，调度器和调用代码在同一个 JVM 内运行，无独立服务端或远程客户端版本。Quartz 2.5.0 要求 JDK 11 或更高版本，本例按仓库环境使用 JDK 17。参阅 [Quartz 2.5.0 发布记录](https://github.com/quartz-scheduler/quartz/releases/tag/v2.5.0)。
+Quartz 是嵌入 Java 应用的调度库。应用用 `JobDetail` 描述执行内容，用 `Trigger` 描述什么时候执行。单机可以用内存存储，计划需要跨重启时可落到数据库。并发示例使用 Quartz 2.5.0，Spring Boot JDBC 示例使用 2.5.2，两者都用 JDK 17。
 
-| Quartz 2.5.0 功能 | 教程状态 |
+| Quartz 2.5.x 功能 | 教程状态 |
 | --- | --- |
-| 作业定义、参数和触发器（`JobDetail`、`JobDataMap`、`SimpleTrigger`、`CronTrigger`） | 待补。本文实验使用一次性触发器，完整接入见 [Quartz Job 和 Trigger](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-02.html)。 |
+| 作业定义、参数和一次性触发器（`JobDetail`、`JobDataMap`、`SimpleTrigger`） | 已有教程 · [用 JDBC 保存对账任务](#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | 作业并发限制 `@DisallowConcurrentExecution` | 已有教程 · [按 JobKey 串行执行对账任务](#按-jobkey-串行执行对账任务)。 |
 | 作业参数更新 `@PersistJobDataAfterExecution`、执行失败处理和监听器 | 待补。 |
-| Cron 时区、日历排除和 misfire 策略 | 待补。可通过 [CronScheduleBuilder](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/CronScheduleBuilder.html) 指定时区和错过触发后的行为。 |
-| RAMJobStore、JDBC JobStore 持久化、集群和故障恢复 | 待补。参阅 [JDBC 集群与恢复](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html)。 |
+| 一次性触发器的 misfire 策略 | 联调实测 · [FireNow 重启补跑](#搭配-spring-boot-用-jdbc-恢复错过的触发)。Cron、时区和日历排除另见 [CronScheduleBuilder](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/CronScheduleBuilder.html)。 |
+| JDBC JobStore 持久化 | 联调实测 · [同库重启恢复触发器](#搭配-spring-boot-用-jdbc-恢复错过的触发)。多实例故障转移见 [Quartz 集群文档](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html)。 |
 
 ### 按 JobKey 串行执行对账任务
 
@@ -63,6 +63,10 @@ store-a manual rerun started after release
 ```
 
 **官方文档**。[Quartz 2.5.x 作业定义与并发限制](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-03.html) · [RAMJobStore 配置](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigRAMJobStore.html) · [工作线程池配置](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigThreadPool.html)。
+
+### 搭配 Spring Boot 用 JDBC 恢复错过的触发
+
+门店日结任务需要跨重启保留时，用 Spring Boot 提供的数据源，把 Quartz 的任务和触发器写到 JDBC JobStore。重启保持调度器名和数据库配置一致，Quartz 就能读回原触发器，再按 `FireNow` 补跑一次。用 [门店对账联调](../../labs/quartz-jdbc/README.md) 核对持久化记录、misfire 回调和对账结果。
 
 ## ElasticJob
 

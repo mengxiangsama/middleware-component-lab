@@ -50,7 +50,7 @@
 | --- | --- |
 | [XXL-JOB](scheduling.md#xxl-job) | 执行器注册、Cron、路由、分片广播和失败重试 |
 | [PowerJob](scheduling.md#powerjob) | Worker 接入、单机或广播执行、Map/MapReduce 和工作流 |
-| [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。 |
+| [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。**联调实测** · [搭配 Spring Boot 用 JDBC 恢复错过的触发](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 
@@ -88,7 +88,7 @@
 | --- | --- |
 | [Kubernetes Deployment](release-tools.md#kubernetes-deployment) | 分批替换 Pod、滚动状态与修订回滚 |
 | [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
-| [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移)。 |
+| [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移) · [搭配 Quartz 重启补跑](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 健康探针、应用信息与 JVM 指标。**可运行** · [HTTP 探针](release-tools.md#搭配-kubernetes-使用-http-探针) · [导出 Prometheus 指标](release-tools.md#搭配-prometheus-采集应用指标)。 |
 | [Argo Rollouts](release-tools.md#argo-rollouts) | 灰度权重、观察与自动分析、晋级或中止 |
 
