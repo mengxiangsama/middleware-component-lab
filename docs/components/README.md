@@ -112,7 +112,7 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Nacos](service-tools.md#nacos) | 服务发现、实例元数据、配置监听与配置灰度 |
-| [Sentinel](service-tools.md#sentinel) | 流控、熔断和降级 |
+| [Sentinel](service-tools.md#sentinel) | 流控、熔断和系统保护。**可运行** · [按商品 ID 限制库存查询](service-tools.md#按商品-id-限制库存查询)。 |
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。可本地运行 [按异常类型有限重试示例](service-tools.md#按异常类型有限重试)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
 | [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出 |

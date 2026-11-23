@@ -12,9 +12,62 @@
 
 ## Sentinel
 
-- **常用功能**：按资源限流、热点参数限流、熔断和系统保护。Sentinel 会根据规则拒绝进入资源的请求，框架适配器或调用方负责返回降级结果。
-- **最小接入**：引入核心库或框架适配器，给接口命名为资源，例如 `inventory.lookup`，配置一条 QPS 流控规则。直接使用 Java API 时，用 `SphU.entry` 进入资源，处理 `BlockException`，并在 `finally` 中退出已获得的 `Entry`。 [资源与规则](https://sentinelguard.io/en-us/docs/basic-api-resource-rule.html)
-- **验证**：以低于和高于阈值的请求调用同一资源，分别观察放行与拒绝。配置熔断时注入慢请求或异常，观察打开、探测恢复与关闭。单机限流与集群限流分别核对规则范围。 [熔断规则](https://sentinelguard.io/en-us/docs/circuit-breaking.html)
+仓库的 Maven 配置、容器镜像和已有实验未固定 Sentinel 版本。本例使用 Java 17，选用 `com.alibaba.csp:sentinel-core:1.8.9` 和同版本的 `sentinel-parameter-flow-control`。规则和计数由应用进程内的库处理，实验无需启动控制台或集群 Token Server。 [Sentinel 1.8.9 发布记录](https://github.com/alibaba/Sentinel/releases/tag/1.8.9)
+
+| 主要功能 | 状态 | 用途 |
+| --- | --- | --- |
+| 资源限流 | 待补 | 按资源的 QPS 或并发线程数限制请求。 |
+| 热点参数限流 | 已有教程 | [按商品 ID 限制库存查询](#按商品-id-限制库存查询)。 |
+| 熔断 | 待补 | 按慢调用比例、异常比例或异常数暂时阻断调用。 |
+| 系统自适应保护 | 待补 | 按实例负载、CPU 或入口流量等信号保护应用。 |
+| 集群流控 | 待补 | 通过 Token Server 协调多个实例的配额。 |
+| 网关流控 | 待补 | 根据路由或自定义 API 分组限制入口流量。 |
+| 控制台与动态规则 | 待补 | 查看应用指标，结合规则数据源分发或持久化规则。 |
+
+### 按商品 ID 限制库存查询
+
+**适用场景**　促销期间，某个商品的库存查询集中涌入。所有查询走同一个资源，按商品 ID 计量，使单个商品耗尽配额后，其他商品仍可查询。此规则适用于能从每次调用稳定提取商品 ID 的单实例服务。多实例使用本地规则时各自计量，整个服务共用一个配额时需配置集群流控。多个商品仍可能同时争用下游容量，有总量约束时还需为整个资源设置限额。
+
+**接入步骤**　Maven 应用引入 `com.alibaba.csp:sentinel-parameter-flow-control:1.8.9`，它会带入同版本的核心库。参照 [ProductHotspotDemo.java](../../labs/sentinel/ProductHotspotDemo.java)，加载名为 `inventory.lookup` 的热点规则，令 `paramIdx=0` 对应传给 `SphU.entry` 的第一个业务参数。默认采用 QPS 模式和超额立即拒绝策略。本例把统计时长设为 60 秒，普通商品的配额为 1 次，`sku-featured` 的配额为 2 次，便于在一次短运行里观察耗尽。例外项用 `String.class.getName()` 对应实际传入的字符串类型。
+
+每次查询在执行业务前调用 `SphU.entry(RESOURCE, EntryType.IN, 1, productId)`，成功获得 `Entry` 后在 `finally` 中用 `entry.exit(1, productId)` 退出。拦截时示例捕获 `ParamFlowException` 并输出 `BLOCK`，HTTP 接口可以据此返回 429。接入时先校验商品 ID，缺少索引对应的参数或传入 `null` 时，该热点规则会跳过检查。
+
+**验证方法**　从仓库根目录运行。需要 Bash 或 Zsh、JDK 17、支持 `--retry-all-errors` 的 curl（7.71.0+）和 Maven Central 的网络连接。示例直接运行 Java 源文件，依赖和 Sentinel 日志写入临时目录，退出时清理。
+
+```bash
+(
+  set -eu
+  lab_dir=$(mktemp -d "${TMPDIR:-/tmp}/sentinel-hotspot.XXXXXX")
+  trap 'rm -rf "$lab_dir"' EXIT
+
+  central=https://repo.maven.apache.org/maven2
+  for module in sentinel-core sentinel-parameter-flow-control; do
+    curl -fsSL --retry 3 --retry-all-errors --max-time 30 \
+      "$central/com/alibaba/csp/$module/1.8.9/$module-1.8.9.jar" \
+      -o "$lab_dir/$module.jar"
+  done
+  curl -fsSL --retry 3 --retry-all-errors --max-time 30 \
+    "$central/com/googlecode/concurrentlinkedhashmap/concurrentlinkedhashmap-lru/1.4.2/concurrentlinkedhashmap-lru-1.4.2.jar" \
+    -o "$lab_dir/concurrentlinkedhashmap-lru.jar"
+
+  java -Duser.home="$lab_dir" -cp "$lab_dir/*" labs/sentinel/ProductHotspotDemo.java
+)
+```
+
+除 Sentinel 启动日志外，预期按顺序输出下列结果。示例逐次断言是否放行，任一结果不符即以非零状态退出。
+
+```text
+sku-hot PASS
+sku-hot BLOCK
+sku-other PASS
+sku-featured PASS
+sku-featured PASS
+sku-featured BLOCK
+```
+
+**实测记录**　在 macOS 26.5（arm64）、Microsoft OpenJDK 17.0.16 和 curl 8.7.1 下用 Bash 运行上述命令。依赖下载遇到 TLS 错误后由 curl 退避重试成功，Java 进程退出码为 0，六次调用依次得到上述结果，临时依赖和日志目录随命令退出清理。
+
+**官方文档**　[热点参数限流](https://sentinelguard.io/en-us/docs/parameter-flow-control.html)说明依赖、参数位置和例外项。[资源与规则](https://sentinelguard.io/en-us/docs/basic-api-resource-rule.html)说明如何进入和退出资源。[1.8.9 规则定义](https://raw.githubusercontent.com/alibaba/Sentinel/1.8.9/sentinel-extension/sentinel-parameter-flow-control/src/main/java/com/alibaba/csp/sentinel/slots/block/flow/param/ParamFlowRule.java)与 [1.8.9 检查逻辑](https://raw.githubusercontent.com/alibaba/Sentinel/1.8.9/sentinel-extension/sentinel-parameter-flow-control/src/main/java/com/alibaba/csp/sentinel/slots/block/flow/param/ParamFlowChecker.java)对应本例的统计时长、配额及参数校验行为。
 
 ## Resilience4j
 
