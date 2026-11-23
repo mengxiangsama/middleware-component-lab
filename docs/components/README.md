@@ -20,14 +20,14 @@
 | --- | --- |
 | [Elasticsearch（ES）](search-cache.md#elasticsearch) | Mapping、全文检索、聚合、批量写入和分页 |
 | [OpenSearch](search-cache.md#opensearch) | 索引管理、检索、聚合与批量操作 |
-| [Redis](search-cache.md#redis) | 键值缓存、计数、集合、排行、Streams 和事务 |
+| [Redis](search-cache.md#redis) | 键值缓存、计数、集合、排行、Streams、事务和 Functions |
 | [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和租约 |
 | [Lettuce](search-cache.md#lettuce) | Java 同步、异步和 Reactive Redis 命令 |
 | [Valkey](search-cache.md#valkey) | 键值与数据结构命令、过期和故障转移 |
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载、刷新和淘汰 |
 | [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合 |
 
-运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。
+运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。运行 [Redis Functions 单件库存扣减](search-cache.md#redis-functions-单件库存扣减)，从独立连接调用已注册的函数并核对库存余量。
 
 ## 任务调度
 

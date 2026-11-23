@@ -36,7 +36,7 @@
 | 发布订阅 | 已有教程 | [广播缓存失效通知并验证断线期间的消息不会重放](#发布订阅与缓存失效通知)。 |
 | 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
 | Lua 脚本 | 已有教程 | [原子检查并更新固定窗口限流计数](#lua-固定窗口限流)。 |
-| Redis Functions | 待补 | 在服务端登记可重复调用的函数库。 |
+| Redis Functions | 已有教程 | [注册函数库并原子扣减单件库存](#redis-functions-单件库存扣减)。 |
 | 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
@@ -294,6 +294,54 @@ docker stop "$redis_rate_lab"
 2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 运行了上述三段命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。前三次调用返回 `1`、`1`、`0`，两次过期时间均为 `1795171902`，计数为 `2`。等待后读到 `-2`，再调用返回 `1`，计数从 `1` 开始。停止后用 `docker container inspect "$redis_rate_lab"` 确认容器已删除。
 
 **官方文档**　Lua 文档说明了脚本的原子执行，Redis 7.4.2 的仓库测试覆盖了 `KEYS` 和 `ARGV` 的传参及脚本内调用命令。 [Lua 脚本](https://redis.io/docs/latest/develop/programmability/eval-intro/) · [EVAL](https://redis.io/docs/latest/commands/eval/) · [INCR 限流示例](https://redis.io/docs/latest/commands/incr/) · [SET](https://redis.io/docs/latest/commands/set/) · [EXPIRETIME](https://redis.io/docs/latest/commands/expiretime/) · [7.4.2 版脚本测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/scripting.tcl)
+
+### Redis Functions 单件库存扣减
+
+**适用场景**　多个应用实例需要共用一条扣减规则，每次为同一 SKU 扣减一件库存。把 Lua 函数随服务端部署，调用方只传函数名和库存键。Redis 原子执行库存检查与扣减，其他客户端无法在这两步之间修改库存。库存键应由业务初始化为非负整数字符串，并由同一库存模型管理。函数执行期间会阻塞其他命令，适合这种执行时间短的逻辑。请求超时后直接重试可能重复扣减，业务需要按订单或请求 ID 做幂等控制。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 的服务端和同版本 `redis-cli`。以 `--network none` 启动单节点实验，后续用 `docker exec` 从容器内连接。若服务仍在启动，稍后重试 `PING`，直到返回 `PONG`。
+
+```bash
+redis_function_lab=$(docker run -d --rm --network none redis:7.4.2)
+docker exec "$redis_function_lab" redis-server --version
+docker exec "$redis_function_lab" redis-cli --version
+docker exec "$redis_function_lab" redis-cli PING
+```
+
+首行声明 Lua 引擎和库名，`redis.register_function` 注册可调用的函数名。`redis-cli -x` 从标准输入读取库源码，作为 `FUNCTION LOAD` 的最后一个参数。加载成功返回 `inventory_lab`。
+
+```bash
+docker exec -i "$redis_function_lab" redis-cli -x FUNCTION LOAD <<'LUA'
+#!lua name=inventory_lab
+redis.register_function('reserve_one', function(keys, args)
+    local stock = redis.call('GET', keys[1])
+    if not stock or tonumber(stock) <= 0 then
+        return -1
+    end
+    return redis.call('DECR', keys[1])
+end)
+LUA
+```
+
+**验证方法**　先确认库里注册了 `reserve_one`，再把样例 SKU 的库存设为 2。每条 `redis-cli` 命令使用新的连接。`FCALL` 中的 `1` 声明传入一个键，函数用 `keys[1]` 读取它，本例没有额外参数。
+
+```bash
+docker exec "$redis_function_lab" redis-cli FUNCTION LIST LIBRARYNAME inventory_lab
+docker exec "$redis_function_lab" redis-cli SET lab:stock:sku42 2
+docker exec "$redis_function_lab" redis-cli FCALL reserve_one 1 lab:stock:sku42
+docker exec "$redis_function_lab" redis-cli FCALL reserve_one 1 lab:stock:sku42
+docker exec "$redis_function_lab" redis-cli FCALL reserve_one 1 lab:stock:sku42
+docker exec "$redis_function_lab" redis-cli GET lab:stock:sku42
+docker exec "$redis_function_lab" redis-cli FCALL reserve_one 1 lab:stock:missing
+docker exec "$redis_function_lab" redis-cli EXISTS lab:stock:missing
+docker stop "$redis_function_lab"
+```
+
+`FUNCTION LIST` 应列出库 `inventory_lab`、引擎 `LUA` 和函数 `reserve_one`。`SET` 返回 `OK`。前三次扣减依次返回 `1`、`0`、`-1`，其中 `0` 表示成功扣完最后一件，`-1` 表示无库存。读取 SKU 的余量为 `0`。缺失的库存键也返回 `-1`，随后 `EXISTS` 返回 `0`，表示调用未创建键。停止容器后，`--rm` 清理容器和匿名卷。
+
+2026-11-23 在 macOS 26.5 arm64、Docker Engine 27.3.1 和 Bash 3.2.57 上运行了以上三段命令。服务端与客户端均报告 7.4.2，`PING` 返回 `PONG`。加载返回 `inventory_lab`，列表显示 `LUA` 和 `reserve_one`。扣减结果依次为 `1`、`0`、`-1`，余量为 `0`。缺失键返回 `-1`，`EXISTS` 返回 `0`。停止后用 `docker container inspect` 和 `docker volume inspect` 确认实验容器与匿名卷均已删除。
+
+**官方文档**　`FUNCTION LOAD`、`FUNCTION LIST` 和 `FCALL` 自 Redis 7.0 起可用，7.4.2 版上游测试包含函数库加载和跨连接调用使用的 API。 [Redis Functions](https://redis.io/docs/latest/develop/programmability/functions-intro/) · [FUNCTION LOAD](https://redis.io/docs/latest/commands/function-load/) · [FUNCTION LIST](https://redis.io/docs/latest/commands/function-list/) · [FCALL](https://redis.io/docs/latest/commands/fcall/) · [Redis 7.4.2 函数测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/functions.tcl)
 
 ### 哈希购物车数量更新
 
