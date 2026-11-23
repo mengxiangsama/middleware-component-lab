@@ -17,7 +17,7 @@
 
 ## Redis
 
-仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB 实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
+仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB 和 AOF 实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
 
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
@@ -38,7 +38,7 @@
 | Lua 脚本 | 已有教程 | [原子检查并更新固定窗口限流计数](#lua-固定窗口限流)。 |
 | Redis Functions | 已有教程 | [注册函数库并原子扣减单件库存](#redis-functions-单件库存扣减)。 |
 | RDB 快照 | 已有教程 | [保存库存快照并验证重启后的恢复边界](#rdb-快照与重启恢复)。 |
-| AOF 持久化 | 待补 | 记录写入操作并在启动时重放，通过 fsync 策略控制同步频率。 |
+| AOF 持久化 | 已有教程 | [记录库存写入并在启动时重放增量日志](#aof-写入日志与重启恢复)。 |
 | 主从复制 | 待补 | 副本异步接收主节点的写入。故障转移时可能丢失最近确认的写入。 |
 | Sentinel 高可用 | 待补 | 监控非集群部署的主从节点，并在主节点故障时协调切换。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
@@ -904,6 +904,65 @@ test ! -e "$lab_dir"
 2026-11-23 在 macOS 26.5 arm64、Bash 3.2.57 上用官方 7.4.2 源码编译并运行了上述实验。服务端和客户端版本均为 7.4.2，两次启动均收到 `PONG`。`SAVE` 返回 `OK` 并生成非空的 `dump.rdb`，重启前读取为 `9`，重启后读取为 `10`，日志显示加载 1 个键且无过期键。最后一次 `wait` 和临时目录删除检查均通过。
 
 **官方文档**　持久化指南解释快照与恢复边界，7.4.2 的配置文件包含本例使用的启动配置。 [Redis 持久化](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) · [SAVE](https://redis.io/docs/latest/commands/save/) · [SHUTDOWN](https://redis.io/docs/latest/commands/shutdown/) · [7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf) · [7.4.2 源码归档](https://codeload.github.com/redis/redis/tar.gz/refs/tags/7.4.2)
+
+### AOF 写入日志与重启恢复
+
+**适用场景**　库存读模型频繁更新，希望实例重启后恢复最近的写入。AOF 持续记录修改数据的操作，启动时加载基准文件并重放增量日志。默认的 `appendfsync everysec` 通常每秒同步一次，故障时可能丢失约一秒的写入。`always` 更频繁地同步，代价是写入延迟和吞吐。本例用 `always` 观察正常重启恢复，适用于能接受同步写入开销的本地演练。
+
+**接入步骤**　需要 Bash、C 编译器、GNU Make 和 Redis Open Source 7.4.2。解压[官方源码](https://codeload.github.com/redis/redis/tar.gz/refs/tags/7.4.2)后，在包含 `redis-7.4.2/` 的目录运行以下命令。实验使用独立临时目录和 Unix Socket，关闭自动 RDB 快照，保留 AOF 默认的 RDB 格式基准文件。
+
+```bash
+make -C redis-7.4.2/src -j8 MALLOC=libc redis-server redis-cli
+redis_bin=$(cd redis-7.4.2/src && pwd)
+"$redis_bin/redis-server" --version
+"$redis_bin/redis-cli" --version
+lab_dir=$(mktemp -d /tmp/redis-aof.XXXXXX)
+aof_cli() { "$redis_bin/redis-cli" -s "$lab_dir/redis.sock" "$@"; }
+start_redis() {
+  "$redis_bin/redis-server" --port 0 --unixsocket "$lab_dir/redis.sock" \
+    --dir "$lab_dir" --save "" --appendonly yes --appendfsync always \
+    --appenddirname appendonlydir --logfile "$lab_dir/redis.log" &
+  redis_pid=$!
+}
+
+start_redis
+```
+
+服务端和客户端的版本输出应包含 `7.4.2`。运行 `aof_cli PING`，等到返回 `PONG` 后继续。
+
+**验证方法**　先写入库存 10，再扣减一件。预期 `SET` 返回 `OK`，`DECR` 返回 `9`，`INFO persistence` 显示 `aof_enabled:1` 和 `aof_last_write_status:ok`。清单应列出基准文件和增量文件。两项 `test` 均应以状态码 0 退出，表示增量日志非空且没有独立的 `dump.rdb` 快照。
+
+```bash
+aof_cli SET lab:stock:sku42 10
+aof_cli DECR lab:stock:sku42
+aof_cli INFO persistence | grep -E '^(aof_enabled|aof_last_write_status):'
+cat "$lab_dir/appendonlydir/appendonly.aof.manifest"
+test -s "$lab_dir/appendonlydir/appendonly.aof.1.incr.aof"
+test ! -e "$lab_dir/dump.rdb"
+```
+
+用 `SHUTDOWN NOSAVE` 正常停机并跳过退出时的独立 RDB 快照。保留整个数据目录，再次启动 Redis。
+
+```bash
+aof_cli SHUTDOWN NOSAVE
+wait "$redis_pid"
+start_redis
+```
+
+再次运行 `aof_cli PING`，等到返回 `PONG`。库存应为 `9`，日志应显示从增量文件加载数据。实验结束后关闭实例并删除临时目录。
+
+```bash
+aof_cli GET lab:stock:sku42
+grep -F 'DB loaded from incr file appendonly.aof.1.incr.aof' "$lab_dir/redis.log"
+aof_cli SHUTDOWN NOSAVE
+wait "$redis_pid"
+rm -r "$lab_dir"
+test ! -e "$lab_dir"
+```
+
+2026-11-23 在 macOS 26.5 arm64、Bash 3.2.57 上用官方源码执行了上述构建、写入和重启步骤。服务端和客户端均为 7.4.2，两次启动均返回 `PONG`。`SET` 返回 `OK`，扣减和重启后读取均返回 `9`。`INFO persistence` 的两个字段与预期一致，清单列出基准文件和增量文件。增量日志非空，独立的 `dump.rdb` 未生成，重启日志确认加载了增量文件。最后一次退出和临时目录删除检查均通过。
+
+**官方文档**　[Redis 持久化](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) · [7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf) · [INFO](https://redis.io/docs/latest/commands/info/) · [SHUTDOWN](https://redis.io/docs/latest/commands/shutdown/)
 
 ## Redisson
 
