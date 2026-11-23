@@ -3,7 +3,7 @@
 [![CI](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/mengxiangsama/middleware-component-lab/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-本仓库收录中间件组件手册、按业务场景组织的学习路线，以及两个可在本地运行的 Java 实验。手册提供常见用法、最小接入步骤、验证方法和官方文档。
+本仓库收录中间件组件手册、按业务场景组织的学习路线，以及可在本地运行的 Java 实验。手册提供常见用法、最小接入步骤、验证方法和官方文档。
 
 ## 从哪里开始
 
@@ -11,10 +11,11 @@
 | --- | --- |
 | 订单落库后怎样可靠地向其他服务发布消息 | [RocketMQ 事务消息实验](#run-locally)，启动 Broker 和示例应用，用 HTTP 请求观察提交、回滚、事务回查和消费去重。 |
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
+| 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 查一个组件的接入方式 | [组件目录](docs/components/README.md) |
 | 按业务场景做练习 | [学习路线](docs/learning-path.md) |
 
-两个实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。
+这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。
 
 ## RocketMQ 事务消息实验
 

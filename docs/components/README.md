@@ -14,6 +14,12 @@
 
 **可运行** · [RocketMQ 事务消息实验](../../README.md#run-locally)，包含提交、回滚、事务回查和消费去重。 [RocketMQ 顺序消息实验](messaging.md#订单顺序消息)按订单核对创建、支付和发货的事件序列。
 
+## 网络编程
+
+| 组件 | 常见用法 |
+| --- | --- |
+| [Netty](../../labs/netty-websocket/README.md) | Java 异步网络编程、协议编解码及 WebSocket 长连接。**可运行** · 建立 WebSocket 连接并回显文本。 |
+
 ## 搜索、缓存与分析
 
 | 组件 | 常见用法 |
