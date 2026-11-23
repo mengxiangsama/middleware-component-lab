@@ -58,3 +58,11 @@
 在 macOS arm64 的 Docker Engine 27.3.1 上，用官方 Fluent Bit 5.2.0 镜像实测。镜像平台为 `linux/arm64`，拉取所得摘要为 `sha256:e2718c47aaab7d99587fdffe78818549bdd09dee5e30a9199d2ff3da6e2c7628`。运行 `sh labs/fluent-bit-java-multiline/verify.sh` 成功，12 行输入按 1、7、3、1 行分成四条事件，逐行核对无丢失。关闭多行解析的对照运行输出 12 条单行事件。根项目 `./mvnw -B verify` 构建成功，7 项通过，3 项按原条件跳过。
 
 最初以异常堆栈结尾时，实测 `exit_on_eof` 使最后一段未输出。最终样例用一条普通日志结束缓冲。长期追踪、轮转和日志存储接收留给接入环境验证。
+
+## 2026-11-23 · Fluent Bit 与 Loki 联调
+
+基于 [`c0c3f6b`](https://github.com/mengxiangsama/middleware-component-lab/commit/c0c3f6b66802a7978795a5cd120ffd830e9613a2) 的 Fluent Bit 示例补齐从文件采集到集中查询的路径。组件目录和日志分册分别从 Fluent Bit 与 Loki 链到同一份[组合说明](../labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，根 README 提供入口和运行命令。
+
+在 Docker Engine 27.3.1 的 `linux/arm64` 容器中，用 Fluent Bit 5.2.0 真实推送到 Loki 3.7.10。运行 `sh labs/fluent-bit-java-multiline/verify-loki.sh` 成功。Loki 返回四条事件，按时间排序后逐行对照原文件，12 行全部保留。LogQL 按服务、环境及错误正文筛选，命中一条结账异常并返回完整堆栈及 `SocketTimeoutException`。根项目 `./mvnw -B verify` 构建成功，7 项通过，3 项按原条件跳过。
+
+对照 [Fluent Bit 原生 Loki 输出](https://docs.fluentbit.io/manual/data-pipeline/outputs/loki)、[Loki 3.7.10 镜像配置](https://github.com/grafana/loki/blob/v3.7.10/cmd/loki/loki-docker-config.yaml)和 [Loki 查询接口](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-logs-within-a-range-of-time)。本次验证覆盖单机写入和 API 查询，未纳入 Grafana 界面、集群及生产鉴权。

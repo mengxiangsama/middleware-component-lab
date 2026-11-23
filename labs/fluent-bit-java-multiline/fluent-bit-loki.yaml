@@ -1,0 +1,12 @@
+includes:
+  - fluent-bit.yaml
+
+pipeline:
+  outputs:
+    - name: loki
+      match: lab.orders
+      host: loki
+      port: 3100
+      labels: service_name=orders,environment=lab
+      line_format: json
+      drop_single_key: raw

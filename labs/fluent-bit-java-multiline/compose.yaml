@@ -1,0 +1,16 @@
+name: fluent-bit-loki-lab
+
+services:
+  loki:
+    image: grafana/loki:3.7.10
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+      - -reporting.enabled=false
+      - -ingester.min-ready-duration=0s
+    ports:
+      - "127.0.0.1::3100"
+  fluent-bit:
+    image: cr.fluentbit.io/fluent/fluent-bit:5.2.0
+    command: ["--quiet", "-c", "/lab/fluent-bit-loki.yaml"]
+    volumes:
+      - .:/lab:ro

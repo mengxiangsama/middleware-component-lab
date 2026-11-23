@@ -1,6 +1,6 @@
 # 中间件组件目录
 
-每个分册包含组件功能、常见用法、最小接入步骤、运行边界、验证方法和官方资料。表中标为「可运行」的条目附本仓库实验，其余可沿分册中的快速开始或 API 文档操作。接入已有环境时，按实际服务端、客户端和连接器版本查阅对应文档。
+先按组件找用途、适用场景、最小接入步骤和官方资料。需要多组件配合时，打开对应的「搭配」条目，查看要解决的问题、组件分工、数据流、对接配置和结果验证。表中标为「可运行」的条目附本仓库实验，标为「联调实测」的组合已运行真实组件并核对输出。
 
 ## 消息
 
@@ -76,9 +76,9 @@
 
 | 组件 | 常见用法 |
 | --- | --- |
-| [Fluent Bit](distributed-logging.md#fluent-bit) | Tail、多行合并、解析、过滤和输出缓冲。**可运行** · [合并 Java 异常堆栈](distributed-logging.md#合并-java-异常堆栈)。 |
+| [Fluent Bit](distributed-logging.md#fluent-bit) | 采集和转发日志。**可运行** · [合并 Java 异常堆栈](distributed-logging.md#合并-java-异常堆栈)。**联调实测** · [搭配 Loki 查完整异常](distributed-logging.md#搭配-loki-集中检索完整堆栈)。 |
 | [Logstash](distributed-logging.md#logstash) | Input、Filter、Output，日志解析、字段处理与持久队列 |
-| [Grafana Loki](distributed-logging.md#grafana-loki) | 按标签写入与索引、LogQL 查询 |
+| [Grafana Loki](distributed-logging.md#grafana-loki) | 集中存储、按标签和正文查日志。**联调实测** · [搭配 Fluent Bit 采集 Java 堆栈](distributed-logging.md#搭配-loki-集中检索完整堆栈)。 |
 | [Kibana](observability-tools.md#kibana) | Elasticsearch Data View、Discover 与 KQL |
 
 ## 优雅上线、灰度发布与探针
