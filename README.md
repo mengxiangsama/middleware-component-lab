@@ -17,6 +17,7 @@
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
+| 怎样区分应用存活和可接收流量 | [Actuator 健康探针](#actuator-健康探针)，检查两个 HTTP 端点的状态变化。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
@@ -101,6 +102,17 @@ docker compose logs -f broker
 ```bash
 docker build -t rocketmq-transaction-lab:local .
 ```
+
+### Actuator 健康探针
+
+示例已引入 `spring-boot-starter-actuator` 并启用两个探针。按上面的步骤启动应用后，在另一终端请求默认端口 `8088`。
+
+```sh
+curl -i http://localhost:8088/actuator/health/liveness
+curl -i http://localhost:8088/actuator/health/readiness
+```
+
+应用正常就绪后，两个请求均返回 HTTP 200 和 `{"status":"UP"}`。运行 `./mvnw -B -Dtest=HealthProbesTest test` 可在不连接 Broker 的情况下验证正常、暂时拒绝流量和存活异常三种状态。[依赖与 Kubernetes 接入](docs/components/release-tools.md#搭配-kubernetes-使用-http-探针)。
 
 ### 配置
 

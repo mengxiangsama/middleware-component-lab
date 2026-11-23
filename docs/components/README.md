@@ -88,7 +88,7 @@
 | [Kubernetes Deployment](release-tools.md#kubernetes-deployment) | 分批替换 Pod、滚动状态与修订回滚 |
 | [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
 | [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移)。 |
-| [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 探针端点、SIGTERM 与在途请求处理 |
+| [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 探针端点、SIGTERM 与在途请求处理。**可运行** · [启用 HTTP 探针并给 Kubernetes 使用](release-tools.md#搭配-kubernetes-使用-http-探针)。 |
 | [Argo Rollouts](release-tools.md#argo-rollouts) | 灰度权重、观察与自动分析、晋级或中止 |
 
 ## 容器构建

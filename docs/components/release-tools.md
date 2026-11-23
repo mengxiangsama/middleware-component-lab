@@ -41,6 +41,33 @@ Spring Boot 用 starter 集中接入数据源等基础设施，通过自动配�
 - **优雅停机**。按版本确认 `server.shutdown=graceful`，用 `spring.lifecycle.timeout-per-shutdown-phase` 设置生命周期阶段的等待上限。容器需把 SIGTERM 送到 Java 进程，终止宽限期包含 `preStop` 和应用退出所需时间。 [Spring Boot 优雅停机](https://docs.spring.io/spring-boot/3.5/reference/web/graceful-shutdown.html) · [Pod 停止流程](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination)
 - **验证**。测试环境发起一个耗时请求后发送 SIGTERM。观察就绪状态、后续请求、在途请求和实际退出时间。消息消费者、后台执行器及长连接分别核对其关闭行为。
 
+### 搭配 Kubernetes 使用 HTTP 探针
+
+用同一个健康状态同时决定是否摘流和是否重启，可能导致暂时不接流量的实例反复重启。Actuator 提供两个独立的 HTTP 端点，Kubernetes 分别据此判断是否给 Pod 分发流量以及是否重启容器。
+
+在 Spring Boot 应用的 Maven 依赖里加入以下 starter。项目使用 Spring Boot 父 POM 或 BOM 时，版本由它管理。[官方依赖说明](https://docs.spring.io/spring-boot/3.5/reference/actuator/enabling.html)。
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+在 `application.yml` 启用探针，本地也能验证。
+
+```yaml
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+```
+
+将存活检查设为 `/actuator/health/liveness`，就绪检查设为 `/actuator/health/readiness`。端口填写容器内实际提供 Actuator 的端口。仓库根项目默认用主服务端口 `8088`，如果服务配置为 `8085`，两个探针就填 `8085`。探测超时、间隔和失败阈值由部署平台配置。
+
+运行 `./mvnw -B -Dtest=HealthProbesTest test` 实测两条 HTTP 路径。正常时都返回 200，拒绝流量时 readiness 返回 503 而 liveness 仍为 200，存活状态异常时 liveness 返回 503。实验隔离 RocketMQ，验证范围是应用 HTTP 端点。实际摘流与重启要在目标 Kubernetes 环境核对。[运行方法](../../README.md#actuator-健康探针) · [官方探针配置](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)。
+
 ## Argo Rollouts
 
 - **灰度发布**。安装控制器与 CRD，使用 `Rollout` 的 `strategy.canary` 设置分步发布。下例在 10% 步骤暂停，检查后执行 `kubectl argo rollouts promote demo`，或用 `kubectl argo rollouts abort demo` 停止此次灰度。仅用副本数时，权重按副本比例近似。需要请求级流量控制时配置 stable/canary Service 和受支持的 `trafficRouting`。 [Canary 策略](https://argoproj.github.io/argo-rollouts/features/canary/) · [快速开始与操作](https://argoproj.github.io/argo-rollouts/getting-started/)
