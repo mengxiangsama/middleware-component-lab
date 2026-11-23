@@ -304,7 +304,7 @@ first=in-stock third=in-stock
 
 ## Prometheus
 
-仓库未在 Compose 或应用依赖中固定 Prometheus 服务端和指标客户端版本。本节实验选用官方镜像 `prom/prometheus:v3.16.0`，服务端和同镜像内的 `promtool` 均为 3.16.0。实验直接注入指标样本，无需应用侧客户端库。 [3.16.0 发布记录](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)
+采集 Spring Boot 应用的 JVM 指标，见 [Actuator 搭配 Prometheus](release-tools.md#搭配-prometheus-采集应用指标)。下方告警规则实验使用官方镜像 `prom/prometheus:v3.16.0` 中的 `promtool` 直接注入样本，无需启动应用或 Prometheus 服务端。[3.16.0 发布记录](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)
 
 | 3.16.0 主要功能 | 教程状态 |
 | --- | --- |

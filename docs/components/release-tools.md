@@ -66,7 +66,25 @@ management:
 
 将存活检查设为 `/actuator/health/liveness`，就绪检查设为 `/actuator/health/readiness`。端口填写容器内实际提供 Actuator 的端口。仓库根项目默认用主服务端口 `8088`，如果服务配置为 `8085`，两个探针就填 `8085`。探测超时、间隔和失败阈值由部署平台配置。
 
-运行 `./mvnw -B -Dtest=HealthProbesTest test` 实测两条 HTTP 路径。正常时都返回 200，拒绝流量时 readiness 返回 503 而 liveness 仍为 200，存活状态异常时 liveness 返回 503。实验隔离 RocketMQ，验证范围是应用 HTTP 端点。实际摘流与重启要在目标 Kubernetes 环境核对。[运行方法](../../README.md#actuator-健康探针) · [官方探针配置](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)。
+运行 `./mvnw -B -Dtest=ActuatorEndpointsTest test` 实测两条 HTTP 路径。正常时都返回 200，拒绝流量时 readiness 返回 503 而 liveness 仍为 200，存活状态异常时 liveness 返回 503。实验隔离 RocketMQ，验证范围是应用 HTTP 端点。实际摘流与重启要在目标 Kubernetes 环境核对。[运行方法](../../README.md#actuator-健康探针) · [官方探针配置](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)。
+
+### 搭配 Prometheus 采集应用指标
+
+排查订单服务的 JVM 内存变化时，Micrometer 在应用进程里收集指标，Actuator 提供 HTTP 接口供人工查看，Prometheus 则按间隔抓取指标以便查询历史趋势。
+
+1. 在 Actuator 依赖之外加入 `io.micrometer:micrometer-registry-prometheus`。根项目由 Spring Boot 管理其版本。
+2. 用 `management.endpoints.web.exposure.include=health,info,metrics,prometheus` 明确开放这四类端点。示例显式设置 `management.prometheus.metrics.export.enabled=true` 启用导出，并通过 `info.app.name` 提供应用名。
+3. 在 Prometheus 的 `scrape_configs` 配置应用地址及指标路径。以下地址适用于两者都运行在同一台机器、且 Prometheus 不在独立容器内的情况。
+
+```yaml
+scrape_configs:
+  - job_name: orders
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["127.0.0.1:8088"]
+```
+
+应用侧测试读取 `/actuator/metrics/jvm.memory.used` 和 `/actuator/prometheus`，分别核对 JSON 读数和 `jvm_memory_used_bytes` 指标。接入 Prometheus 服务端后，可用 `up{job="orders"}` 确认抓取，再查询 `jvm_memory_used_bytes{job="orders"}`。[本地验证命令](../../README.md#应用信息和指标) · [Spring Boot 的 Prometheus 指标导出](https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html#actuator.metrics.export.prometheus)。
 
 ## Argo Rollouts
 
