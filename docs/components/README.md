@@ -63,7 +63,7 @@
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 管理与错误处理 |
 | [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
-| [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和 |
+| [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和。**可运行** · [订单表版本化迁移与校验](release-tools.md#订单表版本化迁移与校验)。 |
 | [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览与结构变更 |
 
 ## 分布式日志

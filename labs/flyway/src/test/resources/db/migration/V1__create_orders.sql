@@ -1,0 +1,4 @@
+CREATE TABLE orders (
+    id BIGINT PRIMARY KEY,
+    amount DECIMAL(10, 2) NOT NULL
+);

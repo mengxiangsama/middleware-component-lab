@@ -53,8 +53,58 @@ strategy:
 
 ## Flyway
 
-- **常用功能**。用版本化 SQL 文件管理数据库结构与数据脚本，例如 `V2__add_order_status.sql`。通过 `info` 检查待执行脚本，在一次性测试库运行 `migrate`，随后用 `validate` 核对已应用脚本的校验和。 [迁移规则](https://documentation.red-gate.com/flyway/flyway-concepts/migrations) · [校验命令](https://documentation.red-gate.com/flyway/reference/commands/validate)
-- **验证**。以旧结构和样本数据执行一次升级，检查列、索引、默认值及既有数据，再重复执行并核对 schema history。数据库的 DDL 事务能力决定失败时可否自动回滚。已应用脚本的修订通常写入新版本。
+**版本基线**。根项目与现有实验没有引入 Flyway，容器编排也没有 Flyway 服务。本实验使用 Java 客户端 `flyway-core` 11.8.2，连接内嵌文件模式的 H2 2.3.232，数据库引擎与 JDBC 驱动来自同一个 H2 依赖，无需独立服务端。接入其他数据库时，按目标库版本选用对应的 Flyway 数据库模块和 JDBC 驱动。
+
+| 功能 | 教程状态 |
+| --- | --- |
+| 版本化 SQL 迁移和历史记录（`migrate`、`info`） | 已有教程 · [订单表版本化迁移与校验](#订单表版本化迁移与校验) |
+| 已应用迁移校验（`validate`） | 已有教程 · [订单表版本化迁移与校验](#订单表版本化迁移与校验) |
+| 可重复迁移（`R__` 脚本） | 待补 |
+| Java 迁移与生命周期回调 | 待补 |
+| 将现有数据库纳入版本管理（`baseline`） | 待补 |
+| 修复迁移历史记录（`repair`） | 待补 |
+| 清理受管 schema 中的对象（`clean`） | 待补 |
+
+### 订单表版本化迁移与校验
+
+**适用场景**。已有订单表和订单数据，新版服务需要新增状态列。在各环境按相同的顺序应用 SQL，并在部署检查中发现已经执行的脚本被改写。此例从 Flyway 已管理的 V1 升级到 V2，新增列的默认值设为 `PENDING`。实际发布前需确认默认值符合历史数据语义，并在目标数据库上验证 DDL 的锁和事务行为。
+
+**接入步骤**
+
+1. 使用 Java 17+ 和仓库的 Maven Wrapper。实验依赖及版本见 [独立 POM](../../labs/flyway/pom.xml)，首次运行需下载 Maven 和依赖。
+2. 迁移目录中放置 [V1 建表脚本](../../labs/flyway/src/test/resources/db/migration/V1__create_orders.sql) 和 [V2 加列脚本](../../labs/flyway/src/test/resources/db/migration/V2__add_order_status.sql)。文件名采用 `V<版本>__<描述>.sql`。在 JDBC 客户端中配置数据源和脚本目录。
+
+   ```java
+   var config = Flyway.configure()
+           .dataSource(url, "sa", "")
+           .locations("filesystem:" + migrations);
+   var flyway = config.load();
+   flyway.migrate();
+   flyway.validate();
+   ```
+
+   `url` 是指向隔离测试库的 `jdbc:h2:file:` URL，`migrations` 是脚本目录的绝对路径。Flyway 首次迁移会创建 `flyway_schema_history`。新增改动时保留已应用脚本，把变更放在后继版本中。
+3. [实验代码](../../labs/flyway/src/test/java/io/github/flywaylab/OrderMigrationTest.java)用临时目录保存数据库和 SQL 副本。先将迁移目标设为 V1，插入订单 `101` 和金额 `19.90`，再将目标恢复为最新版本并执行迁移和校验。
+
+**验证方法**。在仓库根目录执行以下命令。
+
+```bash
+./mvnw -B -f labs/flyway/pom.xml test
+```
+
+| 操作 | 可观察结果 |
+| --- | --- |
+| 从 V1 升到 V2 | 执行 1 条迁移，当前版本为 `2`。查询结果仍只有订单 `101`，金额仍为 `19.90`，状态为 `PENDING`。 |
+| 校验并重复迁移 | `validate()` 成功，重复 `migrate()` 执行 0 条迁移。 |
+| 将已应用的 V2 副本中的默认值改为 `PAID` | `validate()` 抛出 `FlywayValidateException`，V2 的错误码为 `CHECKSUM_MISMATCH`。恢复脚本原文后校验通过。 |
+
+**官方文档**
+
+- [Flyway 11.8.2 Java API 源码](https://github.com/flyway/flyway/blob/flyway-11.8.2/flyway-core/src/main/java/org/flywaydb/core/Flyway.java)
+- [版本化迁移规则](https://documentation.red-gate.com/flyway/flyway-concepts/migrations)
+- [Migrate](https://documentation.red-gate.com/flyway/reference/commands/migrate)
+- [Validate](https://documentation.red-gate.com/flyway/reference/commands/validate)
+- [H2 驱动与 JDBC URL](https://documentation.red-gate.com/flyway/reference/database-driver-reference/h2)
 
 ## Liquibase
 
