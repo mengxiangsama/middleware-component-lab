@@ -17,7 +17,7 @@
 
 ## Redis
 
-仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB 和 AOF 实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
+仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB、AOF 和主从复制实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
 
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
@@ -39,7 +39,7 @@
 | Redis Functions | 已有教程 | [注册函数库并原子扣减单件库存](#redis-functions-单件库存扣减)。 |
 | RDB 快照 | 已有教程 | [保存库存快照并验证重启后的恢复边界](#rdb-快照与重启恢复)。 |
 | AOF 持久化 | 已有教程 | [记录库存写入并在启动时重放增量日志](#aof-写入日志与重启恢复)。 |
-| 主从复制 | 待补 | 副本异步接收主节点的写入。故障转移时可能丢失最近确认的写入。 |
+| 主从复制 | 已有教程 | [将库存读模型复制到只读副本](#主从复制与副本只读验证)。 |
 | Sentinel 高可用 | 待补 | 监控非集群部署的主从节点，并在主节点故障时协调切换。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
@@ -963,6 +963,72 @@ test ! -e "$lab_dir"
 2026-11-23 在 macOS 26.5 arm64、Bash 3.2.57 上用官方源码执行了上述构建、写入和重启步骤。服务端和客户端均为 7.4.2，两次启动均返回 `PONG`。`SET` 返回 `OK`，扣减和重启后读取均返回 `9`。`INFO persistence` 的两个字段与预期一致，清单列出基准文件和增量文件。增量日志非空，独立的 `dump.rdb` 未生成，重启日志确认加载了增量文件。最后一次退出和临时目录删除检查均通过。
 
 **官方文档**　[Redis 持久化](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) · [7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf) · [INFO](https://redis.io/docs/latest/commands/info/) · [SHUTDOWN](https://redis.io/docs/latest/commands/shutdown/)
+
+### 主从复制与副本只读验证
+
+**适用场景**　库存展示页可以从副本读取数据，扣减库存和需要立即读到最新结果的操作走主节点。Redis 默认异步复制，副本读数可能短时滞后，故障时也可能丢失主节点已经确认的写入。需要自动故障转移时，还需配置 Sentinel 或 Cluster。
+
+**接入步骤**　需要 Bash、C 编译器、GNU Make 和空闲的本地 TCP 端口 `16379`。解压 [Redis 7.4.2 官方源码](https://codeload.github.com/redis/redis/tar.gz/refs/tags/7.4.2)，从包含 `redis-7.4.2/` 的目录运行以下命令。两个实例使用独立临时目录，主节点只监听回环地址，副本只通过 Unix Socket 接收客户端连接。以下命令在同一个 Bash 会话执行。
+
+```bash
+make -C redis-7.4.2/src -j8 MALLOC=libc redis-server redis-cli
+redis_bin=$(cd redis-7.4.2/src && pwd)
+"$redis_bin/redis-server" --version
+"$redis_bin/redis-cli" --version
+lab_dir=$(mktemp -d /tmp/redis-repl.XXXXXX)
+mkdir "$lab_dir/primary" "$lab_dir/replica"
+
+primary_cli() { "$redis_bin/redis-cli" -s "$lab_dir/primary.sock" "$@"; }
+replica_cli() { "$redis_bin/redis-cli" -s "$lab_dir/replica.sock" "$@"; }
+
+"$redis_bin/redis-server" --bind 127.0.0.1 --port 16379 \
+  --unixsocket "$lab_dir/primary.sock" --dir "$lab_dir/primary" \
+  --save "" --appendonly no --logfile "$lab_dir/primary.log" &
+primary_pid=$!
+```
+
+服务端和客户端都应显示 7.4.2。运行 `primary_cli PING`，等到返回 `PONG` 后先在主节点写入库存，预期返回 `OK`，然后启动副本。用 `--replicaof` 指定主节点的地址和端口。
+
+```bash
+primary_cli SET lab:stock:sku42 10
+"$redis_bin/redis-server" --port 0 \
+  --unixsocket "$lab_dir/replica.sock" --dir "$lab_dir/replica" \
+  --save "" --appendonly no --logfile "$lab_dir/replica.log" \
+  --replicaof 127.0.0.1 16379 --replica-read-only yes &
+replica_pid=$!
+```
+
+**验证方法**　重复运行以下两条命令，直到看到 `master_link_status:up`、`master_sync_in_progress:0` 和库存 `10`。如果一直不满足，查看 `"$lab_dir/replica.log"` 检查连接或同步错误。Redis 7.4.2 的复制信息仍使用 `role:slave` 和 `slave_read_only:1` 表示只读副本。
+
+```bash
+replica_cli INFO replication | grep -E '^(role|master_link_status|master_sync_in_progress|slave_read_only):'
+replica_cli GET lab:stock:sku42
+```
+
+在主节点扣减一件，预期返回 `9`。重复读取副本直到返回 `9`，确认首次同步完成后主节点的写入仍会传播。随后直接向副本写入，预期返回 `READONLY` 错误，两个节点的库存都仍为 `9`。
+
+```bash
+primary_cli DECR lab:stock:sku42
+replica_cli GET lab:stock:sku42
+replica_cli SET lab:stock:sku42 99
+primary_cli GET lab:stock:sku42
+replica_cli GET lab:stock:sku42
+```
+
+结束后关闭副本和主节点，清理实验目录。
+
+```bash
+replica_cli SHUTDOWN NOSAVE
+wait "$replica_pid"
+primary_cli SHUTDOWN NOSAVE
+wait "$primary_pid"
+rm -r "$lab_dir"
+test ! -e "$lab_dir"
+```
+
+2026-11-23 在 macOS 26.5（arm64）、Bash 3.2.57 上执行了上述命令。用 `make -C redis-7.4.2/src -j8 MALLOC=libc redis-server redis-cli` 构建的两个二进制均报告 7.4.2。主节点 `PING` 返回 `PONG`，写入返回 `OK`。副本的 `INFO replication` 显示连接正常、同步结束及只读状态，首次读取返回 `10`。主节点执行 `DECR` 后，副本读取返回 `9`。副本执行 `SET` 返回 `READONLY`，两端重读均为 `9`。两个实例正常退出，临时目录删除检查通过。
+
+**官方文档**　[Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [Redis 7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf) · [INFO](https://redis.io/docs/latest/commands/info/)
 
 ## Redisson
 
