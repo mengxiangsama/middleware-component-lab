@@ -17,7 +17,7 @@
 
 ## Redis
 
-仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB、AOF 和主从复制实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
+仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB、AOF、主从复制和键空间通知实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
 
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
@@ -34,6 +34,7 @@
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 已有教程 | [广播缓存失效通知并验证断线期间的消息不会重放](#发布订阅与缓存失效通知)。 |
+| 键空间通知 | 已有教程 | [订阅商品缓存键过期通知，核对两种频道的消息内容](#键空间通知与缓存过期观察)。 |
 | 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
 | Lua 脚本 | 已有教程 | [原子检查并更新固定窗口限流计数](#lua-固定窗口限流)。 |
 | Redis Functions | 已有教程 | [注册函数库并原子扣减单件库存](#redis-functions-单件库存扣减)。 |
@@ -772,6 +773,66 @@ docker exec redis-pubsub-lab redis-cli PUBLISH lab:cache:invalidate product:1003
 2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。三次 `PUBLISH` 依次返回 1、0、1，两次 `SUBSCRIBE` 均返回订阅确认，订阅端依次收到 `product:1001` 和 `product:1003`。停止后确认容器已自动删除。
 
 **官方文档**　命令文档列出语法和返回值，Redis 7.4.2 的官方测试包含订阅确认及有无订阅者时的发布断言。 [Redis Pub/Sub](https://redis.io/docs/latest/develop/pubsub/) · [SUBSCRIBE](https://redis.io/docs/latest/commands/subscribe/) · [PUBLISH](https://redis.io/docs/latest/commands/publish/) · [7.4.2 版发布订阅测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/pubsub.tcl)
+
+### 键空间通知与缓存过期观察
+
+**适用场景**　调试商品缓存时，可以订阅 Redis 自动产生的过期通知，观察某个商品键何时被移除，或记录本实例被过期清理的键名。Redis 在访问过期键或后台扫描并删除过期键时产生 `expired`，通知可能晚于 TTL 归零。通知通过 Pub/Sub 投递，断线期间的事件无法重放。需要可靠关单或精确调度时，使用有持久化和补偿机制的任务方案。
+
+**接入步骤**　需要 Bash、C 编译器、GNU Make 和两个终端。解压 [Redis 7.4.2 官方源码](https://codeload.github.com/redis/redis/tar.gz/refs/tags/7.4.2)，从包含 `redis-7.4.2/` 的目录在终端 A 执行。服务端和客户端均应显示 7.4.2。实例仅监听临时目录内的 Unix Socket。
+
+```bash
+make -C redis-7.4.2/src -j8 MALLOC=libc redis-server redis-cli
+redis_bin=$(cd redis-7.4.2/src && pwd)
+"$redis_bin/redis-server" --version
+"$redis_bin/redis-cli" --version
+lab_dir=$(mktemp -d /tmp/redis-notify.XXXXXX)
+lab_cli() { "$redis_bin/redis-cli" -s "$lab_dir/redis.sock" "$@"; }
+
+"$redis_bin/redis-server" --port 0 --unixsocket "$lab_dir/redis.sock" \
+  --dir "$lab_dir" --save "" --appendonly no \
+  --notify-keyspace-events KEx --logfile "$lab_dir/redis.log" &
+redis_pid=$!
+lab_cli PING
+```
+
+收到 `PONG` 后继续。若首次连接失败，稍后重试 `lab_cli PING`。通知默认关闭，启动参数中的 `K` 启用按键订阅的频道，`E` 启用按事件订阅的频道，`x` 只启用过期事件。
+
+**验证方法**　先在终端 A 运行 `declare -p redis_bin lab_dir`，将两行变量定义复制到终端 B 执行，以便两个客户端连接同一个 Socket。然后在终端 A 执行下列订阅命令，等待两条 `subscribe` 确认。
+
+```bash
+lab_cli --csv SUBSCRIBE '__keyspace@0__:lab:product:42' '__keyevent@0__:expired'
+```
+
+在终端 B 写入一个 2 秒后过期的键，预期返回 `OK`。
+
+```bash
+"$redis_bin/redis-cli" -s "$lab_dir/redis.sock" SET lab:product:42 cached EX 2
+```
+
+等待终端 A 出现以下两条消息。按键订阅收到事件名，按事件订阅收到键名。频道名中的 `0` 对应本例使用的数据库。
+
+```text
+"message","__keyspace@0__:lab:product:42","expired"
+"message","__keyevent@0__:expired","lab:product:42"
+```
+
+在终端 B 查询该键，预期返回 `(integer) 0`。
+
+```bash
+"$redis_bin/redis-cli" -s "$lab_dir/redis.sock" EXISTS lab:product:42
+```
+
+在终端 A 按 Ctrl-C 退出订阅，再清理临时实例。
+
+```bash
+lab_cli SHUTDOWN NOSAVE
+wait "$redis_pid"
+rm -r "$lab_dir"
+```
+
+**实测记录**　在 macOS 26.5（arm64）用 Apple Clang 21.0.0 和 GNU Make 3.81 执行上述 `make` 命令。两端版本均为 7.4.2，`PING` 返回 `PONG`。用两个独立客户端执行 `SUBSCRIBE` 和 `SET ... EX 2`，收到两条订阅确认后写入返回 `OK`。在查询键之前收到上面列出的两条过期消息，随后 `EXISTS` 返回 0。`SHUTDOWN NOSAVE` 后服务端以状态码 0 退出。
+
+**官方文档**　[Redis 键空间通知](https://redis.io/docs/latest/develop/pubsub/keyspace-notifications/)说明频道、消息和过期时机。[Redis 7.4.2 配置文件](https://github.com/redis/redis/blob/7.4.2/redis.conf#L1880-L1930)列出本版本支持的标志。
 
 ### 事务与乐观锁
 

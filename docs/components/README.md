@@ -33,7 +33,7 @@
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载、刷新和淘汰 |
 | [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合 |
 
-运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。运行 [Redis Functions 单件库存扣减](search-cache.md#redis-functions-单件库存扣减)，从独立连接调用已注册的函数并核对库存余量。
+运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。运行 [Redis 键空间通知](search-cache.md#键空间通知与缓存过期观察)，对照按键和按事件订阅的消息内容。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。运行 [Redis Functions 单件库存扣减](search-cache.md#redis-functions-单件库存扣减)，从独立连接调用已注册的函数并核对库存余量。
 
 运行 [Redis RDB 快照与重启恢复](search-cache.md#rdb-快照与重启恢复)，核对重启后恢复到哪一次写入。运行 [Redis AOF 写入日志与重启恢复](search-cache.md#aof-写入日志与重启恢复)，通过清单和启动日志核对增量写入的恢复。
 
