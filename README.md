@@ -14,12 +14,15 @@
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
+| 怎样把 Java 异常堆栈采成一条日志事件 | [Fluent Bit 多行日志实验](labs/fluent-bit-java-multiline/README.md)，验证相邻异常分别输出、普通日志独立保留。 |
 | 查一个组件的接入方式 | [组件目录](docs/components/README.md) |
 | 按业务场景做练习 | [学习路线](docs/learning-path.md) |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
 
 Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `sh labs/helm-values-schema/verify.sh`，无需 Kubernetes 集群。
+
+Fluent Bit 多行日志实验需要 Docker、Shell 和 `jq`。在仓库根目录运行 `sh labs/fluent-bit-java-multiline/verify.sh`。
 
 ## RocketMQ 事务消息实验
 

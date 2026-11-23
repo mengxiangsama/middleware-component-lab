@@ -30,6 +30,10 @@ pipeline:
       match: lab.file
 ```
 
+### 合并 Java 异常堆栈
+
+用 Tail 的 `multiline.parser` 识别异常首行和续行。运行 [Fluent Bit 多行日志实验](../../labs/fluent-bit-java-multiline/README.md)，核对两个相邻 Java 异常分别生成一条 JSON 事件，且普通日志、堆栈帧和嵌套原因完整保留。
+
 ## Logstash
 
 - **常用接入**｜`input → filter → output`。可用 file input 追踪本地日志，或用 Beats、HTTP input 接收事件。JSON 可在输入使用 codec 解码，文本常用 grok 或 dissect 提取字段，随后用 date 解析时间，用 mutate 归一字段和删除敏感数据。stdout 可检查结果，Elasticsearch output 可用于写入索引或数据流。 [处理流程](https://www.elastic.co/docs/reference/logstash/how-logstash-works) · [Elasticsearch Output](https://www.elastic.co/docs/reference/logstash/plugins/plugins-outputs-elasticsearch)

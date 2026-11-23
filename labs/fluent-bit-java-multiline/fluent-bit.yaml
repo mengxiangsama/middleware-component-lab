@@ -1,0 +1,30 @@
+service:
+  flush: 1
+  grace: 5
+  log_level: error
+
+multiline_parsers:
+  - name: java_file_errors
+    type: regex
+    flush_timeout: 1000
+    rules:
+      - state: start_state
+        regex: '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}[ \t]+ERROR[ \t]+/'
+        next_state: cont
+      - state: cont
+        regex: '/^(?:[ \t]+at[ \t]+|[ \t]*(?:Caused by:|Suppressed:)|[ \t]+\.\.\. \d+ more)/'
+        next_state: cont
+
+pipeline:
+  inputs:
+    - name: tail
+      path: /lab/orders.txt
+      read_from_head: true
+      exit_on_eof: true
+      tag: lab.orders
+      multiline.parser: java_file_errors
+  outputs:
+    - name: stdout
+      match: lab.orders
+      format: json_lines
+      json_date_key: false

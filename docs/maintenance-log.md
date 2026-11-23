@@ -42,3 +42,19 @@
 在 macOS arm64 上运行经官方 SHA-256 校验的 Helm 4.3.2。执行 `sh labs/helm-values-schema/verify.sh`，默认和环境覆盖的 `lint` 与渲染均通过，分别得到 1 副本、端口 80 和 2 副本、端口 8080。端口类型不符、端口 65536、`service.prt` 和零副本均被 Schema 拒绝。运行根项目 `./mvnw -B verify` 成功，7 项通过，3 项按现有条件跳过。
 
 验证范围是本地 Chart 校验与渲染。集群 API、准入和镜像运行未纳入本轮实验。
+
+## 2026-11-23 · Fluent Bit 合并 Java 异常堆栈
+
+盘点 [`292ec52`](https://github.com/mengxiangsama/middleware-component-lab/commit/292ec52014f5a67e23063d59cb30c9359be6c573) 的组件目录、实验和最近 30 条提交。近期补过多项消息、缓存和服务治理主题，分布式日志分册仍只有通用说明，没有可运行的多行分组实验。
+
+| 组件 | 调研到的实用缺口 | 取舍 |
+| --- | --- | --- |
+| Fluent Bit | 文本文件中相邻 Java 异常的事件边界 | 本轮选择，用官方镜像核对真实 Tail 输入和 stdout 输出 |
+| RabbitMQ | 拒绝消费后核对死信路由及 `x-death` 元数据 | 适合另用 Broker 与客户端联调。[官方死信文档](https://www.rabbitmq.com/docs/dlx) |
+| NATS JetStream | 持久拉取消费者超时重投及重连 | 需要运行服务端与客户端并核对投递次数。[官方拉取消费者示例](https://docs.nats.io/learn/jetstream/pull-consumers) |
+
+新增 [Fluent Bit 多行日志实验](../labs/fluent-bit-java-multiline/README.md)，同步根 README、组件目录、日志分册和学习路线。对照了 [Fluent Bit 仓库](https://github.com/fluent/fluent-bit)、[官方多行配置示例](https://docs.fluentbit.io/manual/data-pipeline/parsers/multiline-parsing#configuration-example)和 [5.2.0 的 Java 内置规则](https://github.com/fluent/fluent-bit/blob/v5.2.0/src/multiline/flb_ml_parser_java.c)。
+
+在 macOS arm64 的 Docker Engine 27.3.1 上，用官方 Fluent Bit 5.2.0 镜像实测。镜像平台为 `linux/arm64`，拉取所得摘要为 `sha256:e2718c47aaab7d99587fdffe78818549bdd09dee5e30a9199d2ff3da6e2c7628`。运行 `sh labs/fluent-bit-java-multiline/verify.sh` 成功，12 行输入按 1、7、3、1 行分成四条事件，逐行核对无丢失。关闭多行解析的对照运行输出 12 条单行事件。根项目 `./mvnw -B verify` 构建成功，7 项通过，3 项按原条件跳过。
+
+最初以异常堆栈结尾时，实测 `exit_on_eof` 使最后一段未输出。最终样例用一条普通日志结束缓冲。长期追踪、轮转和日志存储接收留给接入环境验证。

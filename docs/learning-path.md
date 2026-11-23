@@ -62,6 +62,8 @@
 
 告警上线前，先运行 [Prometheus 告警规则实验](../labs/prometheus-rules/README.md)，用固定样本核对短暂故障不触发、持续故障触发、恢复解除，以及等待时间重置。通过后再接真实抓取和 [Alertmanager](components/observability-tools.md#alertmanager) 通知。
 
+如果 Java 堆栈在下游被拆成多条日志，先运行 [Fluent Bit 多行日志实验](../labs/fluent-bit-java-multiline/README.md)，核对事件边界和整段堆栈，再接实际的日志存储。
+
 用 [Prometheus](components/service-tools.md#prometheus) 找出错误率或延迟变化的时间段，用 [OpenTelemetry](components/service-tools.md#opentelemetry) 和 [Tempo](components/observability-tools.md#grafana-tempo) 定位耗时的调用，再用 [Loki](components/distributed-logging.md#grafana-loki) 按时间和服务筛选日志，并用 Trace ID 核对同一次请求。
 
 先确认应用日志包含 Trace ID，再给测试下游的一条调用加延迟。观察指标变化，找出变慢的 span，并关联调用两端的日志。若请求经过消息队列，也核对生产端到消费端的追踪上下文是否成功传递。

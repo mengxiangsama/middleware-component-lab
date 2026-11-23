@@ -76,7 +76,7 @@
 
 | 组件 | 常见用法 |
 | --- | --- |
-| [Fluent Bit](distributed-logging.md#fluent-bit) | Tail、多行合并、解析、过滤和输出缓冲 |
+| [Fluent Bit](distributed-logging.md#fluent-bit) | Tail、多行合并、解析、过滤和输出缓冲。**可运行** · [合并 Java 异常堆栈](distributed-logging.md#合并-java-异常堆栈)。 |
 | [Logstash](distributed-logging.md#logstash) | Input、Filter、Output，日志解析、字段处理与持久队列 |
 | [Grafana Loki](distributed-logging.md#grafana-loki) | 按标签写入与索引、LogQL 查询 |
 | [Kibana](observability-tools.md#kibana) | Elasticsearch Data View、Discover 与 KQL |

@@ -1,0 +1,12 @@
+2026-11-23 10:00:00.000 INFO  checkout started
+2026-11-23 10:00:00.010 ERROR checkout failed
+    at lab.Checkout.submit(Checkout.java:41)
+    Suppressed: java.io.IOException: close failed
+        at lab.Gateway.close(Gateway.java:31)
+Caused by: java.net.SocketTimeoutException: gateway timed out
+    at lab.Gateway.send(Gateway.java:24)
+    ... 1 more
+2026-11-23 10:00:00.011 ERROR inventory update failed
+    at lab.Inventory.reserve(Inventory.java:32)
+    at lab.Inventory.handle(Inventory.java:15)
+2026-11-23 10:00:00.020 INFO  checkout lab finished
