@@ -17,7 +17,7 @@
 
 ## Redis
 
-仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 为例，使用 Docker 镜像 `redis:7.4.2` 内的同版本 `redis-cli`。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
+仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB 实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
 
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
@@ -37,7 +37,10 @@
 | 事务与乐观锁 | 已有教程 | [检测并发库存变更并重试预留事务](#事务与乐观锁)。 |
 | Lua 脚本 | 已有教程 | [原子检查并更新固定窗口限流计数](#lua-固定窗口限流)。 |
 | Redis Functions | 已有教程 | [注册函数库并原子扣减单件库存](#redis-functions-单件库存扣减)。 |
-| 持久化、复制与高可用 | 待补 | 用 RDB 或 AOF 持久化，使用 Sentinel 管理非集群部署的故障转移。复制默认异步，故障转移时可能丢失最近确认的写入。 |
+| RDB 快照 | 已有教程 | [保存库存快照并验证重启后的恢复边界](#rdb-快照与重启恢复)。 |
+| AOF 持久化 | 待补 | 记录写入操作并在启动时重放，通过 fsync 策略控制同步频率。 |
+| 主从复制 | 待补 | 副本异步接收主节点的写入。故障转移时可能丢失最近确认的写入。 |
+| Sentinel 高可用 | 待补 | 监控非集群部署的主从节点，并在主节点故障时协调切换。 |
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
@@ -841,6 +844,66 @@ docker stop "$redis_tx_lab"
 2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。补货后首次提交返回 `null`，库存和预留量为 6 和 0。重试返回 `[4,2]`，查询确认库存为 4、预留量为 2。停止后确认实验容器已自动删除。
 
 **官方文档**　命令文档和 7.4.2 版事务测试可用于核对命令语法及提交结果。 [Redis 事务](https://redis.io/docs/latest/develop/using-commands/transactions/) · [WATCH](https://redis.io/docs/latest/commands/watch/) · [MULTI](https://redis.io/docs/latest/commands/multi/) · [EXEC](https://redis.io/docs/latest/commands/exec/) · [7.4.2 版事务测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/multi.tcl)
+
+### RDB 快照与重启恢复
+
+**适用场景**　为可从订单流水重建的库存读模型保留一个时间点的副本，以便实例重启后快速恢复。仅启用 RDB 时，恢复的数据取决于最后一份成功写入磁盘的快照，之后已确认的写入可能丢失。适用于业务能接受这一恢复点、或能从原始记录补齐差额的场景。示例用同步 `SAVE` 固定快照时点，它会阻塞其他客户端，在线服务通常用后台快照 `BGSAVE`。
+
+**接入步骤**　需要 Bash、C 编译器、GNU Make 和 Redis Open Source 7.4.2 源码。解压官方源码后，在包含 `redis-7.4.2/` 的目录执行以下命令。本例将数据和日志写入同一个临时目录，仅通过 Unix Socket 连接。启动参数关闭自动快照和 AOF，以便单独观察手动快照的效果。
+
+```bash
+make -C redis-7.4.2/src -j8 MALLOC=libc redis-server redis-cli
+redis_bin=$(cd redis-7.4.2/src && pwd)
+"$redis_bin/redis-server" --version
+"$redis_bin/redis-cli" --version
+lab_dir=$(mktemp -d /tmp/redis-rdb.XXXXXX)
+rdb_cli() { "$redis_bin/redis-cli" -s "$lab_dir/redis.sock" "$@"; }
+start_redis() {
+  "$redis_bin/redis-server" --port 0 --unixsocket "$lab_dir/redis.sock" \
+    --dir "$lab_dir" --dbfilename dump.rdb --save "" --appendonly no \
+    --logfile "$lab_dir/redis.log" &
+  redis_pid=$!
+}
+
+start_redis
+rdb_cli PING
+```
+
+两个版本输出均应包含 `7.4.2`。服务刚启动时，重试 `rdb_cli PING` 直至返回 `PONG`。
+
+**验证方法**　先写入库存并保存快照，再扣减一件。`SET` 和 `SAVE` 应各返回 `OK`，`test -s` 退出状态为 0，表示快照文件非空。扣减和随后的读取各返回 `9`。
+
+```bash
+rdb_cli SET lab:stock:sku42 10
+rdb_cli SAVE
+test -s "$lab_dir/dump.rdb"
+rdb_cli DECR lab:stock:sku42
+rdb_cli GET lab:stock:sku42
+```
+
+用 `SHUTDOWN NOSAVE` 跳过退出时的保存，等待进程退出后使用同一目录启动。若尚未就绪，重试 `PING`，直到返回 `PONG`，再读取库存和检查加载日志。
+
+```bash
+rdb_cli SHUTDOWN NOSAVE
+wait "$redis_pid"
+start_redis
+rdb_cli PING
+```
+
+```bash
+rdb_cli GET lab:stock:sku42
+grep -F 'Done loading RDB, keys loaded: 1' "$lab_dir/redis.log"
+rdb_cli SHUTDOWN NOSAVE
+wait "$redis_pid"
+rm -r "$lab_dir"
+test ! -e "$lab_dir"
+```
+
+库存恢复为 `10`，日志显示从 RDB 加载了 1 个键。最后停掉实验实例并删除其临时目录。
+
+2026-11-23 在 macOS 26.5 arm64、Bash 3.2.57 上用官方 7.4.2 源码编译并运行了上述实验。服务端和客户端版本均为 7.4.2，两次启动均收到 `PONG`。`SAVE` 返回 `OK` 并生成非空的 `dump.rdb`，重启前读取为 `9`，重启后读取为 `10`，日志显示加载 1 个键且无过期键。最后一次 `wait` 和临时目录删除检查均通过。
+
+**官方文档**　持久化指南解释快照与恢复边界，7.4.2 的配置文件包含本例使用的启动配置。 [Redis 持久化](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) · [SAVE](https://redis.io/docs/latest/commands/save/) · [SHUTDOWN](https://redis.io/docs/latest/commands/shutdown/) · [7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf) · [7.4.2 源码归档](https://codeload.github.com/redis/redis/tar.gz/refs/tags/7.4.2)
 
 ## Redisson
 
