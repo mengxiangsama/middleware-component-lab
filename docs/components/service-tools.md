@@ -25,7 +25,7 @@ Resilience4j 是嵌入 JVM 的调用侧库，无独立服务端或容器。仓�
 | Retry 重试 | 已有教程 | [按异常类型有限重试](#按异常类型有限重试) |
 | CircuitBreaker 熔断 | 待补 | 按失败率或慢调用率阻断调用，半开时试探恢复。 |
 | RateLimiter 限流 | 待补 | 按周期分配调用许可。 |
-| Bulkhead 并发隔离 | 待补 | 按信号量或有界线程池限制并发。 |
+| Bulkhead 并发隔离 | 已有教程 | [用信号量限制库存查询的并发](#用信号量限制库存查询的并发)。有界线程池隔离待补。 |
 | TimeLimiter 异步超时 | 待补 | 为异步结果设置等待上限。 |
 | Cache 缓存装饰器 | 待补 | 用 JCache 缓存函数结果。 |
 
@@ -138,6 +138,104 @@ invalid attempts=1 outcome=IllegalArgumentException
 ```
 
 **官方文档**。 [Retry 配置与 Java 用法](https://resilience4j.readme.io/docs/retry) · [2.3.0 RetryConfig 源码](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-retry/src/main/java/io/github/resilience4j/retry/RetryConfig.java)
+
+### 用信号量限制库存查询的并发
+
+**适用场景**。库存接口变慢时，应用中等待库存结果的请求会增多。同步调用方可以用一个共享的信号量 Bulkhead 限制单个 JVM 内同时执行的库存查询数，满载时立即交由调用方处理。信号量适用于已有调用线程的场景，受保护的查询在调用线程上执行。应用有多个副本时，每个副本独立计算许可。
+
+**接入步骤**。使用 JDK 17、Bash、curl 和可访问 Maven Central 的网络。应用可通过构建工具声明 `io.github.resilience4j:resilience4j-bulkhead:2.3.0`。下面的独立示例在同一个 Bash 会话中运行，下载本例用到的 JAR 到临时目录，退出会话时清理。
+
+```bash
+bulkhead_demo_dir=$(mktemp -d)
+trap 'rm -rf -- "$bulkhead_demo_dir"' EXIT
+
+(
+  set -e
+  cd "$bulkhead_demo_dir"
+  central=https://repo1.maven.org/maven2
+  for module in bulkhead core; do
+    jar="resilience4j-${module}-2.3.0.jar"
+    curl -fsSL --retry 3 -o "$jar" "$central/io/github/resilience4j/resilience4j-$module/2.3.0/$jar"
+  done
+  for module in api nop; do
+    jar="slf4j-${module}-1.7.30.jar"
+    curl -fsSL --retry 3 -o "$jar" "$central/org/slf4j/slf4j-$module/1.7.30/$jar"
+  done
+)
+```
+
+将下面的代码保存为 `$bulkhead_demo_dir/BulkheadDemo.java`。`maxConcurrentCalls(1)` 允许一个在途调用，`maxWaitDuration(Duration.ZERO)` 让满载时的后续调用立即收到 `BulkheadFullException`。对同一库存接口复用一个 Bulkhead 实例。示例用两个锁存器控制调用重叠，不依赖休眠来制造满载。
+
+```java
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.bulkhead.BulkheadConfig;
+import io.github.resilience4j.bulkhead.BulkheadFullException;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class BulkheadDemo {
+    public static void main(String[] args) throws Exception {
+        BulkheadConfig config = BulkheadConfig.custom()
+                .maxConcurrentCalls(1)
+                .maxWaitDuration(Duration.ZERO)
+                .build();
+        Bulkhead inventory = Bulkhead.of("inventory", config);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch finish = new CountDownLatch(1);
+        var worker = Executors.newSingleThreadExecutor();
+
+        try {
+            var first = worker.submit(() -> inventory.executeCallable(() -> {
+                entered.countDown();
+                if (!finish.await(10, TimeUnit.SECONDS)) {
+                    throw new AssertionError("first call timed out waiting for release");
+                }
+                return "in-stock";
+            }));
+            if (!entered.await(5, TimeUnit.SECONDS)) {
+                throw new AssertionError("first call did not enter");
+            }
+
+            try {
+                inventory.executeRunnable(() -> {
+                    throw new AssertionError("second call reached inventory");
+                });
+                throw new AssertionError("second call was not rejected");
+            } catch (BulkheadFullException expected) {
+                System.out.println("second=BulkheadFullException");
+            }
+
+            finish.countDown();
+            String firstResult = first.get(5, TimeUnit.SECONDS);
+            String thirdResult = inventory.executeSupplier(() -> "in-stock");
+            if (!"in-stock".equals(firstResult) || !"in-stock".equals(thirdResult)) {
+                throw new AssertionError("unexpected inventory result");
+            }
+            System.out.printf("first=%s third=%s%n", firstResult, thirdResult);
+        } finally {
+            finish.countDown();
+            worker.shutdownNow();
+        }
+    }
+}
+```
+
+**验证**。在同一个 Bash 会话中运行以下命令。预期退出码为 0。第二个调用收到异常且未执行查询，首个调用完成后，第三个调用使用释放的许可正常返回。
+
+```bash
+(cd "$bulkhead_demo_dir" && java --class-path '*' BulkheadDemo.java)
+```
+
+2026-11-23 在 macOS 26.5（arm64）、Microsoft OpenJDK 17.0.16 上，按上述命令下载依赖并运行，退出码为 0，实际输出如下。
+
+```text
+second=BulkheadFullException
+first=in-stock third=in-stock
+```
+
+**官方文档**。 [Bulkhead 配置与 Java 用法](https://resilience4j.readme.io/docs/bulkhead) · [2.3.0 Bulkhead API](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-bulkhead/src/main/java/io/github/resilience4j/bulkhead/Bulkhead.java) · [2.3.0 BulkheadConfig](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-bulkhead/src/main/java/io/github/resilience4j/bulkhead/BulkheadConfig.java)
 
 ## Apache Seata
 
