@@ -121,6 +121,7 @@ docker build -t rocketmq-transaction-lab:local .
 
 | 想查什么 | 分册与常见组件 |
 | --- | --- |
+| 单体应用的模块边界与事件投递 | [应用模块化](docs/components/application-modularity.md) · Spring Modulith |
 | 消息发布、重试和重放 | [消息与事件流](docs/components/messaging.md) · RabbitMQ、RocketMQ、Kafka、Pulsar、NATS JetStream |
 | 全文检索、缓存和分析 | [搜索与缓存](docs/components/search-cache.md) · Elasticsearch、Redis、Redisson、Lettuce、ClickHouse |
 | 定时、分片和补跑 | [任务调度](docs/components/scheduling.md) · XXL-JOB、PowerJob、Quartz、ElasticJob、DolphinScheduler |

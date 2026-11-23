@@ -14,6 +14,12 @@
 
 **可运行** · [RocketMQ 事务消息实验](../../README.md#run-locally)，包含提交、回滚、事务回查和消费去重。 [RocketMQ 顺序消息实验](messaging.md#订单顺序消息)按订单核对创建、支付和发货的事件序列。
 
+## 应用模块化
+
+| 组件 | 常见用法 |
+| --- | --- |
+| [Spring Modulith](application-modularity.md#spring-modulith) | 应用内模块边界和事件投递。**可运行** · [模块结构校验](application-modularity.md#在测试中校验订单与积分模块边界)。 |
+
 ## 网络编程
 
 | 组件 | 常见用法 |
