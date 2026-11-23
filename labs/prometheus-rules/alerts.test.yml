@@ -1,0 +1,30 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="orders",instance="orders:8080"}'
+        values: '1 0 0 0 1'
+    alert_rule_test:
+      - eval_time: 0m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 1m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 3m
+        alertname: OrdersTargetDown
+        exp_alerts:
+          - exp_labels:
+              job: orders
+              instance: "orders:8080"
+              severity: page
+            exp_annotations:
+              summary: "订单服务 orders:8080 抓取失败"
+      - eval_time: 4m
+        alertname: OrdersTargetDown
+        exp_alerts: []

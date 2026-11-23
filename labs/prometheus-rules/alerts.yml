@@ -1,0 +1,10 @@
+groups:
+  - name: orders
+    rules:
+      - alert: OrdersTargetDown
+        expr: up{job="orders"} == 0
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "订单服务 {{ $labels.instance }} 抓取失败"

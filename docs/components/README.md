@@ -122,7 +122,7 @@
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。可本地运行 [按异常类型有限重试示例](service-tools.md#按异常类型有限重试)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
 | [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出 |
-| [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警 |
+| [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警。**可运行** · [测试订单服务抓取失败告警](service-tools.md#测试订单服务抓取失败告警)。 |
 | [Alertmanager](observability-tools.md#alertmanager) | 告警路由、分组、抑制、静默与通知 |
 | [Grafana](observability-tools.md#grafana) | 数据源、Explore 和仪表盘 |
 | [Grafana Tempo](observability-tools.md#grafana-tempo) | OTLP 链路存储、Trace ID 与 TraceQL 查询 |

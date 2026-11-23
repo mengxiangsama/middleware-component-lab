@@ -304,6 +304,44 @@ first=in-stock third=in-stock
 
 ## Prometheus
 
-- **常用功能**：抓取指标端点，用 PromQL 查询时间序列，定期执行记录规则或告警规则。
-- **最小接入**：让应用暴露指标端点，例如 `/metrics`，向 `scrape_configs` 添加目标，配置实际路径。先查询 `up{job="demo"}` 确认抓取，再用 `rate(http_requests_total[5m])` 查看示例计数器的每秒速率。指标名和标签以端点输出为准。 [官方快速开始](https://prometheus.io/docs/prometheus/latest/getting_started/)
-- **验证**：确认正常抓取时 `up` 为 1，停止端点后观察其变为 0 和告警的等待时长。核对实例重启时的计数器重置，并检查标签基数。请求 ID、用户 ID 等高基数字段宜放在日志或追踪中。 [指标命名与标签](https://prometheus.io/docs/practices/naming/)
+仓库未在 Compose 或应用依赖中固定 Prometheus 服务端和指标客户端版本。本节实验选用官方镜像 `prom/prometheus:v3.16.0`，服务端和同镜像内的 `promtool` 均为 3.16.0。实验直接注入指标样本，无需应用侧客户端库。 [3.16.0 发布记录](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)
+
+| 3.16.0 主要功能 | 教程状态 |
+| --- | --- |
+| 指标抓取、目标发现与重标记 | 待补。应用暴露 `/metrics` 后，可在 `scrape_configs` 添加目标，用 `up{job="demo"}` 检查抓取。 [官方快速开始](https://prometheus.io/docs/prometheus/latest/getting_started/) |
+| PromQL 与 HTTP 查询 API | 待补。可用 `rate(http_requests_total[5m])` 查看计数器的每秒速率。 |
+| 记录规则 | 待补。定期计算表达式并将结果写成新的时间序列。 |
+| 告警规则与 Alertmanager 对接 | 待补。服务端评估告警状态，再将触发的告警交给 Alertmanager 路由。 |
+| 规则语法检查与告警单元测试 | 已有教程。[测试订单服务抓取失败告警](#测试订单服务抓取失败告警) |
+| 本地时序存储、远程读写与联邦 | 待补。按部署需求设置本地保留策略、对接远程存储或从其他 Prometheus 抓取选定序列。 |
+
+### 测试订单服务抓取失败告警
+
+**适用场景**　订单服务偶发一次抓取失败时，希望等失败持续两分钟再触发告警。上线规则前，用固定样本检查等待时间、恢复行为以及告警标签和文案。这里的 `up` 表示 Prometheus 对已配置目标的抓取结果。目标从服务发现中消失时，序列可能缺失，需要单独设计缺失检测。
+
+**接入步骤**　准备可运行 Linux 容器的 Docker。从仓库根目录使用 [规则文件](../../labs/prometheus-rules/alerts.yml)和[测试文件](../../labs/prometheus-rules/alerts.test.yml)。规则选择 `job="orders"` 的实例，`up == 0` 持续满足 `for: 2m` 后进入 firing。测试每分钟提供一个样本并评估一次规则。接入运行中的 3.16.0 服务端时，将规则文件加入 `prometheus.yml` 的 `rule_files`，并确认抓取任务名和评估间隔符合预期。
+
+**验证方法**　从仓库根目录运行以下命令。首次运行时 Docker 需要取得指定镜像。规则目录以只读方式挂载，容器内无需网络、Prometheus 服务进程或 Alertmanager。
+
+```bash
+docker run --rm --network none --entrypoint /bin/promtool \
+  --mount "type=bind,source=$PWD/labs/prometheus-rules,target=/lab,readonly" \
+  --workdir /lab prom/prometheus:v3.16.0 check rules alerts.yml
+
+docker run --rm --network none --entrypoint /bin/promtool \
+  --mount "type=bind,source=$PWD/labs/prometheus-rules,target=/lab,readonly" \
+  --workdir /lab prom/prometheus:v3.16.0 test rules alerts.test.yml
+```
+
+| 模拟时间 | `up` | 预期 |
+| --- | --- | --- |
+| 0m | 1 | 抓取正常，无 firing 告警 |
+| 1m、2m | 0 | 等待持续时间达标，无 firing 告警 |
+| 3m | 0 | 一个 firing 告警，匹配测试文件中的实例、级别和摘要 |
+| 4m | 1 | 抓取恢复，无 firing 告警 |
+
+`alert_rule_test` 断言 firing 告警。空列表表示当时没有 firing 告警，等待阶段的断言可发现提前触发。通知路由和接收端送达需在 Alertmanager 中另行验证。
+
+**实测记录**　2026-11-23 在 macOS arm64、Docker Engine 27.3.1 上使用 Linux arm64 镜像运行上述两条命令，实测命令增加了 `--pull=never` 以复用本机镜像。两条命令均以状态码 0 退出，语法检查显示 `SUCCESS: 1 rules found`，规则测试显示 `SUCCESS`，五个时间点的断言全部通过。
+
+**官方文档**　[3.16.0 告警规则](https://github.com/prometheus/prometheus/blob/v3.16.0/docs/configuration/alerting_rules.md) · [3.16.0 规则单元测试](https://github.com/prometheus/prometheus/blob/v3.16.0/docs/configuration/unit_testing_rules.md)
