@@ -74,3 +74,11 @@
 复用订单表 V1、V2 SQL，使用 Spring Boot 3.5.16、Flyway 11.8.2、H2 2.3.232 和 OpenJDK 17.0.16，启动真实应用上下文并验证同一个临时文件库。就绪时读到订单 `101`、金额 `19.90` 和状态 `PENDING`，重启仍只有 V1、V2 两条成功版本。改动已应用的 SQL 临时副本后校验失败，没有发出 `ApplicationReadyEvent`。运行 `./mvnw -B -f labs/flyway/pom.xml clean verify`，独立实验 3 项测试全部通过。
 
 同步根 README、组件目录、Spring Boot 和 Flyway 条目及学习路线。[教程与验证命令](../labs/flyway/README.md)。实验范围为单应用上下文和内嵌 H2，无 HTTP 服务，未验证 MySQL、PostgreSQL 或多副本滚动发布。
+
+## 2026-11-23 · Spring Cache 与 Caffeine 商品改价
+
+盘点 [`3c58f8e`](https://github.com/mengxiangsama/middleware-component-lab/commit/3c58f8ebbc33acf91d7cc10a76aa79af6a81f917) 的组件目录、实验和最近 30 条提交。比较 Caffeine 商品改价后的缓存失效、Quartz 使用 JDBC 保存触发器和 Prometheus 联调抓取。现有 Caffeine 教程只有原生异步刷新，近期两次提交已补 Actuator 和指标端点。本轮选 Caffeine，验证数据库事务何时影响本机缓存。[Spring 缓存示例](https://github.com/spring-guides/gs-caching) · [Quartz JDBC 配置](https://docs.spring.io/spring-boot/3.5/reference/io/quartz.html)
+
+在 OpenJDK 17.0.16、Spring Boot 3.5.16、Caffeine 3.2.4 和 H2 2.3.232 下执行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml clean verify`，3 项集成测试通过。首读回填后确实命中 Caffeine，提交后只清除商品 101 的旧缓存并读到 `24.90`，回滚时数据库和原缓存仍是 `19.90`。行为与 [Spring 事务感知缓存说明](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/cache/transaction/TransactionAwareCacheDecorator.html)一致。
+
+已同步根 README、组件目录和学习路线。[教程与运行方法](../labs/spring-cache-caffeine/README.md)。实验使用单 JVM 和内嵌 H2，跨实例失效和并发回填顺序未验证。

@@ -1113,7 +1113,7 @@ test ! -e "$lab_dir"
 - JVM 应用接入 Caffeine 后，用 `Caffeine.newBuilder()` 指定容量或权重上限与过期策略。使用 `Cache.get(key, loader)` 按需加载，或者用 `build(loader)` 创建 `LoadingCache`。显式失效用 `invalidate`。
 - 缓存属于单个 JVM，实例重启后会冷启动。各实例分别淘汰和失效，可能读到不同版本。测试并发加载、加载异常和容量淘汰，用可控 `Ticker` 检验过期行为。[Caffeine 加载方式](https://github.com/ben-manes/caffeine/wiki/Population) · [淘汰策略](https://github.com/ben-manes/caffeine/wiki/Eviction)
 
-仓库的 POM、容器配置和已有实验都未固定 Caffeine 版本。本例选用 JVM 内嵌库 `com.github.ben-manes.caffeine:caffeine:3.2.3`，无需独立服务端或远程客户端。功能范围见 [Caffeine 官方功能概览](https://github.com/ben-manes/caffeine/wiki)。
+原生异步刷新示例使用 `com.github.ben-manes.caffeine:caffeine:3.2.3`。Spring Cache 组合实验由 Spring Boot 3.5.16 管理依赖，使用 Caffeine 3.2.4。两者都使用 JVM 内嵌缓存。[Caffeine 官方功能概览](https://github.com/ben-manes/caffeine/wiki)
 
 | 功能 | 状态 |
 | --- | --- |
@@ -1121,6 +1121,7 @@ test ! -e "$lab_dir"
 | 按容量或权重淘汰 | 待补 |
 | 按写入或访问时间过期 | 待补 |
 | 读取触发的异步刷新 | 已有教程 · [热点商品详情异步刷新](#热点商品详情异步刷新) |
+| 事务提交后按商品 ID 失效 | 联调实测 · [搭配 Spring Cache 处理商品改价](#搭配-spring-cache-处理商品改价) |
 | 弱引用键、弱引用或软引用值 | 待补 |
 | 移除与淘汰通知 | 待补 |
 | 命中、加载和淘汰统计 | 待补 |
@@ -1211,6 +1212,14 @@ after refresh: price-v2
 - [Caffeine 官方刷新文档](https://github.com/ben-manes/caffeine/wiki/Refresh)
 - [Caffeine v3.2.3 配置 API 源码](https://github.com/ben-manes/caffeine/blob/v3.2.3/caffeine/src/main/java/com/github/benmanes/caffeine/cache/Caffeine.java)
 - [Caffeine v3.2.3 发布记录](https://github.com/ben-manes/caffeine/releases/tag/v3.2.3)
+
+### 搭配 Spring Cache 处理商品改价
+
+商品详情走 [Spring Cache](#spring-cache) 和 Caffeine 读取缓存，数据库负责保存价格。改价事务提交后清掉对应商品键，再访问时查库并回填。用 [商品改价缓存实验](../../labs/spring-cache-caffeine/README.md) 核对命中、单键失效和回滚。
+
+## Spring Cache
+
+Spring Cache 是 Spring Framework 的方法级缓存抽象。应用用 `@EnableCaching` 启用，再接一个具体的 `CacheManager`。读方法可用 `@Cacheable`，写成功后用 `@CacheEvict` 清除相同的键。需要本机热点缓存时可选 Caffeine，接入步骤见 [商品改价组合](#搭配-spring-cache-处理商品改价)。[Spring Cache 注解说明](https://docs.spring.io/spring-framework/reference/6.2/integration/cache/annotations.html)
 
 ## ClickHouse
 

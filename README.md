@@ -18,6 +18,7 @@
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
+| 商品改价后怎样避免继续读到本机旧缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md)，验证提交后单键失效与事务回滚。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
@@ -25,6 +26,8 @@
 Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `sh labs/helm-values-schema/verify.sh`，无需 Kubernetes 集群。
 
 在仓库根目录运行 `./mvnw -B -f labs/flyway/pom.xml -Dtest=OrderStartupMigrationTest test` 可实测 Spring Boot 启动迁移，使用内嵌 H2。
+
+运行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml test` 可联调商品缓存与数据库事务，使用内嵌 H2。
 
 在仓库根目录运行 `sh labs/fluent-bit-java-multiline/verify.sh` 可验证多行采集，需要 Docker、Shell 和 `jq`。运行 `sh labs/fluent-bit-java-multiline/verify-loki.sh` 可联调 Loki 写入与查询，另需 Docker Compose 和 `curl`。
 

@@ -32,6 +32,8 @@
 
 用同一批测试商品分别练习 [Redis](components/search-cache.md#redis) 的按键读取和 [Elasticsearch](components/search-cache.md#elasticsearch) 的关键词检索。有进程内热点数据时，再比较 [Caffeine](components/search-cache.md#caffeine) 和共享缓存的更新方式。
 
+涉及商品价格时，先运行 [Spring Cache + Caffeine 改价实验](../labs/spring-cache-caffeine/README.md)，核对提交后只清除对应商品、回滚时原缓存仍可用。
+
 先查询商品详情和列表，修改源数据中的商品名称，再分别触发缓存失效和索引更新。记录两条读路径何时返回新值，并检查缓存被清理后首次读取是否能从数据源补齐。分别为详情和搜索结果定义可接受的陈旧时间。
 
 ## 任务调度与补跑
