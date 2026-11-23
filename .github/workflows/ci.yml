@@ -20,3 +20,10 @@ jobs:
           cache: maven
       - name: Verify
         run: ./mvnw --batch-mode verify
+
+  prometheus-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Prometheus alert rules
+        run: sh labs/prometheus-rules/verify.sh

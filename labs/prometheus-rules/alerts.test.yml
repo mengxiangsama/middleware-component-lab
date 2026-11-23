@@ -2,10 +2,15 @@ rule_files:
   - alerts.yml
 evaluation_interval: 1m
 tests:
-  - interval: 1m
+  - name: sustained failure fires only for the matching instance
+    interval: 1m
     input_series:
       - series: 'up{job="orders",instance="orders:8080"}'
         values: '1 0 0 0 1'
+      - series: 'up{job="orders",instance="orders-2:8080"}'
+        values: '1x4'
+      - series: 'up{job="inventory",instance="inventory:8080"}'
+        values: '0x4'
     alert_rule_test:
       - eval_time: 0m
         alertname: OrdersTargetDown
@@ -26,5 +31,60 @@ tests:
             exp_annotations:
               summary: "订单服务 orders:8080 抓取失败"
       - eval_time: 4m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+    promql_expr_test:
+      - expr: ALERTS{alertname="OrdersTargetDown"}
+        eval_time: 2m
+        exp_samples:
+          - labels: 'ALERTS{alertname="OrdersTargetDown",alertstate="pending",instance="orders:8080",job="orders",severity="page"}'
+            value: 1
+      - expr: ALERTS{alertname="OrdersTargetDown"}
+        eval_time: 3m
+        exp_samples:
+          - labels: 'ALERTS{alertname="OrdersTargetDown",alertstate="firing",instance="orders:8080",job="orders",severity="page"}'
+            value: 1
+      - expr: ALERTS{alertname="OrdersTargetDown"}
+        eval_time: 4m
+        exp_samples: []
+
+  - name: brief failure does not fire
+    interval: 1m
+    input_series:
+      - series: 'up{job="orders",instance="orders:8080"}'
+        values: '1 0 1 1 1'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+
+  - name: recovery resets the waiting period
+    interval: 1m
+    input_series:
+      - series: 'up{job="orders",instance="orders:8080"}'
+        values: '1 0 1 0 0 0 1'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: OrdersTargetDown
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: OrdersTargetDown
+        exp_alerts:
+          - exp_labels:
+              job: orders
+              instance: "orders:8080"
+              severity: page
+            exp_annotations:
+              summary: "订单服务 orders:8080 抓取失败"
+      - eval_time: 6m
         alertname: OrdersTargetDown
         exp_alerts: []

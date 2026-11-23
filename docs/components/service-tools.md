@@ -345,3 +345,5 @@ docker run --rm --network none --entrypoint /bin/promtool \
 **实测记录**　2026-11-23 在 macOS arm64、Docker Engine 27.3.1 上使用 Linux arm64 镜像运行上述两条命令，实测命令增加了 `--pull=never` 以复用本机镜像。两条命令均以状态码 0 退出，语法检查显示 `SUCCESS: 1 rules found`，规则测试显示 `SUCCESS`，五个时间点的断言全部通过。
 
 **官方文档**　[3.16.0 告警规则](https://github.com/prometheus/prometheus/blob/v3.16.0/docs/configuration/alerting_rules.md) · [3.16.0 规则单元测试](https://github.com/prometheus/prometheus/blob/v3.16.0/docs/configuration/unit_testing_rules.md)
+
+**扩展验证**　[完整实验文档](../../labs/prometheus-rules/README.md)补充了短暂故障不触发、中途恢复后重新等待，以及健康实例和其他 job 的筛选对照。测试还查询 `ALERTS`，明确断言 `2m` pending、`3m` firing、`4m` 解除。运行 `sh labs/prometheus-rules/verify.sh` 可一次完成版本输出、规则检查和三组测试，CI 使用同一入口。
