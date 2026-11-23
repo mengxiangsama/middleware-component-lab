@@ -24,7 +24,7 @@
 
 | 组件 | 常见用法 |
 | --- | --- |
-| [Netty](../../labs/netty-websocket/README.md) | Java 异步网络编程、协议编解码及 WebSocket 长连接。**可运行** · 建立 WebSocket 连接并回显文本。 |
+| [Netty](network-programming.md#netty) | Java 异步网络编程、协议编解码及长连接管理。**可运行** · [WebSocket 回显](../../labs/netty-websocket/README.md)、[读空闲时回收长连接](network-programming.md#读空闲时回收长连接)。 |
 
 ## 搜索、缓存与分析
 
