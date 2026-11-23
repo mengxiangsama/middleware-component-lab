@@ -20,9 +20,46 @@
 | 顺序消息 | 已有教程 | Remoting 客户端将同一业务键路由到同一队列，消费端在队列内串行处理。 [订单顺序消息](#订单顺序消息) |
 | 延时或定时消息 | 已有教程 | 到期后触发订单支付状态检查。 [订单定时消息](#订单定时消息) |
 | 事务消息 | 已有教程 | 半消息、本地事务和回查协调订单落库与消息发布。 [订单事务消息](#订单事务消息) |
-| 消息过滤 | 待补 | 在 Broker 按 Tag 或在启用属性过滤后按 SQL92 表达式匹配订阅。 [消息过滤](https://rocketmq.apache.org/docs/featureBehavior/07messagefilter/) |
+| Tag 订阅过滤 | 已有教程 | 按消息 Tag 精确匹配，可订阅一个 Tag、多个 Tag 或全部消息。 [订单事件 Tag 订阅过滤](#订单事件-tag-订阅过滤) |
+| SQL92 属性过滤 | 待补 | 启用 Broker 属性过滤后，可用 SQL92 表达式匹配消息属性。 [消息过滤](https://rocketmq.apache.org/docs/featureBehavior/07messagefilter/) |
 | 消费重试与死信 | 待补 | 根据消费方式配置重试次数和间隔，检查重试耗尽后的死信。 [消费重试](https://rocketmq.apache.org/docs/featureBehavior/10consumerretrypolicy/) |
 | 消费进度与重放 | 待补 | 在仍保留的消息范围内重置消费位点，用独立消费组验证重放。 [消费进度](https://rocketmq.apache.org/docs/featureBehavior/09consumerprogress/) |
+
+### 订单事件 Tag 订阅过滤
+
+**适用场景**　支付、发货和退款事件共用一个订单主题时，财务服务只需接收支付和退款事件。生产端为每条消息设置一个稳定的事件类型 Tag，Broker 按订阅表达式过滤。Tag 适合按单个分类字段精确匹配。需要组合多个业务属性时，可使用 SQL92 属性过滤。
+
+**接入步骤**　从仓库根目录执行。使用 NameServer 和 Broker 5.5.0、Java Remoting 客户端 5.5.1。需 Java 17+、Docker Compose，以及空闲的本地端口 9876、10909、10911 和 10912。选用尚未使用的 Compose 项目名，本例用 `middleware-daily-tags`。
+
+```bash
+export ROCKETMQ_TAG_PROJECT=middleware-daily-tags
+docker compose -p "$ROCKETMQ_TAG_PROJECT" up -d
+docker compose -p "$ROCKETMQ_TAG_PROJECT" ps -a
+```
+
+确认 Broker 为 `healthy`，`topic-init` 以状态码 0 退出。创建普通消息主题，使用一个读队列和一个写队列，便于核对位点。重跑时生成新的主题，测试会据此生成新消费组。
+
+```bash
+export ROCKETMQ_TAG_TOPIC="order-tag-$(date +%s)"
+docker compose -p "$ROCKETMQ_TAG_PROJECT" exec -T broker sh mqadmin updateTopic \
+  -n namesrv:9876 -b 127.0.0.1:10911 -t "$ROCKETMQ_TAG_TOPIC" \
+  -r 1 -w 1 -a +message.type=NORMAL
+```
+
+[实验代码](../../src/test/java/io/github/rocketmqtx/OrderTagFilterLabTest.java)用 `new Message(topic, tag, body)` 设置 Tag 并发送。全量对照组用 `subscribe(topic, "*")`，财务组用 `subscribe(topic, "PAID || REFUNDED")`。单个 Tag 可直接用 `subscribe(topic, "PAID")`。同一消费组内所有实例应使用一致的主题和表达式，需要不同筛选条件的服务使用独立消费组。 [RocketMQ 5.x 消息过滤与订阅一致性](https://rocketmq.apache.org/docs/featureBehavior/07messagefilter/) · [5.5.1 Remoting Tag 示例](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.1/example/src/main/java/org/apache/rocketmq/example/filter/TagFilterConsumer.java) · [5.5.0 updateTopic 参数](https://raw.githubusercontent.com/apache/rocketmq/refs/tags/rocketmq-all-5.5.0/tools/src/main/java/org/apache/rocketmq/tools/command/topic/UpdateTopicSubCommand.java)
+
+**验证方法**　创建主题应返回 `success`。在保留主题变量的终端执行测试，确认运行了 1 项测试且跳过数为 0。
+
+```bash
+./mvnw -B -Dmaven.repo.local=target/maven-repository \
+  -Drocketmq.log.root=target/rocketmq-logs -Dtest=OrderTagFilterLabTest test
+```
+
+预期三条消息均返回 `SEND_OK`。全量组收到 `PAID`、`SHIPPED`、`REFUNDED`，财务组只收到 `PAID` 和 `REFUNDED`。测试对照两个消费回调的 Tag 集合，并在财务组收到两个匹配事件后继续观察 2 秒，检查是否出现额外投递。
+
+2026-11-23 实测环境为 macOS 26.5 arm64、OpenJDK 17.0.16、Maven 3.9.11、Docker Engine 27.3.1 和 Compose 2.30.3。按上方命令使用独立项目 `middleware-daily-tags-87apx3pr`，创建主题 `order-tag-1795405482` 并执行测试。Broker 健康，`topic-init` 以状态码 0 退出，主题创建成功，1 项测试通过且无跳过。三次发送均返回 `SEND_OK`，全量组收到位点 0、1、2 的事件，财务组收到位点 0 的 `PAID` 和位点 2 的 `REFUNDED`，观察窗口内没有额外投递。
+
+完成后用 `docker compose -p "$ROCKETMQ_TAG_PROJECT" down -v` 清理本教程专用项目的容器、网络和数据卷。
 
 ### 订单顺序消息
 
