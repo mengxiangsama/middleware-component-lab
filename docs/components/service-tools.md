@@ -18,6 +18,17 @@
 
 ## Resilience4j
 
+Resilience4j 是嵌入 JVM 的调用侧库，无独立服务端或容器。仓库根 POM、Spring Modulith 实验和 Compose 均未配置 Resilience4j 运行依赖或镜像。本节选用 Resilience4j 2.3.0 和 Java 17。 [官方 2.3.0 发布记录](https://github.com/resilience4j/resilience4j/releases/tag/v2.3.0) · [2.3.0 模块与示例](https://github.com/resilience4j/resilience4j/tree/v2.3.0)
+
+| 主要功能 | 状态 | 用途 |
+| --- | --- | --- |
+| Retry 重试 | 已有教程 | [按异常类型有限重试](#按异常类型有限重试) |
+| CircuitBreaker 熔断 | 待补 | 按失败率或慢调用率阻断调用，半开时试探恢复。 |
+| RateLimiter 限流 | 待补 | 按周期分配调用许可。 |
+| Bulkhead 并发隔离 | 待补 | 按信号量或有界线程池限制并发。 |
+| TimeLimiter 异步超时 | 待补 | 为异步结果设置等待上限。 |
+| Cache 缓存装饰器 | 待补 | 用 JCache 缓存函数结果。 |
+
 - **常用功能**。Java 调用侧可用 CircuitBreaker 按失败率或慢调用率熔断，用 Retry 配置有限重试，用 Bulkhead 限制并发，用 TimeLimiter 给异步调用设置等待上限。各实例按名称管理。单进程内的熔断状态和并发限制各自计算。 [CircuitBreaker](https://resilience4j.readme.io/docs/circuitbreaker) · [Retry](https://resilience4j.readme.io/docs/retry) · [Bulkhead](https://resilience4j.readme.io/docs/bulkhead) · [TimeLimiter](https://resilience4j.readme.io/docs/timeout)
 - **最小接入**。Spring Boot 3 项目可引入 `resilience4j-spring-boot3`、Actuator 和 Spring AOP。WebFlux 项目按实际使用情况加入 Reactor 模块。从另一个 Bean 调用被代理的 `@CircuitBreaker(name = "inventory")` 方法，用下方的同名实例先验证熔断。Java Core API 可用 `CircuitBreakerRegistry` 获取实例并包裹调用。 [Spring Boot 接入](https://resilience4j.readme.io/docs/getting-started-3) · [Java API](https://resilience4j.readme.io/docs/circuitbreaker)
 
@@ -35,6 +46,98 @@ resilience4j:
 
 - **运行边界**。熔断关注统计与阻断，限制并发要单独使用 Bulkhead。Retry 的 `maxAttempts` 包含首次调用。核对 HTTP 客户端是否也会重试，超时后还要观察实际 I/O 或异步任务是否停止。
 - **验证**。让测试调用连续抛出被计入失败率的异常，记录实际下游请求数、熔断是否打开和后续请求是否被拒绝。恢复接口后等待开路窗口，再发请求验证半开试探和恢复。若启用重试，单独记录每次业务调用到达下游的次数。 [事件与指标](https://resilience4j.readme.io/docs/getting-started-3)
+
+### 按异常类型有限重试
+
+**适用场景**。库存查询遇到暂时不可用时，可以在调用方的总超时预算内少量重试。只重试明确可恢复的故障，参数错误直接返回。若用于写操作，先确保有业务幂等保障，并核对 HTTP 客户端自身的重试次数，避免两层重试放大流量。
+
+**接入步骤**。使用 JDK 17、curl 和可访问 Maven Central 的网络。在同一个 Bash 会话中执行以下命令，依赖与 Java 源文件放在独立临时目录，退出会话时清理。实际应用可直接声明 `io.github.resilience4j:resilience4j-retry:2.3.0`，由构建工具解析传递依赖。示例使用 SLF4J NOP 绑定，输出来自示例自身。
+
+```bash
+retry_demo_dir=$(mktemp -d)
+trap 'rm -rf -- "$retry_demo_dir"' EXIT
+
+(
+  set -e
+  cd "$retry_demo_dir"
+  central=https://repo1.maven.org/maven2
+  for module in retry core; do
+    jar="resilience4j-${module}-2.3.0.jar"
+    curl -fsSL --retry 3 -o "$jar" "$central/io/github/resilience4j/resilience4j-$module/2.3.0/$jar"
+  done
+  for module in api nop; do
+    jar="slf4j-${module}-1.7.30.jar"
+    curl -fsSL --retry 3 -o "$jar" "$central/org/slf4j/slf4j-$module/1.7.30/$jar"
+  done
+)
+```
+
+将下面的代码保存为 `$retry_demo_dir/RetryDemo.java`。通过 `retryExceptions` 限定可重试异常，`maxAttempts(3)` 把首次调用也计入上限。同步调用会在两次尝试之间等待，本例配置固定间隔 50 毫秒。
+
+```java
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
+
+public class RetryDemo {
+    static class InventoryUnavailable extends RuntimeException {}
+
+    public static void main(String[] args) {
+        RetryConfig config = RetryConfig.custom()
+                .maxAttempts(3)
+                .waitDuration(Duration.ofMillis(50))
+                .retryExceptions(InventoryUnavailable.class)
+                .build();
+        Retry retry = Retry.of("inventory", config);
+
+        check(retry, "recover", attempt -> {
+            if (attempt < 3) {
+                throw new InventoryUnavailable();
+            }
+            return "in-stock";
+        }, 3, "in-stock");
+        check(retry, "exhaust", attempt -> {
+            throw new InventoryUnavailable();
+        }, 3, "InventoryUnavailable");
+        check(retry, "invalid", attempt -> {
+            throw new IllegalArgumentException("missing SKU");
+        }, 1, "IllegalArgumentException");
+    }
+
+    private static void check(Retry retry, String scenario, IntFunction<String> inventory,
+                              int expectedAttempts, String expectedOutcome) {
+        AtomicInteger attempts = new AtomicInteger();
+        String outcome;
+        try {
+            outcome = retry.executeSupplier(() -> inventory.apply(attempts.incrementAndGet()));
+        } catch (InventoryUnavailable | IllegalArgumentException e) {
+            outcome = e.getClass().getSimpleName();
+        }
+        if (attempts.get() != expectedAttempts || !expectedOutcome.equals(outcome)) {
+            throw new AssertionError(scenario + ": attempts=" + attempts + ", outcome=" + outcome);
+        }
+        System.out.printf("%s attempts=%d outcome=%s%n", scenario, attempts.get(), outcome);
+    }
+}
+```
+
+**验证**。运行 Java 源文件。退出码应为 0，三个场景分别显示第三次调用成功、三次调用后将最后的异常交回调用方、参数错误在第一次调用时立即返回。示例会对调用次数和结果进行断言。
+
+```bash
+(cd "$retry_demo_dir" && java --class-path '*' RetryDemo.java)
+```
+
+2026-11-23 在 macOS 26.5（arm64）、Microsoft OpenJDK 17.0.16 上，按上述命令下载依赖并运行，退出码为 0，实际输出如下。
+
+```text
+recover attempts=3 outcome=in-stock
+exhaust attempts=3 outcome=InventoryUnavailable
+invalid attempts=1 outcome=IllegalArgumentException
+```
+
+**官方文档**。 [Retry 配置与 Java 用法](https://resilience4j.readme.io/docs/retry) · [2.3.0 RetryConfig 源码](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-retry/src/main/java/io/github/resilience4j/retry/RetryConfig.java)
 
 ## Apache Seata
 
