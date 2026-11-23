@@ -21,7 +21,7 @@
 
 | 功能 | 教程状态 | 用法 |
 | --- | --- | --- |
-| 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
+| 字符串与计数 | 已有教程 | [用 `SET`、`GET` 和 `INCR` 累计页面访问次数](#字符串页面访问计数)。 |
 | 哈希 | 已有教程 | [按 SKU 保存和更新购物车商品数量](#哈希购物车数量更新)。 |
 | 列表 | 已有教程 | [按入队顺序领取任务、确认成功并手动重入队](#列表任务领取与确认)。 |
 | 集合 | 已有教程 | [按用户 ID 去重、判断成员关系并查询名单交集](#集合成员与交集)。 |
@@ -41,6 +41,48 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 字符串页面访问计数
+
+**适用场景**　多个应用实例为同一商品页面累计访问次数。每次计入一次访问时执行一条 `INCR`，Redis 原子完成读取、加一和写回，避免客户端分别执行 `GET` 和 `SET` 时覆盖其他连接的增量。同一请求重复执行会再次加一，需要按请求去重时应另行记录请求 ID。计数值须为十进制 64 位有符号整数。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 中的服务端与同版本的 `redis-cli`，容器不映射宿主机端口。若服务仍在启动，重试 `PING` 直至返回 `PONG`。
+
+```bash
+redis_counter_lab=$(docker run -d --rm --network none redis:7.4.2)
+docker exec "$redis_counter_lab" redis-server --version
+docker exec "$redis_counter_lab" redis-cli --version
+docker exec "$redis_counter_lab" redis-cli PING
+```
+
+**验证方法**　每条 `redis-cli` 命令都打开一个独立连接。新页面的计数键不存在，首次 `INCR` 按初值 0 计算。已有历史计数的页面可在启用计数前用 `SET` 写入基数。普通 `SET` 会覆盖已有值，应避免在计数期间用它初始化同一个键。
+
+```bash
+docker exec "$redis_counter_lab" redis-cli INCR lab:views:sku42
+docker exec "$redis_counter_lab" redis-cli INCR lab:views:sku42
+docker exec "$redis_counter_lab" redis-cli GET lab:views:sku42
+docker exec "$redis_counter_lab" redis-cli SET lab:views:sku43 10
+docker exec "$redis_counter_lab" redis-cli INCR lab:views:sku43
+docker exec "$redis_counter_lab" redis-cli GET lab:views:sku43
+```
+
+前两次自增依次返回 `1` 和 `2`，读取结果为 `2`。初始化历史计数返回 `OK`，再自增和读取均得到 `11`。
+
+```bash
+docker exec "$redis_counter_lab" redis-cli SET lab:views:invalid unknown
+docker exec "$redis_counter_lab" redis-cli INCR lab:views:invalid
+docker exec "$redis_counter_lab" redis-cli GET lab:views:invalid
+docker exec "$redis_counter_lab" redis-cli SET lab:views:max 9223372036854775807
+docker exec "$redis_counter_lab" redis-cli INCR lab:views:max
+docker exec "$redis_counter_lab" redis-cli GET lab:views:max
+docker stop "$redis_counter_lab"
+```
+
+两次 `SET` 均返回 `OK`。非整数字符串和整数溢出分别触发 `ERR value is not an integer or out of range` 和 `ERR increment or decrement would overflow`，随后的读取仍分别得到 `unknown` 和 `9223372036854775807`。停止实验容器后，Docker 通过 `--rm` 清理容器和匿名卷。
+
+2026-11-23 在 macOS 26.5 arm64、Docker Engine 27.3.1 和 Bash 3.2.57 上运行了以上三段命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。新键两次自增返回 `1` 和 `2`，读取为 `2`。历史计数从 `10` 增至 `11`，读取为 `11`。两种边界输入均返回上述错误，随后读取的值与写入值一致。用 `docker container inspect` 和 `docker volume inspect` 确认实验容器与匿名卷已删除。
+
+**官方文档**　以下三个命令自 Redis 1.0.0 起可用，示例仅使用 Redis 7.4.2 支持的基本语法。 [SET](https://redis.io/docs/latest/commands/set/) · [GET](https://redis.io/docs/latest/commands/get/) · [INCR](https://redis.io/docs/latest/commands/incr/)
 
 ### 列表任务领取与确认
 
