@@ -30,7 +30,7 @@
 | 地理空间索引 | 已有教程 | [按距离查找附近门店并更新门店坐标](#地理空间索引查询附近门店)。 |
 | HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
-| 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
+| 内存淘汰 | 已有教程 | [对比写入被拒与带 TTL 的缓存键被淘汰](#缓存内存上限与键淘汰)。 |
 | Streams 消费组确认与接管 | 已有教程 | [跟踪已投递消息并接管退出消费者留下的消息](#streams-消费组确认与接管)。 |
 | Streams 历史读取与裁剪 | 已有教程 | [按 ID 分页读取历史并验证裁剪边界](#streams-历史读取与裁剪)。 |
 | 发布订阅 | 已有教程 | [广播缓存失效通知并验证断线期间的消息不会重放](#发布订阅与缓存失效通知)。 |
@@ -566,6 +566,51 @@ redis_ttl_cli TTL cache:product:1001
 2026-11-20 在 macOS 26.5 arm64、Docker Engine 27.3.1 上用 Bash 执行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `"PONG"`。三次 `TTL` 查询依次返回 60、-1 和 60，保留 TTL 的更新后读到 `"v2"`。缩短 TTL 后等待 3 秒，读取和条件更新均返回 `null`，TTL 返回 -2。停止后确认容器已自动删除。
 
 **官方文档**　`SET` 文档列出 `EX`、`XX` 和 `KEEPTTL` 的语法，其中 `KEEPTTL` 自 6.0.0 起可用。7.4.2 版过期测试包含 TTL 和过期行为的断言。 [SET](https://redis.io/docs/latest/commands/set/) · [TTL](https://redis.io/docs/latest/commands/ttl/) · [EXPIRE](https://redis.io/docs/latest/commands/expire/) · [GET](https://redis.io/docs/latest/commands/get/) · [7.4.2 版过期测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/expire.tcl)
+
+### 缓存内存上限与键淘汰
+
+**适用场景**　商品详情可以从源库重建，缓存达到内存上限时可以腾出空间继续写入。对缓存键都设置 TTL 时，可用 `volatile-lru` 从带 TTL 的键中近似按最近最少使用淘汰。无 TTL 的键不参与这种淘汰。如果没有可淘汰的键，仍可能拒绝写入。需要保留现有键并让应用处理写入失败时，可以选择 `noeviction`。`maxmemory` 是 Redis 的淘汰阈值，给容器或主机分配内存时还要为 Redis 的其他开销留出余量。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。用 `redis:7.4.2` 启动独立容器，使用镜像内同版本的服务端和 `redis-cli`。重试 `PING` 直到返回 `PONG`。本例需要执行 `CONFIG SET` 的权限，配置即时生效，仅用于这个实验实例。
+
+```bash
+redis_eviction_lab=$(docker run -d --rm --network none redis:7.4.2)
+redis_eviction_cli() { docker exec "$redis_eviction_lab" redis-cli "$@"; }
+docker exec "$redis_eviction_lab" redis-server --version
+redis_eviction_cli --version
+redis_eviction_cli PING
+```
+
+**验证方法**　先写入无 TTL 的店铺标记以及带一小时 TTL 的商品缓存。用 `SETRANGE` 把商品缓存扩到 4 MiB，返回的新长度为 `4194304`。随后将上限降到 3 MiB，以便在同一份数据上对比两种策略。
+
+```bash
+redis_eviction_cli SET lab:shop:region east
+redis_eviction_cli SET lab:cache:sku42 x EX 3600
+redis_eviction_cli SETRANGE lab:cache:sku42 4194303 x
+redis_eviction_cli CONFIG SET maxmemory-policy noeviction maxmemory 3145728
+redis_eviction_cli SET lab:cache:sku43 fresh EX 3600
+redis_eviction_cli TTL lab:cache:sku42
+redis_eviction_cli TTL lab:cache:sku43
+redis_eviction_cli INFO stats | grep -E '^(evicted_keys|expired_keys):'
+```
+
+`noeviction` 下写入返回 `OOM`。旧缓存的 TTL 为正数，新缓存的 TTL 查询返回 `-2`，表示键不存在。淘汰和过期计数均为 `0`。
+
+```bash
+redis_eviction_cli CONFIG SET maxmemory-policy volatile-lru
+redis_eviction_cli SET lab:cache:sku43 fresh EX 3600
+redis_eviction_cli TTL lab:cache:sku42
+redis_eviction_cli GET lab:cache:sku43
+redis_eviction_cli GET lab:shop:region
+redis_eviction_cli INFO stats | grep -E '^(evicted_keys|expired_keys):'
+docker stop "$redis_eviction_lab"
+```
+
+切换策略后写入返回 `OK`，旧缓存是唯一带 TTL 的淘汰候选，它的 TTL 查询现在返回 `-2`。新缓存值为 `fresh`，无 TTL 的店铺标记仍为 `east`。`evicted_keys` 增至 `1`，`expired_keys` 仍为 `0`，说明旧键因内存压力被移除。停止容器后 Docker 会自动清理容器和匿名卷。
+
+2026-11-23 在 macOS 26.5 arm64、Docker Engine 27.3.1 和 Bash 3.2.57 上执行了以上三段命令。服务端和客户端均报告 7.4.2，`PING` 返回 `PONG`。第一次写入得到 `OOM`，旧缓存 TTL 为 `3600`，新缓存键不存在，淘汰和过期计数均为 `0`。切换策略后写入成功，旧缓存的 TTL 查询为 `-2`，新缓存和店铺标记分别读到 `fresh` 和 `east`，淘汰计数为 `1`，过期计数为 `0`。用 `docker container inspect` 和 `docker volume inspect` 确认实验容器和匿名卷均已清理。
+
+**官方文档**　策略以 [Redis 7.4.2 配置文件](https://raw.githubusercontent.com/redis/redis/7.4.2/redis.conf)为准，选键和监测方式见[键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)。示例中的命令参数见 [SET](https://redis.io/docs/latest/commands/set/)、[SETRANGE](https://redis.io/docs/latest/commands/setrange/)、[CONFIG SET](https://redis.io/docs/latest/commands/config-set/)、[TTL](https://redis.io/docs/latest/commands/ttl/) 和 [INFO](https://redis.io/docs/latest/commands/info/)。
 
 ### Streams 消费组确认与接管
 
