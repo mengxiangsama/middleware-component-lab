@@ -1,0 +1,5 @@
+apiVersion: v2
+name: orders
+description: Validate deployment overrides with a Helm values schema
+type: application
+version: 0.1.0

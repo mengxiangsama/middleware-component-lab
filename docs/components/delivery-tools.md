@@ -18,6 +18,10 @@ helm history demo -n helm-lab
 - **故障演练**。安装成功后，在测试环境将 `image.repository` 改为无法拉取的仓库并带 `--wait --timeout 60s` 升级。检查 Pod 事件和 `helm history demo -n helm-lab`。如果历史中健康版本号为 `1`，执行 `helm rollback demo 1 -n helm-lab --wait --timeout 2m`，确认 Pod 恢复就绪且镜像回到预期版本。[历史](https://helm.sh/docs/helm/helm_history/) · [回滚](https://helm.sh/docs/helm/helm_rollback/)
 - **CRD 与 Hook**。`crds/` 中的定义在安装时优先注册，已有 CRD 会跳过。CRD 更新和删除需要独立处理。Hook 可以放置 `pre-upgrade` 等 Job，配置 `helm.sh/hook-delete-policy` 或 Job TTL 清理资源。回滚 release 后仍需检查 Hook 执行结果和它写入的外部数据。[CRD](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/) · [Chart Hook](https://helm.sh/docs/topics/charts_hooks/)
 
+### 用 Schema 校验环境覆盖参数
+
+为 Chart 添加 `values.schema.json`，用发布时的环境覆盖文件执行 `helm lint --strict` 和 `helm template`，检查合并后的参数。运行 [Helm Schema 实验](../../labs/helm-values-schema/README.md)，核对合法覆盖后的副本数和 Service 端口，并复现类型错误、端口越界和键名拼错。实验只需要 Helm 4.3.2 和 Shell。
+
 ## Harbor
 
 Harbor 按项目管理镜像和权限。先在 Harbor 界面创建私有测试项目 `lab`，将 `registry.example.invalid` 换成自己的测试地址，使用允许推送该项目的账号。以下示例假定已有本地镜像 `demo:local`。[Docker 客户端推拉镜像](https://goharbor.io/docs/2.14.0/working-with-projects/working-with-images/pulling-pushing-images/)

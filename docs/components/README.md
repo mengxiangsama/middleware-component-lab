@@ -101,7 +101,7 @@
 
 | 组件 | 常见用法 |
 | --- | --- |
-| [Helm](delivery-tools.md#helm) | Chart 渲染、values、安装、升级与回滚 |
+| [Helm](delivery-tools.md#helm) | Chart 渲染、values、安装、升级与回滚。**可运行** · [用 Schema 校验环境覆盖参数](delivery-tools.md#用-schema-校验环境覆盖参数)。 |
 | [Harbor](delivery-tools.md#harbor) | 镜像推拉、Digest、机器人账号与扫描 |
 | [Argo CD](delivery-tools.md#argo-cd) | Git 同步、资源健康、漂移和自动同步 |
 

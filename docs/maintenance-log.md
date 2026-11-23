@@ -26,3 +26,19 @@
 | Shell 语法及 Git 差异检查 | `sh -n labs/prometheus-rules/verify.sh`、`git diff --check` 均退出 0 |
 
 **验证边界**　规则实验使用合成指标样本，并由真实 `promtool` 求值；未验证真实抓取、服务发现和 Alertmanager 通知。本地只运行了 arm64 镜像，远端 CI 的结果以该提交的 Actions 记录为准。提交链接在本轮维护回复中记录。
+
+## 2026-11-23 · Helm 环境覆盖参数校验
+
+盘点 [`05bb714`](https://github.com/mengxiangsama/middleware-component-lab/commit/05bb7140a785da902b83dd7fe4e63d79cc14f4d8) 的组件目录、现有实验和最近 30 条提交。近期已补 Redis、RocketMQ、Netty、Spring Modulith 和 Prometheus 等主题。交付分册对 Helm 只有通用操作说明，缺少可直接运行的参数校验示例。
+
+| 组件 | 调研到的实用缺口 | 取舍 |
+| --- | --- | --- |
+| Helm | 合并环境覆盖值后提前检查类型、范围和拼写 | 本轮选择，只需真实 Helm CLI 即可复现成功与失败 |
+| Fluent Bit | 合并相邻的 Java 多行异常并核对事件边界 | 手册已有多行采集说明，可单独补一轮输入到输出的实测。[官方示例](https://docs.fluentbit.io/manual/data-pipeline/parsers/multiline-parsing#java) |
+| RabbitMQ | 消费者拒绝后核对死信路由和 `x-death` | 需要启动 Broker 并联调实际投递。[官方死信文档](https://www.rabbitmq.com/docs/dlx) |
+
+新增 [Helm Schema 实验](../labs/helm-values-schema/README.md)，更新组件目录、交付手册和学习路线。Schema 规则及合并次序对照了 [Helm 官方文档](https://helm.sh/docs/topics/charts/#schema-files)与 [v4.3.2 上游测试 Chart](https://github.com/helm/helm/blob/v4.3.2/pkg/cmd/testdata/testcharts/chart-with-schema/values.schema.json)。
+
+在 macOS arm64 上运行经官方 SHA-256 校验的 Helm 4.3.2。执行 `sh labs/helm-values-schema/verify.sh`，默认和环境覆盖的 `lint` 与渲染均通过，分别得到 1 副本、端口 80 和 2 副本、端口 8080。端口类型不符、端口 65536、`service.prt` 和零副本均被 Schema 拒绝。运行根项目 `./mvnw -B verify` 成功，7 项通过，3 项按现有条件跳过。
+
+验证范围是本地 Chart 校验与渲染。集群 API、准入和镜像运行未纳入本轮实验。
