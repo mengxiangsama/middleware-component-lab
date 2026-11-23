@@ -23,7 +23,7 @@
 | --- | --- | --- |
 | 字符串与计数 | 待补 | 用 `SET` 和 `GET` 读写缓存，用 `INCR` 计数。 |
 | 哈希 | 已有教程 | [按 SKU 保存和更新购物车商品数量](#哈希购物车数量更新)。 |
-| 列表 | 待补 | 用列表处理有序队列。 |
+| 列表 | 已有教程 | [按入队顺序领取任务、确认成功并手动重入队](#列表任务领取与确认)。 |
 | 集合 | 已有教程 | [按用户 ID 去重、判断成员关系并查询名单交集](#集合成员与交集)。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
 | Bitmap | 已有教程 | [记录每日签到并统计连续签到人数](#bitmap-每日签到与交集)。 |
@@ -41,6 +41,65 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 列表任务领取与确认
+
+**适用场景**　已有 Redis 的小型后台任务队列，例如生成缩略图。生产者按入队顺序追加任务，消费者领取时把任务移入处理中列表，成功后再确认。每条任务使用唯一 ID，同一任务的业务处理需要幂等。多个消费者可以按入队顺序领取，但完成顺序取决于各自的处理时间。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 镜像和镜像内同版本的 `redis-cli`，无需映射宿主机端口。若服务仍在启动，重试 `PING` 直至返回 `"PONG"`。
+
+```bash
+redis_list_lab=$(docker run -d --rm redis:7.4.2)
+list_cli() {
+  docker exec "$redis_list_lab" redis-cli --json "$@"
+}
+docker exec "$redis_list_lab" redis-server --version
+docker exec "$redis_list_lab" redis-cli --version
+list_cli PING
+```
+
+`RPUSH` 从待处理列表尾部入队，`BLMOVE LEFT RIGHT` 原子地从待处理列表头部取走一项并追加到处理中列表尾部。`BLMOVE` 的最后一个参数是等待秒数。成功处理后，用 `LREM` 的正数参数 `1` 从表头开始移除首个匹配的任务 ID。两个键使用共同的 `{thumbnails}` 哈希标签，以满足 Redis Cluster 对多键操作的同槽要求。
+
+```bash
+ready='lab:{thumbnails}:ready'
+processing='lab:{thumbnails}:processing'
+list_cli RPUSH "$ready" job-101 job-102
+list_cli BLMOVE "$ready" "$processing" LEFT RIGHT 1
+list_cli LRANGE "$processing" 0 -1
+# 模拟 job-101 处理成功
+list_cli LREM "$processing" 1 job-101
+```
+
+**验证方法**　在同一终端领取第二项，模拟消费者领取后退出，跳过确认。确认原消费者已经停止后，由操作者用 `LMOVE` 将本例唯一一项未确认任务移回待处理列表。再次领取并确认，最后检查空队列的等待超时和处理中列表。
+
+```bash
+list_cli BLMOVE "$ready" "$processing" LEFT RIGHT 1
+list_cli LRANGE "$processing" 0 -1
+list_cli LMOVE "$processing" "$ready" LEFT RIGHT
+list_cli LRANGE "$ready" 0 -1
+list_cli BLMOVE "$ready" "$processing" LEFT RIGHT 1
+list_cli LREM "$processing" 1 job-102
+list_cli BLMOVE "$ready" "$processing" LEFT RIGHT 1
+list_cli LRANGE "$processing" 0 -1
+```
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 入队并确认首项 | `RPUSH` 返回 `2`，首次领取返回 `"job-101"`，处理中列表返回 `["job-101"]`，确认返回 `1`。 |
+| 中断后重入队 | 第二次领取返回 `"job-102"`，未确认时处理中列表仍有 `["job-102"]`。`LMOVE` 返回 `"job-102"`，待处理列表显示 `["job-102"]`。 |
+| 重领、确认并检查队列 | 重领返回 `"job-102"`，确认返回 `1`。再领取等待约一秒后返回 `null`，处理中列表返回 `[]`。 |
+
+列表不会自动记录领取时间或重投。多消费者自动恢复需要跟踪任务归属和超时，协调确认与回收，避免把仍在执行的任务移回队列。若需要按消费者追踪未确认消息并按空闲时间接管，可参考 [Streams 消费组确认与接管](#streams-消费组确认与接管)。
+
+完成后停止容器，`--rm` 会自动清理容器和匿名卷。
+
+```bash
+docker stop "$redis_list_lab"
+```
+
+2026-11-23 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端与客户端均报告 7.4.2，`PING` 返回 `"PONG"`。依次领到 `job-101` 和 `job-102`，跳过第二项的确认后仍可在处理中列表查到它。手动移回、重新领取并确认后，空队列的 `BLMOVE` 返回 `null`，处理中列表返回 `[]`。停止后确认实验容器已自动删除。
+
+**官方文档**　`LMOVE` 和 `BLMOVE` 自 Redis 6.2 提供。 [RPUSH](https://redis.io/docs/latest/commands/rpush/) · [LMOVE](https://redis.io/docs/latest/commands/lmove/) · [BLMOVE](https://redis.io/docs/latest/commands/blmove/) · [LREM](https://redis.io/docs/latest/commands/lrem/) · [LRANGE](https://redis.io/docs/latest/commands/lrange/) · [Redis 7.4.2 列表命令测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/type/list.tcl)
 
 ### 地理空间索引查询附近门店
 
