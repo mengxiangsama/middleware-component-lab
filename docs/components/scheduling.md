@@ -16,9 +16,53 @@
 
 ## Quartz
 
-- Quartz 是可嵌入 Java 应用的调度库。实现 `Job.execute`，创建 `JobDetail` 和 `Trigger`，向 `Scheduler.scheduleJob` 注册后启动。简单周期用 `SimpleTrigger`，日历时间表用 `CronTrigger`。需要持久化或多节点调度时配置 JDBC JobStore，集群节点共享其数据库。[Quartz Job 和 Trigger](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-02.html)
-- 显式选择 Cron 时区和 misfire 策略，例如错过周期后立即触发或等待下一次。集群节点故障后标记为可恢复的作业可能被其他节点重新执行。
-- 验证停机跨过多个计划时间、节点在完成实际写入后退出，以及跨时区和夏令时触发。[Quartz CronScheduleBuilder](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/CronScheduleBuilder.html) · [JDBC 集群与恢复](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html)
+Quartz 是嵌入 Java 应用的调度库。仓库原有应用 POM、容器镜像和实验未固定 Quartz 版本。本例使用 `org.quartz-scheduler:quartz:2.5.0`，调度器和调用代码在同一个 JVM 内运行，无独立服务端或远程客户端版本。Quartz 2.5.0 要求 JDK 11 或更高版本，本例按仓库环境使用 JDK 17。参阅 [Quartz 2.5.0 发布记录](https://github.com/quartz-scheduler/quartz/releases/tag/v2.5.0)。
+
+| Quartz 2.5.0 功能 | 教程状态 |
+| --- | --- |
+| 作业定义、参数和触发器（`JobDetail`、`JobDataMap`、`SimpleTrigger`、`CronTrigger`） | 待补。本文实验使用一次性触发器，完整接入见 [Quartz Job 和 Trigger](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-02.html)。 |
+| 作业并发限制 `@DisallowConcurrentExecution` | 已有教程 · [按 JobKey 串行执行对账任务](#按-jobkey-串行执行对账任务)。 |
+| 作业参数更新 `@PersistJobDataAfterExecution`、执行失败处理和监听器 | 待补。 |
+| Cron 时区、日历排除和 misfire 策略 | 待补。可通过 [CronScheduleBuilder](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/CronScheduleBuilder.html) 指定时区和错过触发后的行为。 |
+| RAMJobStore、JDBC JobStore 持久化、集群和故障恢复 | 待补。参阅 [JDBC 集群与恢复](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html)。 |
+
+### 按 JobKey 串行执行对账任务
+
+**适用场景**。定时对账和人工补跑可能同时处理同一家门店的数据。若同一家门店的两次对账写入需要错开，可以让两个 Trigger 引用同一个 `JobDetail`，并在 Job 实现上加 `@DisallowConcurrentExecution`。Quartz 按由名称和组组成的 `JobKey` 限制并发。同一 Job 类可为各门店建立独立的 `JobDetail`，工作线程充足时仍可并行处理不同门店。RAMJobStore 的状态只保存在当前调度器内存中，进程退出后丢失。业务写入仍需要按门店和业务日期实现幂等，避免先后两次执行重复入账。
+
+**接入步骤**。需要 JDK 17、Bash、curl 和可访问 Maven Central 的网络。运行 [Java 示例](../../labs/quartz/JobKeyConcurrencyDemo.java)。它配置 RAMJobStore 和两个工作线程，先让 `store-a` 的定时对账停在锁存器上，再提交引用同一 `JobKey` 的手动补跑，以及引用另一个 `JobKey` 的 `store-b` 对账。应用可在构建文件中声明上述 Quartz 依赖。下面的命令只下载本实验需要的 JAR，SLF4J 使用空日志实现，输出均由示例打印。
+
+**验证方法**。从仓库根目录运行。命令退出时会清理临时下载目录。
+
+```bash
+(
+    set -e
+    quartz_demo_dir=$(mktemp -d)
+    trap 'rm -r -- "$quartz_demo_dir"' EXIT
+    central=https://repo.maven.apache.org/maven2
+
+    curl -fsSL --retry 3 --retry-all-errors \
+        -o "$quartz_demo_dir/quartz-2.5.0.jar" \
+        "$central/org/quartz-scheduler/quartz/2.5.0/quartz-2.5.0.jar"
+    for module in slf4j-api slf4j-nop; do
+        curl -fsSL --retry 3 --retry-all-errors \
+            -o "$quartz_demo_dir/$module-2.0.16.jar" \
+            "$central/org/slf4j/$module/2.0.16/$module-2.0.16.jar"
+    done
+
+    java --class-path "$quartz_demo_dir/*" labs/quartz/JobKeyConcurrencyDemo.java
+)
+```
+
+2026-11-23 在 macOS arm64、OpenJDK 17.0.16 上运行上述命令，进程退出码为 0。首个 `store-a` 作业仍在运行时，`store-b` 已进入执行，手动补跑触发器处于 `BLOCKED`。放行首个作业后，手动补跑才进入执行。超时或状态不符时，示例以非零状态退出。
+
+```text
+store-b ran while store-a was active
+store-a manual rerun: BLOCKED
+store-a manual rerun started after release
+```
+
+**官方文档**。[Quartz 2.5.x 作业定义与并发限制](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-03.html) · [RAMJobStore 配置](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigRAMJobStore.html) · [工作线程池配置](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigThreadPool.html)。
 
 ## ElasticJob
 

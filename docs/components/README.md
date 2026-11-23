@@ -43,7 +43,7 @@
 | --- | --- |
 | [XXL-JOB](scheduling.md#xxl-job) | 执行器注册、Cron、路由、分片广播和失败重试 |
 | [PowerJob](scheduling.md#powerjob) | Worker 接入、单机或广播执行、Map/MapReduce 和工作流 |
-| [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化、并发限制和 misfire |
+| [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。 |
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 

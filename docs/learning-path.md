@@ -40,6 +40,8 @@
 
 从 [Quartz](components/scheduling.md#quartz) 的触发器和错过触发策略开始，再看 [XXL-JOB](components/scheduling.md#xxl-job) 或 [PowerJob](components/scheduling.md#powerjob) 的执行器和失败重试。需要多个任务按依赖补数时，参考 [DolphinScheduler](components/scheduling.md#apache-dolphinscheduler) 的工作流。
 
+如果定时对账与人工补跑可能同时运行，先做 [Quartz 同一 JobKey 并发限制实验](components/scheduling.md#按-jobkey-串行执行对账任务)，观察同一门店的补跑何时开始，以及另一家门店能否同时执行。
+
 选一个按业务日期执行的测试对账任务，先让其中一批失败，再用相同业务日期补跑。核对失败批次能恢复、已完成批次的业务结果只生效一次，并保留任务参数、批次范围和执行日志。
 
 ## 数据同步与恢复
