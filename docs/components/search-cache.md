@@ -1113,6 +1113,105 @@ test ! -e "$lab_dir"
 - JVM 应用接入 Caffeine 后，用 `Caffeine.newBuilder()` 指定容量或权重上限与过期策略。使用 `Cache.get(key, loader)` 按需加载，或者用 `build(loader)` 创建 `LoadingCache`。显式失效用 `invalidate`。
 - 缓存属于单个 JVM，实例重启后会冷启动。各实例分别淘汰和失效，可能读到不同版本。测试并发加载、加载异常和容量淘汰，用可控 `Ticker` 检验过期行为。[Caffeine 加载方式](https://github.com/ben-manes/caffeine/wiki/Population) · [淘汰策略](https://github.com/ben-manes/caffeine/wiki/Eviction)
 
+仓库的 POM、容器配置和已有实验都未固定 Caffeine 版本。本例选用 JVM 内嵌库 `com.github.ben-manes.caffeine:caffeine:3.2.3`，无需独立服务端或远程客户端。功能范围见 [Caffeine 官方功能概览](https://github.com/ben-manes/caffeine/wiki)。
+
+| 功能 | 状态 |
+| --- | --- |
+| 手动加载、自动加载与异步加载 | 待补 |
+| 按容量或权重淘汰 | 待补 |
+| 按写入或访问时间过期 | 待补 |
+| 读取触发的异步刷新 | 已有教程 · [热点商品详情异步刷新](#热点商品详情异步刷新) |
+| 弱引用键、弱引用或软引用值 | 待补 |
+| 移除与淘汰通知 | 待补 |
+| 命中、加载和淘汰统计 | 待补 |
+
+### 热点商品详情异步刷新
+
+商品详情在单个 JVM 中频繁读取、回源耗时且业务允许短暂读旧值时，可以用 `LoadingCache` 配合 `refreshAfterWrite`。写入达到刷新间隔后，下一次读取才触发刷新。刷新进行中仍可返回旧值，成功后替换为新值，失败则保留旧值并记录异常。需要限制未刷新条目的保留时间时，可同时配置 `expireAfterWrite`。条目过期后，再次读取按缺失条目加载。
+
+需要 JDK 17、`curl` 和访问 Maven Central 的网络。在仓库根目录运行以下命令。示例使用可推进的 `Ticker` 和手动执行的任务队列，精确控制每次读取和刷新发生的顺序。实际应用可使用默认时钟，并按回源负载配置执行器。
+
+```bash
+(
+  set -eu
+  work_dir=$(mktemp -d)
+  trap 'rm -rf "$work_dir"' EXIT
+  curl -fsSL -o "$work_dir/caffeine.jar" \
+    https://repo.maven.apache.org/maven2/com/github/ben-manes/caffeine/caffeine/3.2.3/caffeine-3.2.3.jar
+
+  cat > "$work_dir/RefreshDemo.java" <<'JAVA'
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+class RefreshDemo {
+    public static void main(String[] args) {
+        AtomicLong now = new AtomicLong();
+        Queue<Runnable> tasks = new ArrayDeque<>();
+        AtomicReference<String> source = new AtomicReference<>("price-v1");
+        LoadingCache<String, String> products = Caffeine.newBuilder()
+                .maximumSize(100)
+                .refreshAfterWrite(Duration.ofMinutes(1))
+                .expireAfterWrite(Duration.ofMinutes(5))
+                .ticker(now::get)
+                .executor(tasks::add)
+                .build(key -> source.get());
+
+        String sku = "sku-101";
+        expect("initial", "price-v1", products.get(sku));
+        runTasks(tasks);
+        source.set("price-v2");
+        now.addAndGet(Duration.ofSeconds(30).toNanos());
+        expect("before refresh interval", "price-v1", products.get(sku));
+        runTasks(tasks);
+
+        now.addAndGet(Duration.ofSeconds(31).toNanos());
+        runTasks(tasks);
+        expect("before triggering read", "price-v1", products.asMap().entrySet()
+                .iterator().next().getValue());
+        expect("triggering read", "price-v1", products.get(sku));
+        runTasks(tasks);
+        expect("after refresh", "price-v2", products.get(sku));
+    }
+
+    private static void runTasks(Queue<Runnable> tasks) {
+        Runnable task;
+        while ((task = tasks.poll()) != null) {
+            task.run();
+        }
+    }
+
+    private static void expect(String step, String expected, String actual) {
+        if (!expected.equals(actual)) {
+            throw new AssertionError(step + ": expected " + expected + ", got " + actual);
+        }
+        System.out.println(step + ": " + actual);
+    }
+}
+JAVA
+
+  java --class-path "$work_dir/caffeine.jar" "$work_dir/RefreshDemo.java"
+)
+```
+
+在 macOS arm64、OpenJDK 17.0.16 和 Caffeine 3.2.3 下执行上述命令，实际输出与下列预期一致。第 61 秒先执行任务队列，再用视图遍历检查旧值，随后用 `get` 触发刷新。再次执行任务队列后，`get` 返回新值。
+
+```text
+initial: price-v1
+before refresh interval: price-v1
+before triggering read: price-v1
+triggering read: price-v1
+after refresh: price-v2
+```
+
+- [Caffeine 官方刷新文档](https://github.com/ben-manes/caffeine/wiki/Refresh)
+- [Caffeine v3.2.3 配置 API 源码](https://github.com/ben-manes/caffeine/blob/v3.2.3/caffeine/src/main/java/com/github/benmanes/caffeine/cache/Caffeine.java)
+- [Caffeine v3.2.3 发布记录](https://github.com/ben-manes/caffeine/releases/tag/v3.2.3)
+
 ## ClickHouse
 
 - 用于明细扫描、报表和聚合查询。连接测试实例后创建 `MergeTree` 系列表，按常用过滤条件选择 `ORDER BY` 排序键，用 `INSERT` 批量写入样本，再用 `GROUP BY` 与聚合函数校验结果。排序键允许重复值。

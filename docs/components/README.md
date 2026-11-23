@@ -30,7 +30,7 @@
 | [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和租约 |
 | [Lettuce](search-cache.md#lettuce) | Java 同步、异步和 Reactive Redis 命令 |
 | [Valkey](search-cache.md#valkey) | 键值与数据结构命令、过期和故障转移 |
-| [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载、刷新和淘汰 |
+| [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载和淘汰。可运行 [热点商品详情异步刷新](search-cache.md#热点商品详情异步刷新)。 |
 | [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合 |
 
 运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。运行 [Redis 键空间通知](search-cache.md#键空间通知与缓存过期观察)，对照按键和按事件订阅的消息内容。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。运行 [Redis Functions 单件库存扣减](search-cache.md#redis-functions-单件库存扣减)，从独立连接调用已注册的函数并核对库存余量。
