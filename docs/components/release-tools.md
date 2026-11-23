@@ -31,6 +31,10 @@ livenessProbe:
 
 **验证**。延长冷启动，检查 startup 探针期间容器没有被过早重启。分别让 readiness 与 liveness 失败，核对 EndpointSlice 就绪状态和重启计数。liveness 使用应用自身状态，避免共享数据库或缓存抖动同时重启所有实例。 [探针触发行为](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
 
+## Spring Boot
+
+Spring Boot 用 starter 集中接入数据源等基础设施，通过自动配置完成应用初始化。应用配置 JDBC 数据源时，可让 Flyway 在启动阶段检查迁移历史并执行版本化 SQL。需要让新版应用就绪后能直接读取升级过的订单表时，见 [搭配 Flyway 启动时迁移](#搭配-spring-boot-启动时迁移)。[Spring Boot 启动说明](https://docs.spring.io/spring-boot/3.5/reference/features/spring-application.html)。
+
 ## Spring Boot Actuator
 
 - **常用功能**。Actuator 可暴露 `/actuator/health/liveness` 与 `/actuator/health/readiness`。在 Kubernetes 之外验证时可用 `management.endpoint.health.probes.enabled=true` 启用。若管理端口独立，设置 `management.endpoint.health.probes.add-additional-paths=true` 可在主服务端口加 `/livez` 与 `/readyz`，用实际承载请求的端口做检查。 [Actuator 探针](https://docs.spring.io/spring-boot/3.5/reference/actuator/endpoints.html#actuator.endpoints.kubernetes-probes)
@@ -53,12 +57,13 @@ strategy:
 
 ## Flyway
 
-**版本基线**。根项目与现有实验没有引入 Flyway，容器编排也没有 Flyway 服务。本实验使用 Java 客户端 `flyway-core` 11.8.2，连接内嵌文件模式的 H2 2.3.232，数据库引擎与 JDBC 驱动来自同一个 H2 依赖，无需独立服务端。接入其他数据库时，按目标库版本选用对应的 Flyway 数据库模块和 JDBC 驱动。
+Flyway 管理数据库结构的版本化变更，适合将建表、加列等脚本随应用版本发布并追踪执行记录。独立实验使用 `flyway-core` 11.8.2 和文件模式的 H2 2.3.232。接入其他数据库时，按目标库版本选用对应的 Flyway 数据库模块和 JDBC 驱动。
 
 | 功能 | 教程状态 |
 | --- | --- |
 | 版本化 SQL 迁移和历史记录（`migrate`、`info`） | 已有教程 · [订单表版本化迁移与校验](#订单表版本化迁移与校验) |
 | 已应用迁移校验（`validate`） | 已有教程 · [订单表版本化迁移与校验](#订单表版本化迁移与校验) |
+| 应用启动时自动迁移和失败阻断 | 联调实测 · [搭配 Spring Boot 启动时迁移](#搭配-spring-boot-启动时迁移) |
 | 可重复迁移（`R__` 脚本） | 待补 |
 | Java 迁移与生命周期回调 | 待补 |
 | 将现有数据库纳入版本管理（`baseline`） | 待补 |
@@ -89,7 +94,7 @@ strategy:
 **验证方法**。在仓库根目录执行以下命令。
 
 ```bash
-./mvnw -B -f labs/flyway/pom.xml test
+./mvnw -B -f labs/flyway/pom.xml -Dtest=OrderMigrationTest test
 ```
 
 | 操作 | 可观察结果 |
@@ -105,6 +110,10 @@ strategy:
 - [Migrate](https://documentation.red-gate.com/flyway/reference/commands/migrate)
 - [Validate](https://documentation.red-gate.com/flyway/reference/commands/validate)
 - [H2 驱动与 JDBC URL](https://documentation.red-gate.com/flyway/reference/database-driver-reference/h2)
+
+### 搭配 Spring Boot 启动时迁移
+
+新版订单服务使用新增的状态列时，[Spring Boot](#spring-boot) 先初始化数据源并调用 Flyway，Flyway 从 V1 升到 V2，业务层再用 JDBC 读取历史订单。如果已执行的 SQL 被改写，校验失败使应用启动中止。[接入配置与联调步骤](../../labs/flyway/README.md)。
 
 ## Liquibase
 

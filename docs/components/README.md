@@ -69,7 +69,7 @@
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 管理与错误处理 |
 | [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
-| [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和。**可运行** · [订单表版本化迁移与校验](release-tools.md#订单表版本化迁移与校验)。 |
+| [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和。**可运行** · [订单表版本化迁移与校验](release-tools.md#订单表版本化迁移与校验)。**联调实测** · [搭配 Spring Boot 自动迁移](release-tools.md#搭配-spring-boot-启动时迁移)。 |
 | [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览与结构变更 |
 
 ## 分布式日志
@@ -87,6 +87,7 @@
 | --- | --- |
 | [Kubernetes Deployment](release-tools.md#kubernetes-deployment) | 分批替换 Pod、滚动状态与修订回滚 |
 | [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
+| [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移)。 |
 | [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 探针端点、SIGTERM 与在途请求处理 |
 | [Argo Rollouts](release-tools.md#argo-rollouts) | 灰度权重、观察与自动分析、晋级或中止 |
 

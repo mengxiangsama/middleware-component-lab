@@ -66,3 +66,11 @@
 在 Docker Engine 27.3.1 的 `linux/arm64` 容器中，用 Fluent Bit 5.2.0 真实推送到 Loki 3.7.10。运行 `sh labs/fluent-bit-java-multiline/verify-loki.sh` 成功。Loki 返回四条事件，按时间排序后逐行对照原文件，12 行全部保留。LogQL 按服务、环境及错误正文筛选，命中一条结账异常并返回完整堆栈及 `SocketTimeoutException`。根项目 `./mvnw -B verify` 构建成功，7 项通过，3 项按原条件跳过。
 
 对照 [Fluent Bit 原生 Loki 输出](https://docs.fluentbit.io/manual/data-pipeline/outputs/loki)、[Loki 3.7.10 镜像配置](https://github.com/grafana/loki/blob/v3.7.10/cmd/loki/loki-docker-config.yaml)和 [Loki 查询接口](https://grafana.com/docs/loki/latest/reference/loki-http-api/#query-logs-within-a-range-of-time)。本次验证覆盖单机写入和 API 查询，未纳入 Grafana 界面、集群及生产鉴权。
+
+## 2026-11-23 · Spring Boot 与 Flyway 启动迁移
+
+盘点 [`eeb5151`](https://github.com/mengxiangsama/middleware-component-lab/commit/eeb5151f63fd74c0936a0c4f96cf2fc6c56551cf) 的组件目录、实验和最近 30 条提交。对比 Spring Cache + Caffeine 的商品改价失效与 Spring Boot + Flyway 的发布前迁移。缓存近期已有多项示例，现有 Flyway 实验只覆盖手动调用，优先补齐应用启动自动迁移与失败阻断。[Spring Boot 的 Caffeine 接入](https://docs.spring.io/spring-boot/3.5/reference/io/caching.html#io.caching.provider.caffeine) · [Spring Boot 自动迁移](https://docs.spring.io/spring-boot/3.5/how-to/data-initialization.html)。
+
+复用订单表 V1、V2 SQL，使用 Spring Boot 3.5.16、Flyway 11.8.2、H2 2.3.232 和 OpenJDK 17.0.16，启动真实应用上下文并验证同一个临时文件库。就绪时读到订单 `101`、金额 `19.90` 和状态 `PENDING`，重启仍只有 V1、V2 两条成功版本。改动已应用的 SQL 临时副本后校验失败，没有发出 `ApplicationReadyEvent`。运行 `./mvnw -B -f labs/flyway/pom.xml clean verify`，独立实验 3 项测试全部通过。
+
+同步根 README、组件目录、Spring Boot 和 Flyway 条目及学习路线。[教程与验证命令](../labs/flyway/README.md)。实验范围为单应用上下文和内嵌 H2，无 HTTP 服务，未验证 MySQL、PostgreSQL 或多副本滚动发布。
