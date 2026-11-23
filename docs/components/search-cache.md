@@ -27,7 +27,7 @@
 | 集合 | 已有教程 | [按用户 ID 去重、判断成员关系并查询名单交集](#集合成员与交集)。 |
 | 有序集合 | 已有教程 | [更新积分并查询排行榜和个人名次](#有序集合积分排行)。 |
 | Bitmap | 已有教程 | [记录每日签到并统计连续签到人数](#bitmap-每日签到与交集)。 |
-| 地理空间索引 | 待补 | 用 `GEOADD` 保存坐标，用 `GEOSEARCH` 查询附近位置。 |
+| 地理空间索引 | 已有教程 | [按距离查找附近门店并更新门店坐标](#地理空间索引查询附近门店)。 |
 | HyperLogLog | 已有教程 | [估算单日及跨日独立访客](#hyperloglog-独立访客估算)。 |
 | 键过期 | 已有教程 | [为商品缓存设置 TTL 并在覆盖时保留过期时间](#键过期与缓存更新)。 |
 | 内存淘汰 | 待补 | 容量不足时由 `maxmemory-policy` 决定淘汰或拒绝写入。 |
@@ -41,6 +41,55 @@
 | Cluster 分片 | 待补 | 按哈希槽在多个主节点间分布键，由支持 Cluster 的客户端处理重定向。 |
 
 [Redis 数据结构](https://redis.io/docs/latest/develop/data-types/) · [Redis 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/) · [键淘汰](https://redis.io/docs/latest/develop/reference/eviction/)
+
+### 地理空间索引查询附近门店
+
+**适用场景**　按用户坐标筛选一定半径内的自提门店，再按距离排序。门店有稳定 ID，坐标使用同一坐标系，业务接受基于球面距离的筛选。步行距离或预计到店时间还需要路线计算。
+
+**接入步骤**　需要 Docker 和 Bash 或 Zsh。使用 `redis:7.4.2` 镜像内的 Redis 服务端和同版本 `redis-cli`，无需映射宿主机端口。等 `PING` 返回 `"PONG"` 后继续，若服务仍在启动可稍后重试。
+
+```bash
+redis_geo_lab=$(docker run -d --rm redis:7.4.2)
+redis_geo_cli() {
+  docker exec "$redis_geo_lab" redis-cli --json "$@"
+}
+docker exec "$redis_geo_lab" redis-server --version
+docker exec "$redis_geo_lab" redis-cli --version
+redis_geo_cli PING
+```
+
+以经度、纬度、门店 ID 的顺序写入三条测试数据。用用户的经纬度作为圆心，查询 2 公里内的门店。`ASC` 按距离从近到远排序，`WITHDIST` 返回以公里为单位的距离。只取最近一项时用 `ASC COUNT 1`。如果加上 `ANY`，服务端可能提前结束搜索，结果可能漏掉更近的门店。
+
+```bash
+redis_geo_cli GEOADD stores:geo 121.480 31.230 store-a 121.490 31.230 store-b 121.550 31.230 store-c
+redis_geo_cli GEOSEARCH stores:geo FROMLONLAT 121.475 31.230 BYRADIUS 2 km ASC WITHDIST
+redis_geo_cli GEOSEARCH stores:geo FROMLONLAT 121.475 31.230 BYRADIUS 2 km ASC COUNT 1
+```
+
+模拟 `store-a` 搬迁。`XX` 只更新已有成员，`CH` 让返回值计入坐标发生变化的成员。用相同的圆心和半径再查一次。
+
+```bash
+redis_geo_cli GEOADD stores:geo XX CH 121.530 31.230 store-a
+redis_geo_cli GEOSEARCH stores:geo FROMLONLAT 121.475 31.230 BYRADIUS 2 km ASC WITHDIST
+```
+
+**验证方法**　核对命令返回值、门店顺序和距离。
+
+| 操作 | 预期结果 |
+| --- | --- |
+| 写入并查询半径内门店 | `GEOADD` 返回 `3`。查询依次返回 `store-a`（约 0.48 公里）、`store-b`（约 1.43 公里）。 |
+| 只取最近一项 | 返回 `["store-a"]`。 |
+| 搬迁后按原条件查询 | 更新返回 `1`，随后查询仅返回 `store-b`。 |
+
+完成后停止容器，`--rm` 会自动删除实验容器和匿名卷。
+
+```bash
+docker stop "$redis_geo_lab"
+```
+
+2026-11-23 在 macOS 26.5 arm64、Docker Engine 27.3.1 上运行上述命令。服务端和客户端均报告 7.4.2，`PING` 返回 `"PONG"`。初次搜索返回 `[["store-a","0.4756"],["store-b","1.4267"]]`，限量查询返回 `["store-a"]`。更新返回 `1`，再次搜索仅返回 `[["store-b","1.4267"]]`。停止后确认容器已自动删除。
+
+**官方文档**　`GEOADD` 自 Redis 3.2 提供，`NX`、`XX`、`CH` 自 6.2 提供，`GEOSEARCH` 自 6.2 提供。 [GEOADD](https://redis.io/docs/latest/commands/geoadd/) · [GEOSEARCH](https://redis.io/docs/latest/commands/geosearch/) · [Redis 7.4.2 地理空间命令测试](https://raw.githubusercontent.com/redis/redis/7.4.2/tests/unit/geo.tcl)
 
 ### Bitmap 每日签到与交集
 
