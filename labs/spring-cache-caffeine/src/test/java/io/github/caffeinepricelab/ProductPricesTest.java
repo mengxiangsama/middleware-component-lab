@@ -82,6 +82,18 @@ class ProductPricesTest {
         assertThat(cache().get(PRODUCT, BigDecimal.class)).isEqualByComparingTo(OLD_PRICE);
     }
 
+    @Test
+    void readingInTransactionDoesNotCacheUncommittedPrice() {
+        transactions.executeWithoutResult(status -> {
+            prices.changePrice(PRODUCT, NEW_PRICE);
+            assertThat(prices.findPrice(PRODUCT)).isEqualByComparingTo(NEW_PRICE);
+            assertThat(cache().get(PRODUCT)).isNull();
+            status.setRollbackOnly();
+        });
+
+        assertThat(prices.findPrice(PRODUCT)).isEqualByComparingTo(OLD_PRICE);
+    }
+
     private Cache cache() {
         return cacheManager.getCache(PRODUCT_PRICES);
     }

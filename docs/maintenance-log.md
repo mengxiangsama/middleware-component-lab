@@ -82,3 +82,11 @@
 在 OpenJDK 17.0.16、Spring Boot 3.5.16、Caffeine 3.2.4 和 H2 2.3.232 下执行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml clean verify`，3 项集成测试通过。首读回填后确实命中 Caffeine，提交后只清除商品 101 的旧缓存并读到 `24.90`，回滚时数据库和原缓存仍是 `19.90`。行为与 [Spring 事务感知缓存说明](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/cache/transaction/TransactionAwareCacheDecorator.html)一致。
 
 已同步根 README、组件目录和学习路线。[教程与运行方法](../labs/spring-cache-caffeine/README.md)。实验使用单 JVM 和内嵌 H2，跨实例失效和并发回填顺序未验证。
+
+## 2026-11-23 · Redis Pub/Sub 广播 Caffeine 商品改价失效
+
+盘点 [`c707838`](https://github.com/mengxiangsama/middleware-component-lab/commit/c70783808db7effc5d92c1913562494c3ad2de55) 的组件目录、实验和最近 30 条提交。Redis 已有 CLI 广播示例，Caffeine 已有单实例提交失效。对照了广播失效、单实例同键合并和共享二级缓存，本轮侧重将前两项接成一条可验证的改价链路，回应多实例读旧价和热点同时回源的问题。[Spring Data Redis 的发布订阅](https://docs.spring.io/spring-data/redis/reference/3.5/redis/pubsub.html) · [Spring Cache 同步加载](https://docs.spring.io/spring-framework/reference/6.2/integration/cache/annotations.html#cache-annotations-cacheable-synchronized)
+
+在 macOS arm64 和 OpenJDK 17 上使用经官方 SHA-256 核对后编译的 [Redis 7.4.12](https://github.com/redis/redis/releases/tag/7.4.12)，绑定本机回环端口。两个独立 Spring Boot 上下文各有一个 Caffeine 实例，共用真实 Redis 和内嵌 H2。改价回滚保留两份旧缓存，提交后两份都清商品 101、保留商品 102。24 个并发调用均读取 `24.90`，两份 Caffeine 各成功加载一次。单实例测试也确认事务内读取的未提交价格不会写进缓存。
+
+两实例联调和四项单实例回归均通过。根 README、组件目录和学习路线提供了实验入口和命令。[双实例运行方法](../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。本轮未验证跨进程压测、Redis 断线恢复或全局只回源一次。

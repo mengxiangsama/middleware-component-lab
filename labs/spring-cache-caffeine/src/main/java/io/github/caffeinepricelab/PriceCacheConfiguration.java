@@ -20,6 +20,7 @@ class PriceCacheConfiguration {
         var caffeine = new CaffeineCacheManager(PRODUCT_PRICES);
         caffeine.setCaffeine(Caffeine.newBuilder()
                 .maximumSize(1000)
+                .recordStats()
                 .expireAfterWrite(Duration.ofMinutes(5)));
         return new TransactionAwareCacheManagerProxy(caffeine);
     }

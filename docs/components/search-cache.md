@@ -728,6 +728,8 @@ docker stop "$redis_history_lab"
 
 ### 发布订阅与缓存失效通知
 
+需要验证多台应用收到改价通知后的本地缓存行为时，运行 [Redis Pub/Sub + Caffeine 联调](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。两个订阅者各清除同一个商品键，并合并各自的并发回源。
+
 **适用场景**　多个应用实例各自维护进程内的商品缓存。源数据更新后，向在线实例广播商品标识，订阅端收到通知后删除对应的本地缓存，下次读取时重新加载。Redis Pub/Sub 是至多一次投递，适合能用 TTL、重连后清理缓存等措施兜底的通知。需要追踪处理结果或恢复离线期间的消息时，可使用 [Streams 消费组](#streams-消费组确认与接管)。
 
 **接入步骤**　需要 Docker 和两个终端。本例用 `redis:7.4.2` 镜像，服务端和 `redis-cli` 均为 7.4.2。容器不映射宿主机端口。先在终端 A 启动独立实例，确认两个版本输出和 `PONG`。若服务还在启动，稍后重试 `PING`。
@@ -1216,6 +1218,8 @@ after refresh: price-v2
 ### 搭配 Spring Cache 处理商品改价
 
 商品详情走 [Spring Cache](#spring-cache) 和 Caffeine 读取缓存，数据库负责保存价格。改价事务提交后清掉对应商品键，再访问时查库并回填。用 [商品改价缓存实验](../../labs/spring-cache-caffeine/README.md) 核对命中、单键失效和回滚。
+
+部署多个实例时，可通过 [Redis Pub/Sub 广播失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。每个订阅者收到商品 ID 后清理本机条目，用 `@Cacheable(sync = true)` 合并同实例、同商品的并发加载。
 
 ## Spring Cache
 

@@ -3,6 +3,7 @@ package io.github.caffeinepricelab;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +16,16 @@ import static io.github.caffeinepricelab.PriceCacheConfiguration.PRODUCT_PRICES;
 @CacheConfig(cacheNames = PRODUCT_PRICES)
 public class ProductPrices {
     private final JdbcTemplate jdbc;
+    private final ApplicationEventPublisher events;
 
-    public ProductPrices(JdbcTemplate jdbc) {
+    public ProductPrices(JdbcTemplate jdbc, ApplicationEventPublisher events) {
         this.jdbc = jdbc;
+        this.events = events;
     }
 
-    @Cacheable(key = "#p0")
+    // A synchronized cache load fills the cache immediately, so lookups in transactions bypass it.
+    @Cacheable(key = "#p0", sync = true,
+            condition = "!T(org.springframework.transaction.support.TransactionSynchronizationManager).isActualTransactionActive()")
     public BigDecimal findPrice(long productId) {
         return jdbc.queryForObject("SELECT price FROM products WHERE id = ?", BigDecimal.class, productId);
     }
@@ -32,5 +37,9 @@ public class ProductPrices {
         if (updated == 0) {
             throw new IllegalArgumentException("Unknown product: " + productId);
         }
+        events.publishEvent(new PriceChanged(productId));
+    }
+
+    record PriceChanged(long productId) {
     }
 }
