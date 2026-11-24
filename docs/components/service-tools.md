@@ -16,6 +16,14 @@
 - **最小接入**。连接 etcd 端点，用 Go 客户端的 `concurrency.NewSession` 创建会续约的会话。给同一个任务的候选进程使用相同 Election 前缀，用 `Campaign` 领取执行资格。[Election API](https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/)
 - **验证**。运行 [租约选主和旧任务写入拦截](../../labs/etcd-leader-election/README.md)，核对候选排队、租约过期接手，以及 etcd 条件事务拦截过期执行者的写入。
 
+## ZooKeeper
+
+ZooKeeper 让分布式应用用带路径的 znode 保存小型协调数据。节点版本可用于条件修改，客户端可注册 Watch 感知变化。接入时选择业务专用路径，在两个客户端中分别写入和读取节点，核对版本的变化。Java 应用可搭配 [Apache Curator](#apache-curator) 管理会话和本地配置缓存。[ZooKeeper 开发文档](https://zookeeper.apache.org/doc/r3.9.3/zookeeperProgrammers.html)
+
+## Apache Curator
+
+Apache Curator 是 [ZooKeeper](#zookeeper) 的 Java 客户端，提供连接管理和缓存等常用用法。使用 `curator-recipes` 创建 `CuratorFramework` 并连接集群，再用 `CuratorCache` 观察节点。在 [门店配置实验](../../labs/curator-zookeeper-cache/README.md) 中，后台修改和删除节点后，应用核对本地值和删除事件。[官方接入示例](https://curator.apache.org/docs/getting-started/) · [CuratorCache](https://curator.apache.org/docs/recipes-curator-cache/)
+
 ## Sentinel
 
 仓库的 Maven 配置、容器镜像和已有实验未固定 Sentinel 版本。本例使用 Java 17，选用 `com.alibaba.csp:sentinel-core:1.8.9` 和同版本的 `sentinel-parameter-flow-control`。规则和计数由应用进程内的库处理，实验无需启动控制台或集群 Token Server。 [Sentinel 1.8.9 发布记录](https://github.com/alibaba/Sentinel/releases/tag/1.8.9)

@@ -25,6 +25,7 @@
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
+| 后台改门店接单上限后怎样更新本地配置 | [ZooKeeper + Apache Curator](labs/curator-zookeeper-cache/README.md)，运行 `./mvnw -B -f labs/curator-zookeeper-cache/pom.xml clean verify` 核对初始加载、更新和删除。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
 | 商品价格怎样本地命中并跟踪改价 | [Valkey + Lettuce 客户端缓存](labs/valkey-client-cache/README.md)，核对 RESP3 失效前后的服务端 GET 次数。 |
