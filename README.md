@@ -20,6 +20,7 @@
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
+| 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
@@ -28,6 +29,8 @@
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
 
 使用 Go 1.24+ 和 C 编译器，在仓库根目录运行 `(cd labs/nats-jetstream-sqlite && CGO_ENABLED=1 go run .)`，验证 JetStream 重投时积分只入账一次。
+
+使用 Go 1.24+ 运行 `(cd labs/etcd-leader-election && go run .)`，验证 etcd 租约过期后的任务接手和写入保护。
 
 将 Prometheus 3.16.0 和 Alertmanager 0.35.0 加入 `PATH` 后，在仓库根目录运行 `python3 labs/alertmanager-webhook/verify.py`，验证真实抓取到 Webhook 的告警链路。
 
@@ -175,7 +178,7 @@ curl -i http://localhost:8088/actuator/prometheus
 | 全量、增量和对账 | [SQL 数据同步与处理](docs/components/data-pipelines.md) · MySQL、PostgreSQL 逻辑复制、Canal、DTS、Flink CDC、Debezium、Kafka Connect、Apicurio Registry |
 | 日志采集、解析和查询 | [分布式日志](docs/components/distributed-logging.md) · Fluent Bit、Logstash、Grafana Loki、[Kibana](docs/components/observability-tools.md#kibana) |
 | 优雅上线、探针和灰度 | [发布与探针](docs/components/release-tools.md) · Kubernetes、Spring Boot Actuator、Argo Rollouts。 [全链路灰度](docs/components/traffic-routing.md) · Istio、Dubbo、Spring Cloud Gateway |
-| 配置灰度、服务发现和容错 | [服务治理](docs/components/service-tools.md) · Nacos、Sentinel、Resilience4j、Seata |
+| 配置灰度、服务发现、进程协调和容错 | [服务治理](docs/components/service-tools.md) · Nacos、etcd、Sentinel、Resilience4j、Seata |
 | 指标、告警和链路 | [采集与指标](docs/components/service-tools.md#opentelemetry) · OpenTelemetry、Prometheus。 [查询与告警](docs/components/observability-tools.md) · Grafana、Alertmanager、Tempo |
 | 打包和构建镜像 | [Dockerfile 与 Compose](docs/components/docker-build.md) · Maven Wrapper、BuildKit、镜像和容器检查 |
 | 镜像仓库、部署模板和 Git 同步 | [制品与持续交付](docs/components/delivery-tools.md) · Harbor、Helm、Argo CD |

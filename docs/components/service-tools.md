@@ -10,6 +10,12 @@
 
 请求标记、实例匹配和全链路验证见 [灰度路由组件](traffic-routing.md)。
 
+## etcd
+
+- **常用功能**。etcd 是分布式键值存储。应用可用事务做条件更新、用 Watch 订阅变更，并用租约关联带有有效期的注册键。[etcd API](https://etcd.io/docs/v3.6/learning/api/)
+- **最小接入**。连接 etcd 端点，用 Go 客户端的 `concurrency.NewSession` 创建会续约的会话。给同一个任务的候选进程使用相同 Election 前缀，用 `Campaign` 领取执行资格。[Election API](https://etcd.io/docs/v3.6/dev-guide/api_concurrency_reference_v3/)
+- **验证**。运行 [租约选主和旧任务写入拦截](../../labs/etcd-leader-election/README.md)，核对候选排队、租约过期接手，以及 etcd 条件事务拦截过期执行者的写入。
+
 ## Sentinel
 
 仓库的 Maven 配置、容器镜像和已有实验未固定 Sentinel 版本。本例使用 Java 17，选用 `com.alibaba.csp:sentinel-core:1.8.9` 和同版本的 `sentinel-parameter-flow-control`。规则和计数由应用进程内的库处理，实验无需启动控制台或集群 Token Server。 [Sentinel 1.8.9 发布记录](https://github.com/alibaba/Sentinel/releases/tag/1.8.9)
