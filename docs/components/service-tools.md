@@ -10,6 +10,13 @@
 
 请求标记、实例匹配和全链路验证见 [灰度路由组件](traffic-routing.md)。
 
+## Consul
+
+Consul 让应用登记各个服务实例，并按健康状态发现可调用的地址。每个实例把服务名、ID 和检查配置注册到 Agent。调用方查询健康接口中的实例地址和端口，再向该地址发起业务请求。
+
+- **最小接入**。通过 Agent 的注册接口，为同名实例分别设置 ID 和 HTTP 检查 URL。用 `GET /v1/health/service/<服务名>?passing=true` 取得健康实例。用无筛选的健康查询核对单个实例的状态。[注册接口](https://developer.hashicorp.com/consul/api-docs/agent/service#register-service) · [健康查询接口](https://developer.hashicorp.com/consul/api-docs/health#list-nodes-for-service)
+- **联调验证**。运行 [Consul + HTTP 门店查询](../../labs/consul-health-discovery/README.md)，观察一个实例的健康端点出现 503 时如何退出发现结果，以及恢复后如何重新进入。
+
 ## etcd
 
 - **常用功能**。etcd 是分布式键值存储。应用可用事务做条件更新、用 Watch 订阅变更，并用租约关联带有有效期的注册键。[etcd API](https://etcd.io/docs/v3.6/learning/api/)
