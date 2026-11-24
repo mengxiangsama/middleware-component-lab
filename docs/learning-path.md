@@ -16,6 +16,8 @@
 
 先读 [RocketMQ 事务消息](components/messaging.md#订单事务消息)，弄清半消息、本地事务和回查的先后关系。需要比较消费确认与历史重放时，再看 [RabbitMQ](components/messaging.md#rabbitmq) 和 [Kafka](components/messaging.md#apache-kafka)。选型时分别记录顺序约束的范围、失败后的重试方式和允许回放的时间窗口。
 
+排查订单事件发出后没到队列时，运行 [RabbitMQ + Java 发布确认](../labs/rabbitmq-publisher-confirms/README.md)，同时记录 Broker 确认、无路由返回和队列内容。
+
 按[本地实验步骤](../README.md#run-locally)启动服务。用 `docker compose ps -a` 查看 `broker` 和 `topic-init` 的状态，确认 Broker 健康且主题初始化以状态码 0 退出，再分别发出三种请求。每次保存响应中的 `orderId`，用它关联查询结果和应用日志。
 
 | 请求中的 `outcome` | 对照结果 |

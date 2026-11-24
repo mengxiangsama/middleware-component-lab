@@ -16,6 +16,7 @@
 | 两个 Worker 更新同一个批次进度时怎样避免覆盖 | [NATS JetStream KV + Go](labs/nats-kv-cas/README.md)，运行 `(cd labs/nats-kv-cas && go run -mod=readonly .)` 检查版本冲突与重试。 |
 | 发货消费者重启与补数时怎样控制读取位置 | [Kafka 消费位点恢复与独立重放](labs/kafka-offset-replay/README.md)，运行 `./mvnw -B -f labs/kafka-offset-replay/pom.xml clean verify`。 |
 | 坏的订单消息总是处理失败时怎样隔离 | [ActiveMQ Artemis + Jakarta JMS](labs/artemis-jms-dead-letter/README.md)，运行 `./mvnw -B -f labs/artemis-jms-dead-letter/pom.xml clean verify` 核对重投、死信与正常提交。 |
+| 收到 Broker 确认后怎样核对消息确实有路由 | [RabbitMQ + Java 发布确认](labs/rabbitmq-publisher-confirms/README.md)，运行 `sh labs/rabbitmq-publisher-confirms/verify.sh` 对照入队和 `NO_ROUTE` 返回。 |
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 订单服务调用库存时怎样共用请求的超时预算 | [gRPC + Protocol Buffers](labs/grpc-deadline/README.md)，运行 `./mvnw -B -f labs/grpc-deadline/pom.xml clean verify` 验证两跳调用和取消。 |

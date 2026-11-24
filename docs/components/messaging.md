@@ -1,6 +1,6 @@
 # 消息队列与事件流
 
-本页收录消息队列与事件流组件的典型用法、接入步骤和投递边界。仓库附 ActiveMQ Artemis、RocketMQ、Kafka 和 NATS JetStream 的可运行实验。
+本页收录消息队列与事件流组件的典型用法、接入步骤和投递边界。仓库附 RabbitMQ、ActiveMQ Artemis、RocketMQ、Kafka 和 NATS JetStream 的可运行实验。
 
 ## RabbitMQ
 
@@ -9,6 +9,8 @@
 - **确认与重试**｜Publisher Confirm 反映 Broker 侧接收结果。即使无队列匹配，发布也可能收到 confirm。要求至少匹配一条路由时，应处理 `mandatory` 返回。消费侧在业务提交后手动 ACK，按错误类型设计有限重试和 Dead Letter Exchange。设置 prefetch 限制未确认消息数，并核对所用队列类型的死信投递保证。 [确认机制](https://www.rabbitmq.com/docs/confirms) · [死信交换机](https://www.rabbitmq.com/docs/dlx)
 - **顺序与重放**｜队列按 FIFO 入队和出队。多消费者、优先级和重投都会影响实际处理顺序。需要顺序时核对单活消费者和应用内处理并发。普通队列 ACK 后无法作为历史日志重读，需要从历史位点重放时评估 RabbitMQ Streams 及其保留策略。 [队列顺序](https://www.rabbitmq.com/docs/queues#message-ordering) · [Streams](https://www.rabbitmq.com/docs/streams)
 - **验证**｜发布到未绑定的路由键应告警。消费者提交后断线使消息重投时，同一事件只产生一次业务写入。让死信目标暂时不可用，检查原消息的去向及恢复结果。
+
+运行 [RabbitMQ + Java 发布确认](../../labs/rabbitmq-publisher-confirms/README.md)。用 `confirmSelect` 开启确认，用 `mandatory=true` 发布并监听返回。分别核对匹配路由时的入队结果，以及未匹配路由时的 ACK、`312 NO_ROUTE` 和原始消息标识。
 
 ## Apache ActiveMQ Artemis
 
