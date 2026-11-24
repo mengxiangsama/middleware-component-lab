@@ -27,6 +27,7 @@
 | 订单表怎样从主库同步到报表库 | [PostgreSQL 逻辑复制](labs/postgres-logical-replication/README.md)，运行 `./mvnw -B -f labs/postgres-logical-replication/pom.xml clean verify` 验证全量、增量和暂停恢复。 |
 | 下游怎样从订单表读到新增、修改和删除事件 | [Debezium + PostgreSQL](labs/debezium-postgres-events/README.md)，运行 `./mvnw -B -f labs/debezium-postgres-events/pom.xml clean verify`，核对快照和 CDC 事件。 |
 | 支付看板怎样增量汇总并跨批去重 | [ClickHouse + chDB](labs/clickhouse-payment-rollup/README.md)，用 Python 核对北京时间分日、回填和买家去重。 |
+| 怎样在本机核对指定日期的 Parquet 订单 | [DuckDB + Parquet](labs/duckdb-parquet-report/README.md)，安装实验依赖后运行 `python labs/duckdb-parquet-report/verify.py` 检查分区筛选与金额。 |
 | 支付事件乱序到达时怎样按付款时间汇总 | [Flink 事件时间窗口](labs/flink-event-time/README.md)，运行 `./mvnw -B -f labs/flink-event-time/pom.xml clean verify` 核对两个窗口和迟到输出。 |
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
 | CSV 导入接口临时失败时怎样重投和归档 | [Camel File + HTTP](labs/camel-file-http-import/README.md)，运行 `./mvnw -B -f labs/camel-file-http-import/pom.xml clean verify` 验证重投及成功后的文件移动。 |
