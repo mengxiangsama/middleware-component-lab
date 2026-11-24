@@ -124,6 +124,12 @@ CREATE SUBSCRIPTION lab_orders_sub
 - 某个 sink 是否能在恢复时避免重复影响，取决于该连接器的实现、启用的提交模式和外部目标能力。验证 checkpoint 后能否从可回放源续读，以及事务提交或按键幂等能否处理重放。多个 sink 各自恢复成功，仍需分别做结果核对。 [SeaTunnel 连接器能力](https://seatunnel.apache.org/docs/introduction/concepts/connector-v2-features/)
 - 在写入目标后中断任务，核对恢复后的行数、最后版本和删除结果。做一次目标不可用后追平，并验证来自源端的新字段如何进入目标。
 
+## Apache Camel
+
+Camel 用路由连接文件、消息队列和 HTTP 等输入输出。配置 `from` 端点接收数据，按需映射消息，再用 `to` 端点发送。通过 `onException` 识别可重试错误并限制次数。File 消费端可在处理成功后移动文件。[路由入门](https://camel.apache.org/manual/getting-started.html) · [File 组件](https://camel.apache.org/components/4.18.x/file-component.html)
+
+运行 [Camel 文件到 HTTP 导入实验](../../labs/camel-file-http-import/README.md)，检查 503 后的请求正文以及接口确认前后的文件位置。
+
 ## 运行检查
 
 记录测试使用的版本、源和目标连接器、启动模式、恢复位点及日志保留期。对全量加增量任务，用相同主键做插入、更新和删除，按同一同步水位核对源端与目标端。对支持恢复的任务，记录重启前后的位点、重复记录和目标最终状态。需要验证 exactly-once 时，指定一个目标和写入模式，在写入与位点确认之间中断任务，比较重放前后的最终结果。
