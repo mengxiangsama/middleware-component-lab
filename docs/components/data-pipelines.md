@@ -86,6 +86,8 @@ CREATE SUBSCRIPTION lab_orders_sub
 - 作业从持久化 checkpoint 恢复状态并重放源数据。单个目标的端到端保证依赖可回放的源、能完成并恢复提交的事务 sink，或具备严格幂等语义的写入。以主键覆盖相同记录只能保护满足该条件的结果，读者仍可能在重放时观察到旧值。逐个核实连接器、写入模式和版本。 [Flink 连接器容错保证](https://nightlies.apache.org/flink/flink-docs-stable/docs/connectors/table/overview/)
 - 在 checkpoint 前后分别终止作业，核对窗口、迟到事件和目标输出。用真实连接器测试待提交事务恢复，检查目标暂不可用时是否可以在日志保留期内追平。
 
+- **事件时间窗口**。在 [订单付款样本实验](../../labs/flink-event-time/README.md) 中，用付款时间和门店构建 10 秒滚动窗口。观察乱序但仍能入窗的事件，再推进 watermark，让已经超过迟到边界的事件进入 side output。测试分别核对两个窗口的金额和迟到记录。
+
 ## Flink CDC
 
 - 适合在 Flink 作业或 CDC Pipeline 中读取库表快照及后续行变更。以 MySQL 增量快照为例，按分片做快照并记录进度，随后衔接 binlog。评估分片列、源库读负载、连接器与 Flink 兼容性，以及日志能否覆盖回填和恢复窗口。 [Flink CDC MySQL 数据源](https://nightlies.apache.org/flink/flink-cdc-docs-stable/docs/connectors/flink-sources/mysql-cdc/)

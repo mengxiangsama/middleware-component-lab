@@ -76,7 +76,7 @@
 | [PostgreSQL Logical Replication](data-pipelines.md#postgresql-logical-replication) | Publication、Subscription、行标识、复制槽和 WAL。**联调实测** · [订单表初始复制、增量与暂停恢复](../../labs/postgres-logical-replication/README.md)。 |
 | [Canal](data-pipelines.md#canal) | MySQL binlog 订阅、获取批次与确认 |
 | [阿里云 DTS](data-pipelines.md#阿里云-dts) | 托管迁移、全量和增量同步、订阅与任务监控 |
-| [Apache Flink](data-pipelines.md#apache-flink) | DataStream 或 SQL、事件时间、窗口和状态恢复 |
+| [Apache Flink](data-pipelines.md#apache-flink) | DataStream 或 SQL、事件时间、窗口和状态恢复。**可运行** · [付款窗口与迟到输出](../../labs/flink-event-time/README.md)。 |
 | [Flink CDC](data-pipelines.md#flink-cdc) | 数据库快照、增量捕获、Schema 演进和 Pipeline |
 | [Debezium](data-pipelines.md#debezium) | 数据库连接器、变更事件、快照和 offset 恢复。**联调实测** · [搭配 PostgreSQL 读取订单 CDC](../../labs/debezium-postgres-events/README.md)。 |
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 管理与错误处理 |
