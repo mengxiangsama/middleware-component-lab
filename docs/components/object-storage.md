@@ -8,4 +8,4 @@ SeaweedFS 的 S3 网关按 bucket 和对象键管理文件，可用 S3 SDK 上�
 - **搭配 AWS SDK for Go v2**。服务端为特定对象生成短时预签名 URL，浏览器或普通 HTTP 客户端持 URL 直传。应用用 `HeadObject` 核对大小和元数据，再记录上传完成。该 URL 在有效期内可重复使用，完成状态可由业务记录去重。
 - **验证**。运行 [SeaweedFS + AWS SDK 直传报表](../../labs/seaweedfs-s3-presign/README.md)，核对预签名上传、下载、内容摘要和对象键约束。
 
-[SeaweedFS S3 API](https://github.com/seaweedfs/seaweedfs/wiki/Amazon-S3-API) · [AWS SDK for Go v2 S3 示例](https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/go_s3_code_examples.html#create-a-presigned-url)
+[SeaweedFS S3 API](https://github.com/seaweedfs/seaweedfs/wiki/Amazon-S3-API) · [AWS SDK for Go v2 S3 示例](https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/go_s3_code_examples.html#s3_Scenario_PresignedUrl_go_topic)

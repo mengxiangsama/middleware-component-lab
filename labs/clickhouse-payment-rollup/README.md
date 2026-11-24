@@ -18,11 +18,12 @@
 
 ## 本地验证
 
-准备 Python 3.13 和可下载 chDB wheel 的网络。本实验使用 chDB 4.0.2，从仓库根目录执行。可以在虚拟环境里安装依赖。
+准备 Python 3.13 和可下载 chDB wheel 的网络。本实验使用 chDB 4.0.2，从仓库根目录创建虚拟环境后运行。
 
 ```sh
-python -m pip install -r labs/clickhouse-payment-rollup/requirements.txt
-python labs/clickhouse-payment-rollup/verify.py
+python3.13 -m venv .venv-clickhouse
+.venv-clickhouse/bin/python -m pip install -r labs/clickhouse-payment-rollup/requirements.txt
+.venv-clickhouse/bin/python labs/clickhouse-payment-rollup/verify.py
 ```
 
 验证脚本在临时目录中创建表。第一笔数据在创建视图前写入，检查其在回填后才进入结果。接下来分两批插入明细，同一买家跨批付款。脚本断言原始明细的聚合结果与目标表的合并结果一致。

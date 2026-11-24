@@ -13,7 +13,7 @@
 ## 接入步骤
 
 1. 在应用端初始化 S3 客户端。为 SeaweedFS 设置 `BaseEndpoint` 和 `UsePathStyle: true`，从服务端的凭据配置取密钥。预创建业务 bucket。
-2. 为业务记录分配对象键。实验使用 `report-attachments/reconciliation/day-report.csv`，把对象键、文件大小和类型交给 `PresignPutObject`，签出 60 秒有效的 PUT URL。把 URL、HTTP 方法和 `SignedHeader` 交给客户端。
+2. 为业务记录分配对象键。实验把 `report-attachments` 传给 `Bucket`，把 `reconciliation/day-report.csv` 传给 `Key`。调用 `PresignPutObject` 时同时传入文件大小和类型，签出 60 秒有效的 PUT URL，再把 URL、HTTP 方法和 `SignedHeader` 交给客户端。
 3. 客户端将文件作为请求正文直接 PUT，保留签名要求的请求头。实验用 `DisableHeaderHoisting` 将 `X-Amz-Meta-Source` 保留为请求头，SeaweedFS 能将它写入对象元数据。
 4. 上传后，应用以 `HeadObject` 核对对象大小、内容类型和业务元数据。需要客户端下载时，应用重新确认访问资格并通过 `PresignGetObject` 生成 GET URL。实验对下载内容计算 SHA-256，核对它与原文件一致。
 
@@ -44,4 +44,4 @@
 ## 官方资料
 
 - [SeaweedFS S3 API](https://github.com/seaweedfs/seaweedfs/wiki/Amazon-S3-API) · [weed mini 快速入门](https://github.com/seaweedfs/seaweedfs/wiki/Quick-Start-with-weed-mini)
-- [AWS SDK for Go v2 预签名上传示例](https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/go_s3_code_examples.html#create-a-presigned-url) · [S3 预签名 URL 生命周期](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html)
+- [AWS SDK for Go v2 预签名上传示例](https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/go_s3_code_examples.html#s3_Scenario_PresignedUrl_go_topic) · [S3 预签名 URL 生命周期](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html)
