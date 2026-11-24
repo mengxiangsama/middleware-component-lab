@@ -24,6 +24,7 @@
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 发版失败时怎样撤销新列并保留旧订单 | [Liquibase + H2 按标签回退](labs/liquibase-rollback/README.md)，运行 `./mvnw -B -f labs/liquibase-rollback/pom.xml clean verify` 检查列结构、订单数据和迁移记录。 |
 | 订单表怎样从主库同步到报表库 | [PostgreSQL 逻辑复制](labs/postgres-logical-replication/README.md)，运行 `./mvnw -B -f labs/postgres-logical-replication/pom.xml clean verify` 验证全量、增量和暂停恢复。 |
+| 支付看板怎样增量汇总并跨批去重 | [ClickHouse + chDB](labs/clickhouse-payment-rollup/README.md)，用 Python 核对北京时间分日、回填和买家去重。 |
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
 | 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
@@ -39,6 +40,8 @@
 | 下单变慢时怎样查入口和库存调用各花多久 | [OpenTelemetry Collector + Grafana Tempo](labs/otel-collector-tempo/README.md)，按一个 Trace ID 核对两段 span 的父子关系和耗时。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
+
+在 Python 虚拟环境安装 `labs/clickhouse-payment-rollup/requirements.txt` 中的依赖，然后运行 `python labs/clickhouse-payment-rollup/verify.py`，对账 ClickHouse 原始明细和增量报表。
 
 使用 Go 1.24+ 和 C 编译器，在仓库根目录运行 `(cd labs/nats-jetstream-sqlite && CGO_ENABLED=1 go run .)`，验证 JetStream 重投时积分只入账一次。
 

@@ -1240,3 +1240,5 @@ Spring Cache 是 Spring Framework 的方法级缓存抽象。应用用 `@EnableC
 - 用于明细扫描、报表和聚合查询。连接测试实例后创建 `MergeTree` 系列表，按常用过滤条件选择 `ORDER BY` 排序键，用 `INSERT` 批量写入样本，再用 `GROUP BY` 与聚合函数校验结果。排序键允许重复值。
 - `ReplacingMergeTree` 在后台合并时按排序键处理重复记录，查询可能看到合并前的多版本数据。需要当前版本时明确查询口径及对应成本，并区分业务去重与插入批次重试去重。
 - 追加同排序键的多版本与删除标记，比较普通查询和 `FINAL` 的结果及开销。不同数据批次用样本校验插入重试和回填的结果。[排序键](https://clickhouse.com/docs/concepts/best-practices/choosing-a-primary-key) · [ReplacingMergeTree](https://clickhouse.com/docs/reference/engines/table-engines/mergetree-family/replacingmergetree) · [去重策略](https://clickhouse.com/docs/concepts/features/operations/insert/deduplication)
+
+- **增量汇总**。物化视图对新写入批次计算聚合状态，目标表用 `AggregatingMergeTree` 保存。查询用 `...Merge` 函数合并同组的状态。[ClickHouse + chDB 支付实验](../../labs/clickhouse-payment-rollup/README.md)验证旧数据回填、跨批次去重和按北京时间分日。

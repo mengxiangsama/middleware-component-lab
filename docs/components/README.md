@@ -41,7 +41,7 @@
 | [Valkey](search-cache.md#valkey) | 键值与数据结构命令、过期和故障转移。**联调实测** · [搭配 Lettuce 按键推送失效](../../labs/valkey-client-cache/README.md)。 |
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载和淘汰。**可运行** · [异步刷新](search-cache.md#热点商品详情异步刷新)。**联调实测** · [搭配 Spring Cache 处理商品改价](search-cache.md#搭配-spring-cache-处理商品改价) · [Redis 广播失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。 |
 | [Spring Cache](search-cache.md#spring-cache) | 用注解声明读取、写入和失效策略。**联调实测** · [搭配 Caffeine 处理商品改价](search-cache.md#搭配-spring-cache-处理商品改价)。 |
-| [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合 |
+| [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合。**联调实测** · [用 chDB 验证支付增量汇总](../../labs/clickhouse-payment-rollup/README.md)。 |
 
 运行 [Redis 键过期与缓存更新](search-cache.md#键过期与缓存更新)，检查覆盖写入后的 TTL。运行 [Redis 键空间通知](search-cache.md#键空间通知与缓存过期观察)，对照按键和按事件订阅的消息内容。试跑 [Redis Streams 消费组接管](search-cache.md#streams-消费组确认与接管)，核对未确认消息的归属和投递次数。用两个 `redis-cli` 连接复现 [Redis 事务与乐观锁](search-cache.md#事务与乐观锁)的提交冲突和重试。运行 [Redis Functions 单件库存扣减](search-cache.md#redis-functions-单件库存扣减)，从独立连接调用已注册的函数并核对库存余量。
 
