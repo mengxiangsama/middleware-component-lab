@@ -47,6 +47,7 @@
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
 | 怎样让带标记的商品查询走灰度版本 | [Spring Cloud Gateway Header 路由实验](labs/spring-cloud-gateway/README.md)，运行 `./mvnw -B -f labs/spring-cloud-gateway/pom.xml verify` 核对实际转发。 |
 | 订单状态怎样通过代理逐条到达客户端 | [NGINX + SSE 流式响应实验](labs/nginx-sse/README.md)，运行 `python3 labs/nginx-sse/verify.py` 核对首条事件在流结束前到达。 |
+| 本地 HTTP API 怎样通过 HTTPS 入口转发 | [Caddy + Python HTTP API](labs/caddy-tls-proxy/README.md)，运行 `python3 labs/caddy-tls-proxy/verify.py --caddy /absolute/path/to/caddy` 核对证书、转发和路径匹配。 |
 | 怎样让门店把对账 CSV 直接上传到对象存储 | [SeaweedFS + AWS SDK 预签名 URL](labs/seaweedfs-s3-presign/README.md)，运行 `(cd labs/seaweedfs-s3-presign && WEED_BINARY=/absolute/path/to/weed go test -count=1 -v ./...)`。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
 | 下单变慢时怎样查入口和库存调用各花多久 | [OpenTelemetry Collector + Grafana Tempo](labs/otel-collector-tempo/README.md)，按一个 Trace ID 核对两段 span 的父子关系和耗时。 |

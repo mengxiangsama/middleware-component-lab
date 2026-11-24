@@ -1,0 +1,24 @@
+{
+	admin off
+	persist_config off
+	auto_https disable_redirects
+	skip_install_trust
+	storage file_system "{$LAB_CADDY_DATA}"
+	default_sni 127.0.0.1
+
+	servers {
+		protocols h1
+	}
+}
+
+https://127.0.0.1:{$LAB_HTTPS_PORT} {
+	bind 127.0.0.1
+	tls internal
+
+	handle /catalog/* {
+		reverse_proxy 127.0.0.1:{$LAB_BACKEND_PORT}
+	}
+	handle {
+		respond 404
+	}
+}

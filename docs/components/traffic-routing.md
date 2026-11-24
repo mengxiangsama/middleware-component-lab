@@ -8,6 +8,12 @@ NGINX 可按路径代理 HTTP 服务。通过 `location` 选择请求，再用 `
 
 运行 [SSE 订单进度实验](../../labs/nginx-sse/README.md)，在两条事件之间暂停上游，先从代理读取首条事件，再放行上游并核对第二条事件和响应结束。
 
+## Caddy
+
+Caddy 可以终止 TLS，并按路径把请求转发给 HTTP 上游。本地实验用 `tls internal` 生成证书，用 `handle` 和 `reverse_proxy` 匹配商品 API。客户端仅为本次连接加载实验 CA。上游使用 `X-Forwarded-Proto` 等字段识别原始请求时，应确认请求来自配置好的反向代理。[Caddy TLS](https://caddyserver.com/docs/caddyfile/directives/tls) · [反向代理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+
+运行 [Caddy + Python HTTPS 商品 API](../../labs/caddy-tls-proxy/README.md)，核对默认客户端的证书拒绝、指定 CA 后的成功响应、转发字段与非匹配路径。
+
 ## Istio
 
 在测试网格中准备同一个 Service 下的两个版本，给 Pod 分别标记 `version: stable` 和 `version: canary`。用 `DestinationRule` 将标签声明为同名的 subset，用 `VirtualService` 按请求选择 subset。下面是一跳的规则，将测试命名空间和 Service 名替换为实际值。Header 键使用小写，HTTP 路由从上到下选第一条命中的规则。可先用官方 Bookinfo 跑同类操作。[请求路由](https://istio.io/latest/docs/tasks/traffic-management/request-routing/) · [VirtualService](https://istio.io/latest/docs/reference/config/networking/virtual-service/) · [DestinationRule](https://istio.io/latest/docs/reference/config/networking/destination-rule/)
