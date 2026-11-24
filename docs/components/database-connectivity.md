@@ -19,3 +19,9 @@ MyBatis 将 Java 接口方法映射到 SQL。通过 XML 或注解配置语句，
 SQLite 将关系数据存入本地文件。适合单机工具、门店应用和本机任务。Java 通过 Xerial SQLite JDBC 打开文件，多个连接共享同一数据库。启用 WAL 后，读事务可以保留自己的快照，同时一个写事务仍能提交。[Xerial JDBC](https://github.com/xerial/sqlite-jdbc) · [SQLite WAL](https://www.sqlite.org/wal.html)
 
 运行 [SQLite + JDBC 发货报表快照](../../labs/sqlite-wal-snapshot/README.md)，核对写入前后的两套读结果，以及第二个写事务和旧快照升级写事务时的错误码。
+
+## MySQL InnoDB
+
+InnoDB 支持行级加锁。任务表可以用 `SELECT ... FOR UPDATE SKIP LOCKED` 让多个事务领取各自可见的可用行，在同一事务更新状态。调用方需要用合适的索引限制扫描范围，并处理事务失败后的重试与领取后的业务恢复。[MySQL 锁定读](https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html)
+
+运行 [MySQL + JDBC 发货任务领取实验](../../labs/mysql-skip-locked/README.md)，核对 A 持锁、B 领取另一行，以及 A 回滚后 C 接手。需要复制数据时另见 [MySQL Replication](data-pipelines.md#mysql-replication)。
