@@ -18,6 +18,7 @@
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 两个订单实例同时出故障时怎样只发一条告警 | [Prometheus + Alertmanager](labs/alertmanager-webhook/README.md)，在本地 Webhook 核对合并后的触发和恢复通知。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
+| 预发和生产怎样共用发布清单并拦截错误字段 | [Kustomize + kubeconform](labs/kustomize-overlays/README.md)，对照环境差异，并用 Kubernetes Schema 校验渲染结果。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
@@ -35,6 +36,8 @@
 将 Prometheus 3.16.0 和 Alertmanager 0.35.0 加入 `PATH` 后，在仓库根目录运行 `python3 labs/alertmanager-webhook/verify.py`，验证真实抓取到 Webhook 的告警链路。
 
 Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `sh labs/helm-values-schema/verify.sh`，无需 Kubernetes 集群。
+
+将 Kustomize 5.8.1 和 kubeconform 0.8.0 加入 `PATH` 后，运行 `sh labs/kustomize-overlays/verify.sh`，验证预发和生产渲染，以及错误副本字段拦截。
 
 在仓库根目录运行 `./mvnw -B -f labs/flyway/pom.xml -Dtest=OrderStartupMigrationTest test` 可实测 Spring Boot 启动迁移，使用内嵌 H2。
 
@@ -181,7 +184,7 @@ curl -i http://localhost:8088/actuator/prometheus
 | 配置灰度、服务发现、进程协调和容错 | [服务治理](docs/components/service-tools.md) · Nacos、etcd、Sentinel、Resilience4j、Seata |
 | 指标、告警和链路 | [采集与指标](docs/components/service-tools.md#opentelemetry) · OpenTelemetry、Prometheus。 [查询与告警](docs/components/observability-tools.md) · Grafana、Alertmanager、Tempo |
 | 打包和构建镜像 | [Dockerfile 与 Compose](docs/components/docker-build.md) · Maven Wrapper、BuildKit、镜像和容器检查 |
-| 镜像仓库、部署模板和 Git 同步 | [制品与持续交付](docs/components/delivery-tools.md) · Harbor、Helm、Argo CD |
+| 镜像仓库、部署模板和 Git 同步 | [制品与持续交付](docs/components/delivery-tools.md) · Harbor、Helm、Kustomize、kubeconform、Argo CD |
 
 ## 学习路线
 

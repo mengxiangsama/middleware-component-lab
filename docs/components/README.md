@@ -104,6 +104,8 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Helm](delivery-tools.md#helm) | Chart 渲染、values、安装、升级与回滚。**可运行** · [用 Schema 校验环境覆盖参数](delivery-tools.md#用-schema-校验环境覆盖参数)。 |
+| [Kustomize](delivery-tools.md#kustomize) | 复用 Kubernetes 基础清单，按环境设置差异。**联调实测** · [预发与生产 overlay 渲染和校验](../../labs/kustomize-overlays/README.md)。 |
+| [kubeconform](delivery-tools.md#kubeconform) | 以目标 Kubernetes 版本的 Schema 校验清单。**联调实测** · [拦截错误副本字段](../../labs/kustomize-overlays/README.md#验证方法)。 |
 | [Harbor](delivery-tools.md#harbor) | 镜像推拉、Digest、机器人账号与扫描 |
 | [Argo CD](delivery-tools.md#argo-cd) | Git 同步、资源健康、漂移和自动同步 |
 

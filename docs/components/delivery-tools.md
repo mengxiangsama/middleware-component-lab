@@ -22,6 +22,18 @@ helm history demo -n helm-lab
 
 为 Chart 添加 `values.schema.json`，用发布时的环境覆盖文件执行 `helm lint --strict` 和 `helm template`，检查合并后的参数。运行 [Helm Schema 实验](../../labs/helm-values-schema/README.md)，核对合法覆盖后的副本数和 Service 端口，并复现类型错误、端口越界和键名拼错。实验只需要 Helm 4.3.2 和 Shell。
 
+## Kustomize
+
+- **适用场景**。预发与生产的大部分 Kubernetes 清单相同，只需分别管理副本数、镜像标签或命名空间。把共享资源放在 base，把环境差异放在 overlay。
+- **最小接入**。先在 base 的 `kustomization.yaml` 中用 `resources` 列出 Deployment 等资源，再给各环境创建 overlay 并引用 base。用 `kustomize build overlays/production` 预览生产的完整 YAML。 [Kubernetes base 与 overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays)
+- **搭配 kubeconform**。把渲染结果交给 [kubeconform](#kubeconform) 检查字段类型。运行 [预发与生产清单实验](../../labs/kustomize-overlays/README.md)，核对两个 overlay 的命名空间、副本数与镜像标签，并复现副本字段类型错误。
+
+## kubeconform
+
+- **适用场景**。在发布流水线校验已经渲染的 Kubernetes 清单，使字段类型、未知字段等结构问题在提交到集群前暴露。
+- **最小接入**。先由 [Kustomize](#kustomize) 渲染，再用 `kubeconform -strict -summary -kubernetes-version 1.35.0 rendered.yaml` 对齐目标集群的 Kubernetes 版本。默认从上游下载 Schema，CI 也可提供已准备的本地 Schema。已有 CRD 的应用需给相应资源提供 Schema。 [kubeconform 选项与 Schema 位置](https://github.com/yannh/kubeconform/blob/v0.8.0/Readme.md#overriding-schemas-location)
+- **验证**。运行 [环境清单实验](../../labs/kustomize-overlays/README.md#验证方法)，确认合法 Deployment 校验通过，错误用例指出 `/spec/replicas` 的类型问题。
+
 ## Harbor
 
 Harbor 按项目管理镜像和权限。先在 Harbor 界面创建私有测试项目 `lab`，将 `registry.example.invalid` 换成自己的测试地址，使用允许推送该项目的账号。以下示例假定已有本地镜像 `demo:local`。[Docker 客户端推拉镜像](https://goharbor.io/docs/2.14.0/working-with-projects/working-with-images/pulling-pushing-images/)
