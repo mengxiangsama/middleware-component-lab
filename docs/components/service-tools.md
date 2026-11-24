@@ -310,6 +310,8 @@ first=in-stock third=in-stock
 - **最小接入**：启动应用时传入 `-javaagent`，设置 `OTEL_SERVICE_NAME`，选择 OTLP 导出协议和接收端。使用 Collector 时，配置 receiver、processor 和 exporter，并把它们接入对应信号的 pipeline。 [Java Agent 快速开始](https://opentelemetry.io/docs/zero-code/java/agent/getting-started/) · [Collector 配置](https://opentelemetry.io/docs/collector/configuration/)
 - **验证**：发一次跨服务调用，检查上下游 trace 是否关联，检查对应指标和日志是否到达预定接收端。短暂关闭接收端，观察导出队列、重试和丢弃。采样和进程内缓冲会影响信号的完整性。
 
+[Collector 搭配 Grafana Tempo 实验](../../labs/otel-collector-tempo/README.md)实测 OTLP/HTTP 接收、OTLP/gRPC 导出，以及按 Trace ID 读回父子 span。
+
 ## Prometheus
 
 采集 Spring Boot 应用的 JVM 指标，见 [Actuator 搭配 Prometheus](release-tools.md#搭配-prometheus-采集应用指标)。下方告警规则实验使用官方镜像 `prom/prometheus:v3.16.0` 中的 `promtool` 直接注入样本，无需启动应用或 Prometheus 服务端。[3.16.0 发布记录](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)

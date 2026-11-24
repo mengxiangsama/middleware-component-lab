@@ -27,6 +27,7 @@
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
 | 怎样让带标记的商品查询走灰度版本 | [Spring Cloud Gateway Header 路由实验](labs/spring-cloud-gateway/README.md)，运行 `./mvnw -B -f labs/spring-cloud-gateway/pom.xml verify` 核对实际转发。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
+| 下单变慢时怎样查入口和库存调用各花多久 | [OpenTelemetry Collector + Grafana Tempo](labs/otel-collector-tempo/README.md)，按一个 Trace ID 核对两段 span 的父子关系和耗时。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
 
@@ -47,6 +48,8 @@ Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `s
 运行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml test` 可联调商品缓存与数据库事务，使用内嵌 H2。用本地 Redis 验证双实例时，执行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml -Dtest=RedisPriceCacheIT -Dlab.redis.port=16379 test`。
 
 在仓库根目录运行 `sh labs/fluent-bit-java-multiline/verify.sh` 可验证多行采集，需要 Docker、Shell 和 `jq`。运行 `sh labs/fluent-bit-java-multiline/verify-loki.sh` 可联调 Loki 写入与查询，另需 Docker Compose 和 `curl`。
+
+将 `otelcol` 和 `tempo` 加入 `PATH` 后，在仓库根目录运行 `python3 labs/otel-collector-tempo/verify.py` 验证 OTLP 转发和 Trace ID 查询。
 
 ## RocketMQ 事务消息实验
 

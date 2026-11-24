@@ -16,6 +16,8 @@
 
 ## Grafana Tempo
 
+[运行 Collector + Tempo 联调实验](../../labs/otel-collector-tempo/README.md)，按同一 Trace ID 查询下单和库存 span，核对父子关系及各自耗时。
+
 - **常用功能**。保存并查询分布式请求的 trace，通过 Trace ID 定位一次请求，或用 TraceQL 找到指定服务的错误 span。 [Tracing 入门](https://grafana.com/docs/tempo/latest/set-up-for-tracing/) · [TraceQL 示例](https://grafana.com/docs/tempo/latest/traceql/construct-traceql-queries/)
 - **最小接入**。在 Tempo 启用可访问的 OTLP receiver。将 [OpenTelemetry Collector](service-tools.md#opentelemetry) 的 traces pipeline 指向 Tempo 的 OTLP gRPC 或 HTTP 接收端，匹配协议与 TLS。令测试服务以 `service.name=demo-api` 导出追踪，并发出一次测试请求。在 Grafana 增加 Tempo 数据源并连接查询端，在 Explore 按 Trace ID 查看完整链路。也可以用 `{ resource.service.name = "demo-api" && status = error }` 搜索标记为错误的 span。 [Collector 接入](https://grafana.com/docs/tempo/latest/set-up-for-tracing/instrument-send/set-up-collector/otel-collector/) · [Tempo 数据源设置](https://grafana.com/docs/grafana/latest/datasources/tempo/configure-tempo-data-source/)
 - **验证**。让测试接口分别成功和失败，确认错误查询命中失败请求。在 Explore 找不到已知 Trace ID 时，检查 Collector 导出日志、Tempo receiver 监听和采样结果。再用查询端的 `GET /api/traces/<traceID>` 验证数据是否能被读出。多租户部署需核对写入与查询使用同一个租户标识。 [查询 API](https://grafana.com/docs/tempo/latest/api_docs/)

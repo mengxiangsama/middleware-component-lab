@@ -126,8 +126,8 @@
 | [etcd](service-tools.md#etcd) | 键值读写、事务、Watch、租约与任务选主。**联调实测** · [租约过期后的接手与写入保护](../../labs/etcd-leader-election/README.md)。 |
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。**可运行** · [按异常类型有限重试](service-tools.md#按异常类型有限重试)。**联调实测** · [搭配 Java HttpClient 保护库存查询](../../labs/resilience4j-inventory/README.md)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
-| [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出 |
+| [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出。**联调实测** · [Collector 搭配 Tempo 转发 trace](../../labs/otel-collector-tempo/README.md)。 |
 | [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警。**可运行** · [测试订单服务抓取失败告警](service-tools.md#测试订单服务抓取失败告警)，含 [pending 状态与等待重置验证](../../labs/prometheus-rules/README.md)。 |
 | [Alertmanager](observability-tools.md#alertmanager) | 告警路由、分组、抑制、静默与通知。**联调实测** · [搭配 Prometheus 合并订单告警](../../labs/alertmanager-webhook/README.md)。 |
 | [Grafana](observability-tools.md#grafana) | 数据源、Explore 和仪表盘 |
-| [Grafana Tempo](observability-tools.md#grafana-tempo) | OTLP 链路存储、Trace ID 与 TraceQL 查询 |
+| [Grafana Tempo](observability-tools.md#grafana-tempo) | OTLP 链路存储、Trace ID 与 TraceQL 查询。**联调实测** · [按 Trace ID 查下单链路](../../labs/otel-collector-tempo/README.md)。 |
