@@ -86,6 +86,7 @@
 | [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
 | [Apache Camel](data-pipelines.md#apache-camel) | 应用间消息路由、协议连接和异常处理。**联调实测** · [搭配 File 和 HTTP 导入 CSV](../../labs/camel-file-http-import/README.md)。 |
+| [Apache MINA SSHD 与 SFTP](data-pipelines.md#apache-mina-sshd-与-sftp) | Java SFTP、主机密钥核验和文件交付。**联调实测** · [传完后发布对账 CSV](../../labs/sftp-staged-upload/README.md)。 |
 | [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和。**可运行** · [订单表版本化迁移与校验](release-tools.md#订单表版本化迁移与校验)。**联调实测** · [搭配 Spring Boot 自动迁移](release-tools.md#搭配-spring-boot-启动时迁移)。 |
 | [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览、结构变更与版本标签回退。**联调实测** · [搭配 H2 回退订单表](../../labs/liquibase-rollback/README.md)。 |
 

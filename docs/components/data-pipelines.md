@@ -130,6 +130,12 @@ Camel 用路由连接文件、消息队列和 HTTP 等输入输出。配置 `fro
 
 运行 [Camel 文件到 HTTP 导入实验](../../labs/camel-file-http-import/README.md)，检查 503 后的请求正文以及接口确认前后的文件位置。
 
+## Apache MINA SSHD 与 SFTP
+
+Java 应用通过 Apache MINA SSHD 连接 SFTP。连接时核验从可信渠道取得的服务器主机公钥。发送方先向目标目录中的临时文件写入全部内容，关闭后更名为约定的文件名，接收方只读取最终名称。部署前用实际服务端和文件系统确认选用的重命名方式与失败处理。[Apache MINA SSHD SFTP](https://github.com/apache/mina-sshd/blob/sshd-2.20.0/docs/sftp.md)
+
+运行 [SFTP 对账文件交付实验](../../labs/sftp-staged-upload/README.md)，核对主机公钥错误时连接被拒绝，临时文件消失后最终 CSV 的字节完全一致。
+
 ## 运行检查
 
 记录测试使用的版本、源和目标连接器、启动模式、恢复位点及日志保留期。对全量加增量任务，用相同主键做插入、更新和删除，按同一同步水位核对源端与目标端。对支持恢复的任务，记录重启前后的位点、重复记录和目标最终状态。需要验证 exactly-once 时，指定一个目标和写入模式，在写入与位点确认之间中断任务，比较重放前后的最终结果。

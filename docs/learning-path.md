@@ -68,6 +68,8 @@
 
 在本机做多查询报表时，运行 [SQLite + JDBC 快照实验](../labs/sqlite-wal-snapshot/README.md)。保持报表事务打开，再让另一连接提交发货，核对事务内外看到的金额。
 
+通过 SFTP 交付对账文件时，运行 [Apache MINA SSHD + SFTP](../labs/sftp-staged-upload/README.md)，核对主机密钥、最终文件出现的时机和文件内容。
+
 ## 服务保护与灰度
 
 发布前要确认环境覆盖参数合法时，运行 [Helm Schema 实验](../labs/helm-values-schema/README.md)。用本地渲染核对副本数和 Service 端口，并确认参数拼错或越界时 Helm 会报错。
