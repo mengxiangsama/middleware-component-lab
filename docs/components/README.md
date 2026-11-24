@@ -8,7 +8,7 @@
 | --- | --- |
 | [RabbitMQ](messaging.md#rabbitmq) | 工作队列、Exchange 路由、发布确认和消费 ACK |
 | [Apache RocketMQ](messaging.md#apache-rocketmq) | 普通、顺序、定时、事务消息，以及重试和死信 |
-| [Apache Kafka](messaging.md#apache-kafka) | 分区事件流、消费组、位点提交和历史回放 |
+| [Apache Kafka](messaging.md#apache-kafka) | 分区事件流、消费组、位点提交和历史回放。**可运行** · [Java Client 位点恢复与独立重放](../../labs/kafka-offset-replay/README.md)。 |
 | [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递 |
 | [NATS JetStream](messaging.md#nats-jetstream) | Subject 过滤、Stream 保留、持久 Consumer 和 ACK。**联调实测** · [搭配 SQLite 防止积分重复入账](../../labs/nats-jetstream-sqlite/README.md)。 |
 
