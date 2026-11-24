@@ -56,6 +56,8 @@ Tag Router 按每次 RPC 的 `dubbo.tag` 从候选 Provider 地址中筛选实�
 
 ## Spring Cloud Gateway
 
+运行 [WebFlux Header 路由实验](../../labs/spring-cloud-gateway/README.md)，用两个本地 HTTP 上游验证精确匹配和 Header 转发，再停止灰度上游核对响应以及稳定版是否收到请求。
+
 在 Server WebFlux 的路由里用 `Header` 谓词匹配入站请求。下面的两个本地端口应分别运行 canary 和 stable 测试服务，并能处理 `/catalog/**`。匹配灰度的路由顺序在通用路由之前。此 YAML 使用新版 WebFlux 前缀，4.2 参考文档使用 `spring.cloud.gateway.routes`，升级时按对应版本核对配置键。Header 的值使用 Java 正则表达式。[新版 Header 谓词](https://docs.spring.io/spring-cloud-gateway/reference/spring-cloud-gateway-server-webflux/request-predicates-factories.html) · [4.2 路由谓词](https://docs.spring.io/spring-cloud-gateway/reference/4.2/spring-cloud-gateway/request-predicates-factories.html)
 
 ```yaml

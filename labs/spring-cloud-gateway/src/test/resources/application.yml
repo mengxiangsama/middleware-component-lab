@@ -1,0 +1,20 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 1000
+            response-timeout: 2s
+          routes:
+            - id: catalog-canary
+              uri: ${catalog.canary-uri}
+              order: -1
+              predicates:
+                - Path=/catalog/**
+                - Header=X-Release-Track, ^canary$
+            - id: catalog-stable
+              uri: ${catalog.stable-uri}
+              order: 0
+              predicates:
+                - Path=/catalog/**
