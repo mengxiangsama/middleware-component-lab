@@ -25,6 +25,7 @@
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 发版失败时怎样撤销新列并保留旧订单 | [Liquibase + H2 按标签回退](labs/liquibase-rollback/README.md)，运行 `./mvnw -B -f labs/liquibase-rollback/pom.xml clean verify` 检查列结构、订单数据和迁移记录。 |
 | 订单表怎样从主库同步到报表库 | [PostgreSQL 逻辑复制](labs/postgres-logical-replication/README.md)，运行 `./mvnw -B -f labs/postgres-logical-replication/pom.xml clean verify` 验证全量、增量和暂停恢复。 |
+| 下游怎样从订单表读到新增、修改和删除事件 | [Debezium + PostgreSQL](labs/debezium-postgres-events/README.md)，运行 `./mvnw -B -f labs/debezium-postgres-events/pom.xml clean verify`，核对快照和 CDC 事件。 |
 | 支付看板怎样增量汇总并跨批去重 | [ClickHouse + chDB](labs/clickhouse-payment-rollup/README.md)，用 Python 核对北京时间分日、回填和买家去重。 |
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
 | 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |

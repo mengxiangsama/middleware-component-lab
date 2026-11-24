@@ -113,6 +113,8 @@ CREATE SUBSCRIPTION lab_orders_sub
 - 恢复时已发出但未记入位点的记录可能重复。以消息键和可追踪位点核对重发记录。表主题的消息分区会影响观察到的顺序，跨分区的汇总顺序应以产品实际写入和消费行为为准。 [Debezium 故障恢复](https://debezium.io/documentation/reference/stable/connectors/mysql.html#mysql-when-things-go-wrong)
 - 分别在快照和增量阶段终止连接任务，检查重发对目标的影响。模拟过期位点或缺失 schema history，验证告警、恢复备份和受控重做快照流程。
 
+在 Java 服务中直接消费订单事件时，可使用 [Debezium Engine + PostgreSQL 实验](../../labs/debezium-postgres-events/README.md)。测试经真实 `pgoutput` 读取初始快照和三类变更，并检查事件的 `op`、主键、`before` 与 `after`。
+
 ## Apache SeaTunnel
 
 - 适合通过 Source、Transform、Sink 组合完成异构迁移、批量装载或 CDC 同步。优先确认具体连接器能否处理全量与增量衔接、类型映射、主键 upsert、删除和 DDL，并核查引擎与连接器版本的兼容性。 [SeaTunnel CDC 管道](https://seatunnel.apache.org/docs/architecture/cdc-pipeline-architecture/)
