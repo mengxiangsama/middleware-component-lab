@@ -31,6 +31,7 @@
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
 | 商品价格怎样本地命中并跟踪改价 | [Valkey + Lettuce 客户端缓存](labs/valkey-client-cache/README.md)，核对 RESP3 失效前后的服务端 GET 次数。 |
+| 商品搜索怎样筛出有库存的结果并按价格排序 | [Meilisearch 商品搜索实验](labs/meilisearch-storefront/README.md)，运行 `python3 labs/meilisearch-storefront/verify.py` 核对异步写入、过滤和价格顺序。 |
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
 | 怎样让带标记的商品查询走灰度版本 | [Spring Cloud Gateway Header 路由实验](labs/spring-cloud-gateway/README.md)，运行 `./mvnw -B -f labs/spring-cloud-gateway/pom.xml verify` 核对实际转发。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |

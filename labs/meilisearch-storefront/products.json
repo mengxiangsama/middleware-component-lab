@@ -1,0 +1,7 @@
+[
+  {"id":"kb-compact","title":"Keyboard Compact","category":"keyboards","in_stock":true,"price_cents":8900},
+  {"id":"kb-pro","title":"Keyboard Pro","category":"keyboards","in_stock":true,"price_cents":14900},
+  {"id":"kb-clearance","title":"Keyboard Clearance","category":"keyboards","in_stock":false,"price_cents":5900},
+  {"id":"cover","title":"Keyboard Cover","category":"accessories","in_stock":true,"price_cents":4900},
+  {"id":"switch-tester","title":"Mechanical Switch Tester","category":"keyboards","in_stock":true,"price_cents":3900}
+]

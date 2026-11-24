@@ -15,6 +15,12 @@
 - refresh 推进索引可见性。用同一个 `_aliases` 请求移除旧指向并添加新指向，可原子切换别名。别名切换只更新索引指向，重建期间的数据变更仍需要追平。别名关联多个索引时，写入需指定写索引。
 - 验证 refresh 前后查询，确认切换期间写请求的目标索引。迁移时单独测试实际版本的客户端、映射、插件与查询兼容性。[刷新](https://docs.opensearch.org/latest/api-reference/index-apis/refresh/) · [索引别名](https://docs.opensearch.org/latest/im-plugin/index-alias/) · [分页](https://docs.opensearch.org/latest/search-plugins/searching-data/paginate/)
 
+## Meilisearch
+
+- Meilisearch 提供文档全文搜索、结构化过滤和可选的查询排序。适合商品列表按名称搜索、按库存和类目筛选。
+- 商品应用按 SKU 写入 JSON 文档。为索引声明 `searchableAttributes`、`filterableAttributes` 和 `sortableAttributes`，并检查建索引、配置和文档写入的异步任务状态。查询端通过 `q`、`filter` 和 `sort` 组合搜索。 [搜索 API](https://www.meilisearch.com/docs/reference/api/search/search-with-post) · [任务状态](https://www.meilisearch.com/docs/reference/api/async-task-management/get-task)
+- 运行 [商品搜索实验](../../labs/meilisearch-storefront/README.md)，核对配置与写入任务成功、缺货或非目标类目的商品被过滤，以及两个在售商品按请求的价格顺序返回。将一个商品更新为缺货，再检查同一查询返回的 SKU。
+
 ## Redis
 
 仓库的 Maven 依赖和 Compose 未固定 Redis 服务端或客户端版本。本节以 Redis Open Source 7.4.2 和同版本的 `redis-cli` 为例。大部分示例使用 Docker 镜像 `redis:7.4.2`，RDB、AOF、主从复制和键空间通知实验使用源码构建。 [Redis 7.4.2 官方发布记录](https://github.com/redis/redis/releases/tag/7.4.2)
