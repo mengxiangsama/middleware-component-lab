@@ -2,6 +2,12 @@
 
 以下用 `stable` 和 `canary` 标识两个版本。金丝雀可以按权重抽样，也可以按 Header 或 RPC 标签选定请求。验证时让两个版本在日志或测试响应中报告实际命中的版本。
 
+## NGINX
+
+NGINX 可按路径代理 HTTP 服务。通过 `location` 选择请求，再用 `proxy_pass` 指定上游。对 SSE 路径单独设置 `proxy_buffering off`，让上游逐条写出的事件经代理转递给浏览器。 [反向代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html) · [响应缓冲](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering)
+
+运行 [SSE 订单进度实验](../../labs/nginx-sse/README.md)，在两条事件之间暂停上游，先从代理读取首条事件，再放行上游并核对第二条事件和响应结束。
+
 ## Istio
 
 在测试网格中准备同一个 Service 下的两个版本，给 Pod 分别标记 `version: stable` 和 `version: canary`。用 `DestinationRule` 将标签声明为同名的 subset，用 `VirtualService` 按请求选择 subset。下面是一跳的规则，将测试命名空间和 Service 名替换为实际值。Header 键使用小写，HTTP 路由从上到下选第一条命中的规则。可先用官方 Bookinfo 跑同类操作。[请求路由](https://istio.io/latest/docs/tasks/traffic-management/request-routing/) · [VirtualService](https://istio.io/latest/docs/reference/config/networking/virtual-service/) · [DestinationRule](https://istio.io/latest/docs/reference/config/networking/destination-rule/)

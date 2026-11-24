@@ -132,6 +132,7 @@
 | [Istio](traffic-routing.md#istio) | HTTP Header、版本 subset、权重和默认路由 |
 | [Apache Dubbo](traffic-routing.md#apache-dubbo) | Tag Router、请求标签与 Provider 分组 |
 | [Spring Cloud Gateway](traffic-routing.md#spring-cloud-gateway) | 入口 Header 匹配、灰度路由与默认稳定路由。**联调实测** · [转发到灰度和稳定 HTTP 上游](../../labs/spring-cloud-gateway/README.md)。 |
+| [NGINX](traffic-routing.md#nginx) | HTTP 反向代理、按路径路由与响应缓冲控制。**联调实测** · [代理 SSE 订单进度](../../labs/nginx-sse/README.md)。 |
 
 ## 服务治理与可观测性
 
