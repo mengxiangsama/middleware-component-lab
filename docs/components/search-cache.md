@@ -15,6 +15,8 @@
 - refresh 推进索引可见性。用同一个 `_aliases` 请求移除旧指向并添加新指向，可原子切换别名。别名切换只更新索引指向，重建期间的数据变更仍需要追平。别名关联多个索引时，写入需指定写索引。
 - 验证 refresh 前后查询，确认切换期间写请求的目标索引。迁移时单独测试实际版本的客户端、映射、插件与查询兼容性。[刷新](https://docs.opensearch.org/latest/api-reference/index-apis/refresh/) · [索引别名](https://docs.opensearch.org/latest/im-plugin/index-alias/) · [分页](https://docs.opensearch.org/latest/search-plugins/searching-data/paginate/)
 
+运行 [OpenSearch + Python PIT 分页](../../labs/opensearch-pit-pagination/README.md)。按时间和唯一订单号排序，在两页之间写入并刷新订单，对比快照和最新查询，然后关闭 PIT。
+
 ## Meilisearch
 
 - Meilisearch 提供文档全文搜索、结构化过滤和可选的查询排序。适合商品列表按名称搜索、按库存和类目筛选。

@@ -36,6 +36,8 @@
 
 ## 缓存与检索
 
+需要分页导出正在更新的订单索引时，运行 [OpenSearch + Python PIT 分页](../labs/opensearch-pit-pagination/README.md)。保持查询和排序条件一致，核对中途新增或更新的订单在两种查询中的结果。
+
 用同一批测试商品分别练习 [Redis](components/search-cache.md#redis) 的按键读取和 [Elasticsearch](components/search-cache.md#elasticsearch) 的关键词检索。有进程内热点数据时，再比较 [Caffeine](components/search-cache.md#caffeine) 和共享缓存的更新方式。
 
 涉及商品价格时，先运行 [Spring Cache + Caffeine 改价实验](../labs/spring-cache-caffeine/README.md)，核对提交后只清除对应商品、回滚时原缓存仍可用。

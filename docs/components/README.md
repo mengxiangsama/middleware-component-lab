@@ -35,7 +35,7 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Elasticsearch（ES）](search-cache.md#elasticsearch) | Mapping、全文检索、聚合、批量写入和分页 |
-| [OpenSearch](search-cache.md#opensearch) | 索引管理、检索、聚合与批量操作 |
+| [OpenSearch](search-cache.md#opensearch) | 索引管理、检索、聚合与批量操作。**联调实测** · [搭配 Python 用 PIT 导出订单](../../labs/opensearch-pit-pagination/README.md)。 |
 | [Meilisearch](search-cache.md#meilisearch) | 全文检索、异步索引、过滤和排序。**联调实测** · [商品搜索、库存过滤与价格排序](../../labs/meilisearch-storefront/README.md)。 |
 | [Redis](search-cache.md#redis) | 键值缓存、计数、集合、排行、Streams、事务和 Functions。**联调实测** · [广播 Caffeine 失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。 |
 | [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和限流。**联调实测** · [搭配 Valkey 共享报价服务额度](../../labs/redisson-shared-rate/README.md)。 |
