@@ -69,6 +69,12 @@ store-a manual rerun started after release
 
 门店日结任务需要跨重启保留时，用 Spring Boot 提供的数据源，把 Quartz 的任务和触发器写到 JDBC JobStore。重启保持调度器名和数据库配置一致，Quartz 就能读回原触发器，再按 `FireNow` 补跑一次。用 [门店对账联调](../../labs/quartz-jdbc/README.md) 核对持久化记录、misfire 回调和对账结果。
 
+## Temporal
+
+Temporal 运行带状态的工作流。Workflow 安排步骤，Activity 执行 HTTP 或数据库操作，并可配置每次尝试的超时、重试间隔和次数。Activity 调用写接口时携带稳定的业务幂等键，外部服务用该键识别重试并复用已有结果。[Temporal 重试策略](https://docs.temporal.io/encyclopedia/retry-policies) · [Activity 与幂等性](https://docs.temporal.io/activity-definition)
+
+运行 [Temporal + Go 库存预留实验](../../labs/temporal-activity-retry/README.md)，核对接口先写入再返回 503、第二次请求复用预留号，以及 Workflow 返回的结果。
+
 ## ElasticJob
 
 - Apache ShardingSphere ElasticJob 提供分布式分片调度。ElasticJob-Lite 用 ZooKeeper 注册协调，Java 作业实现 `SimpleJob`，在 `ShardingContext` 读取分片序号和参数。设置任务名、总分片数、Cron 和 ZooKeeper 命名空间后，用 `ScheduleJobBootstrap` 启动。

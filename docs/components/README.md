@@ -58,6 +58,7 @@
 | [XXL-JOB](scheduling.md#xxl-job) | 执行器注册、Cron、路由、分片广播和失败重试 |
 | [PowerJob](scheduling.md#powerjob) | Worker 接入、单机或广播执行、Map/MapReduce 和工作流 |
 | [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。**联调实测** · [恢复错过的触发](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发) · [用 JDBC 保存和恢复任务游标](../../labs/quartz-jdbc/README.md#重启后继续处理下一批)。 |
+| [Temporal](scheduling.md#temporal) | Workflow、Activity、重试和时间限制。**联调实测** · [搭配 Go 和 HTTP 库存服务验证重试](../../labs/temporal-activity-retry/README.md)。 |
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 
