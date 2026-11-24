@@ -83,7 +83,7 @@
 | [Flink CDC](data-pipelines.md#flink-cdc) | 数据库快照、增量捕获、Schema 演进和 Pipeline |
 | [Debezium](data-pipelines.md#debezium) | 数据库连接器、变更事件、快照和 offset 恢复。**联调实测** · [搭配 PostgreSQL 读取订单 CDC](../../labs/debezium-postgres-events/README.md)。 |
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 管理与错误处理 |
-| [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
+| [Apicurio Registry](data-pipelines.md#apicurio-registry) | 消息 Schema 登记、版本与兼容性。**联调实测** · [搭配 Avro 检查订单事件的演进](../../labs/apicurio-avro-compatibility/README.md)。 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
 | [Apache Camel](data-pipelines.md#apache-camel) | 应用间消息路由、协议连接和异常处理。**联调实测** · [搭配 File 和 HTTP 导入 CSV](../../labs/camel-file-http-import/README.md)。 |
 | [Apache MINA SSHD 与 SFTP](data-pipelines.md#apache-mina-sshd-与-sftp) | Java SFTP、主机密钥核验和文件交付。**联调实测** · [传完后发布对账 CSV](../../labs/sftp-staged-upload/README.md)。 |

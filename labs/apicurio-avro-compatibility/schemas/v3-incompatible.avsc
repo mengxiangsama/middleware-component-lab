@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "OrderCreated",
+  "namespace": "lab.orders",
+  "fields": [
+    {"name": "orderId", "type": "string"},
+    {"name": "totalCents", "type": "long"},
+    {"name": "currency", "type": "string", "default": "CNY"},
+    {"name": "warehouseId", "type": "string"}
+  ]
+}

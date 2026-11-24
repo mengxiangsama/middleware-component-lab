@@ -108,6 +108,8 @@ CREATE SUBSCRIPTION lab_orders_sub
 - **Kafka 接入**。以 3.3 系列的 Avro Java SerDes 为例，生产端配置 `AvroKafkaSerializer`，消费端配置 `AvroKafkaDeserializer`，两端指向同一 Registry API（`apicurio.registry.url`，例如 `https://registry.example.com/apis/registry/v3`）。生产端通过 `apicurio.registry.artifact.group-id`、`apicurio.registry.artifact.artifact-id`、`apicurio.registry.artifact.version` 选择预注册版本。序列化器把 Schema ID 写入消息载荷前缀，或按配置写入 header。反序列化器据该 ID 查到写入 Schema。两端需匹配 ID 类型、存放位置和编码长度。3.3 默认用 4 字节 `contentId`，升级旧客户端前验证历史消息回放。 [Kafka SerDes 配置](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-configuring-kafka-client-serdes.html) · [2.x 到 3.x 的 ID 编码变更](https://www.apicur.io/registry/docs/apicurio-registry/3.1.x/getting-started/assembly-migrating-registry-v2-v3.html)
 - **兼容规则和验证**。在 artifact 上启用 `COMPATIBILITY`，例如 `BACKWARD_TRANSITIVE` 要求新 Schema 能读取所有旧版本写入的数据。相同规则按 artifact、group、全局的顺序生效。在版本 2 加一个默认值为 `null` 的 Avro 可选字段，验证能注册且新消费者能回放旧消息。再尝试把 `status` 从字符串改为整数，检查上传被拒绝且原版本仍可读取。用未缓存 Schema 的消费者模拟 Registry 不可用，核对查找失败、重试与恢复。 [规则与优先级](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-intro-to-registry-rules.html) · [兼容模式](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-rule-reference.html)
 
+运行 [Apicurio Registry + Apache Avro](../../labs/apicurio-avro-compatibility/README.md)，在真实 Registry 上设置 artifact 级 `BACKWARD`。对照带默认值的新字段和无默认值的必填字段，再查已注册版本。
+
 ## Debezium
 
 - 适合将数据库行级变更分发给多个下游。以 MySQL 连接器经 Kafka Connect 写 Kafka 为例，初始快照建立基线，随后从对应 binlog 位点读取增量。保留 Connect 位点、MySQL 连接器的 schema history 和源日志，分开规划 Kafka 主题的保留期。部署与维护范围还包括连接器权限和消费者的 schema 兼容。 [Debezium MySQL 连接器](https://debezium.io/documentation/reference/stable/connectors/mysql.html)

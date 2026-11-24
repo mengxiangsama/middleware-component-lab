@@ -70,6 +70,8 @@
 
 通过 SFTP 交付对账文件时，运行 [Apache MINA SSHD + SFTP](../labs/sftp-staged-upload/README.md)，核对主机密钥、最终文件出现的时机和文件内容。
 
+向已有订单事件增加字段时，运行 [Apicurio Registry + Avro](../labs/apicurio-avro-compatibility/README.md)，对照新增字段带默认值和缺少默认值时的注册结果。
+
 ## 服务保护与灰度
 
 发布前要确认环境覆盖参数合法时，运行 [Helm Schema 实验](../labs/helm-values-schema/README.md)。用本地渲染核对副本数和 Service 端口，并确认参数拼错或越界时 Helm 会报错。
