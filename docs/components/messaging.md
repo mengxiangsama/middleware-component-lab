@@ -168,3 +168,7 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 - **确认与重投**｜PubAck 表示服务端已把消息存入 Stream，持久化程度由 Stream 存储与复制设置决定。用 `AckWait` 和最大投递次数管理投递预算，到达上限后可根据 advisory 追踪失败记录。发布去重取决于消息 ID 和窗口，消费业务副作用另行验证。 [发布](https://docs.nats.io/learn/jetstream/publishing) · [确认与重投](https://docs.nats.io/learn/jetstream/acknowledgment)
 - **顺序与重放**｜Stream 序列可用于顺序读取，多个 worker 并行完成和超时重投会改变业务处理顺序。按保留策略确定可回放范围。Limits 受时间、消息数和大小等上限约束，WorkQueue 在确认后删除已处理消息。 [顺序读取](https://docs.nats.io/learn/jetstream/ordered-consumer) · [保留策略](https://docs.nats.io/learn/jetstream/retention-policies)
 - **验证**｜模拟 worker 卡顿超过 ACK 时限及迟到 ACK，检查重复执行与停机后的进度恢复。让固定错误的消息达到投递上限，确认能追踪并修复。用实际保留配置验证可重放窗口。
+
+### 搭配 SQLite 防止重投导致积分重复入账
+
+订单支付事件可能在积分事务已提交、ACK 未发出时被重投。用 SQLite 主键约束去重，在同一事务登记事件 ID 和更新积分，再向 JetStream 确认。[运行联调实验](../../labs/nats-jetstream-sqlite/README.md)，核对两次投递的 Stream 序号和最终积分余额。

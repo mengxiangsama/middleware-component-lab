@@ -1,6 +1,6 @@
 # 中间件学习路线
 
-按手头的业务场景选择一条路线。消息路线可以直接运行仓库的 RocketMQ 和 Spring Modulith 实验，其余路线可沿组件分册的接入步骤，在测试环境完成练习。
+按手头的业务场景选择一条路线。消息路线可以直接运行仓库的 RocketMQ、Spring Modulith 和 NATS JetStream 实验，其余路线可沿组件分册的接入步骤，在测试环境完成练习。
 
 | 场景 | 留下的验证结果 |
 | --- | --- |
@@ -27,6 +27,8 @@
 对照[事务监听器](../src/main/java/io/github/rocketmqtx/transaction/OrderTransactionListener.java)看回查如何读取本地事务结果，再看[消费实现](../src/main/java/io/github/rocketmqtx/consumer/OrderMessageConsumer.java)如何用消息 ID 和 `consumed_event` 的主键处理重复投递。如果还需要处理生产者重复发出的同一业务事件，练习为该事件选择稳定的业务幂等键。关单或对账任务也可以复用这个思路。
 
 需要按订单依次处理创建、支付和发货时，运行 [RocketMQ 订单顺序消息实验](components/messaging.md#订单顺序消息)，按订单核对事件序列、队列号和队列位点。
+
+需要确认提交积分后断开连接会不会重复入账时，运行 [NATS JetStream + SQLite 实验](../labs/nats-jetstream-sqlite/README.md)，将同一消息的两次投递和最终余额对照起来。
 
 ## 缓存与检索
 

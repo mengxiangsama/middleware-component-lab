@@ -12,6 +12,7 @@
 | 某个组件能做什么、怎么接、能和谁搭配 | [组件目录](docs/components/README.md) |
 | 手头的问题要用哪些组件一起解决 | [按业务场景查学习路线](docs/learning-path.md) |
 | 订单落库后怎样可靠地向其他服务发布消息 | [RocketMQ 事务消息实验](#run-locally)，启动 Broker 和示例应用，用 HTTP 请求观察提交、回滚、事务回查和消费去重。 |
+| 订单支付消息重投后怎样避免积分重复发放 | [NATS JetStream + SQLite](labs/nats-jetstream-sqlite/README.md)，实测 Worker 提交后断开、Broker 重投与数据库去重。 |
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
@@ -25,6 +26,8 @@
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。
+
+使用 Go 1.24+ 和 C 编译器，在仓库根目录运行 `(cd labs/nats-jetstream-sqlite && CGO_ENABLED=1 go run .)`，验证 JetStream 重投时积分只入账一次。
 
 将 Prometheus 3.16.0 和 Alertmanager 0.35.0 加入 `PATH` 后，在仓库根目录运行 `python3 labs/alertmanager-webhook/verify.py`，验证真实抓取到 Webhook 的告警链路。
 
