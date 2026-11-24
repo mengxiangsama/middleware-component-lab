@@ -98,3 +98,26 @@
 使用 OpenJDK 17.0.16、Spring Boot 3.5.16、Quartz 2.5.2 和文件 H2 2.3.232 运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml clean verify`，集成测试通过。原应用上下文关闭后保留了 H2 文件，第二个上下文从同库读回原计划时间和 `FireNow` 策略。启动调度后收到一次性触发器的 misfire 回调，补写一条 `store-a / 2026-11-22` 对账执行记录，触发器已清除。
 
 教程已链接根 README、组件目录和学习路线。[实验与验证命令](../labs/quartz-jdbc/README.md)。已过去的触发时刻用于模拟错过计划，实验未验证运行中强制中断恢复或多实例故障转移。
+
+## 2026-11-24 · 16:13–16:43 手动维护
+
+从 `63cc7ec` 起检查组件目录、实验及近期提交。优先补缺少可运行示例的组件组合，已有教程则补一项独立能力。各实验链接首页或组件索引，教程包含适用场景、接入步骤、验证方法和官方资料。
+
+| 组件或功能 | 选题理由 | 本地实测 | 提交 |
+| --- | --- | --- | --- |
+| PostgreSQL 逻辑复制 | 订单报表库需要收到增量变更。 | 两个 PostgreSQL 17.12 实例完成首次复制、增删改同步、暂停恢复和复制槽清理。 | [3570ba8](https://github.com/mengxiangsama/middleware-component-lab/commit/3570ba8c24137c49999618292d6d2d5c9344c383) |
+| Meilisearch 商品搜索 | 商品列表需要按分类、库存和价格查找。 | Meilisearch 1.58.0 的索引任务和查询通过，商品下架后从可售结果中移除。 | [d97b5a3](https://github.com/mengxiangsama/middleware-component-lab/commit/d97b5a3fb0b128ba4b556017ab968c35461c87fd) |
+| gRPC + Protobuf | 订单服务调用库存时需要限定等待时间。 | 两个 Java 服务完成正常库存查询，短截止时间返回 `DEADLINE_EXCEEDED`，下游观测到取消。 | [346e1ac](https://github.com/mengxiangsama/middleware-component-lab/commit/346e1ac7dd445395c45e57e68def9509b61d39f7) |
+| ClickHouse + chDB | 按业务日期统计订单，需要合并多批数据和补算历史记录。 | chDB 4.0.2 中，两个写入批次与历史回填所得报表和明细查询一致。 | [a8b36c1](https://github.com/mengxiangsama/middleware-component-lab/commit/a8b36c159f071120956ab2eb934d6dc42d5b48f2) |
+| SeaweedFS + AWS SDK for Go | 浏览器直传和下载需要限于指定对象。 | SeaweedFS 4.55 的预签名 PUT/GET 往返校验通过，错键和匿名请求返回 403。 | [dc45e69](https://github.com/mengxiangsama/middleware-component-lab/commit/dc45e69ddccb058d6ec849575510fac08b05cd57) |
+| NGINX + SSE | 前端需要经反向代理及时看到订单状态。 | NGINX 1.30.8 在上游关闭前送达 `packed`，随后收到 `shipped` 和 EOF。 | [f36a80c](https://github.com/mengxiangsama/middleware-component-lab/commit/f36a80c5c251a1ae65c193638905f13abfb61c25) |
+| Artemis + Jakarta JMS | 消息处理反复失败后需要保留内容供排查。 | 回滚两次后，Artemis 2.44.0 把原消息送入死信队列，后续正常消息一次消费即提交。 | [9d8cdae](https://github.com/mengxiangsama/middleware-component-lab/commit/9d8cdae1bb9942414ee294f604828c6acad89438) |
+| Consul + HTTP 健康检查 | 调用端需要发现可用实例并避开故障实例。 | 实例 B 返回 503 后从健康发现结果移除，恢复后重新被发现，实例 A 继续响应。 | [6289793](https://github.com/mengxiangsama/middleware-component-lab/commit/62897930908a5e314838451a6e4831eaefdf2cb3) |
+| Debezium + PostgreSQL | 下游服务需要读取订单的变更内容。 | 实际 `pgoutput` 连接产出快照、插入、更新与删除事件，主键和变更前后值均符合预期。 | [604c60e](https://github.com/mengxiangsama/middleware-component-lab/commit/604c60e9f0efc9490322e967aeac03b34b545ec1) |
+| Flink 事件时间窗口 | 乱序订单要按事件时间汇总，过晚记录需留待核查。 | 本地 Flink 1.20.3 验得两个窗口金额为 1700 分和 1000 分，仅迟到记录 `p4` 进入侧输出。 | [9612584](https://github.com/mengxiangsama/middleware-component-lab/commit/9612584c3383d7843add87b42145bced19b5b3c0) |
+| Camel File + HTTP | 批量上传需在对端确认后归档。 | 第一次 POST 返回 503，同一份 CSV 重投成功并得到 204，之后才归档，字节一致。 | [5828a42](https://github.com/mengxiangsama/middleware-component-lab/commit/5828a423594bbe6e7eadfc48d92f766fa3a346a5) |
+| Quartz + H2 | 分批任务重启后需要续接处理进度。 | 调度器更换后从同一 H2 文件读出游标 3，下次执行推进到 4。 | [abc4fc6](https://github.com/mengxiangsama/middleware-component-lab/commit/abc4fc6956451d732e66be9e5384cfc82576aa0a) |
+| Redisson + Valkey | 多个 Java 实例需要共用接口限流额度。 | 两个独立 JVM 各取一个配额，第三次请求被拒绝，剩余 0。 | [a1aeac4](https://github.com/mengxiangsama/middleware-component-lab/commit/a1aeac4c677d09b768652a59915c51d66531c88f) |
+| DuckDB + Parquet | 核对指定日期订单时希望跳过其他日期的明细文件。 | 两个分区写入成功，所选日期两个渠道金额吻合，物理计划显示 `Scanning Files: 1/2`。 | [9435a49](https://github.com/mengxiangsama/middleware-component-lab/commit/9435a49c3b246758d1e485683756af9144847292) |
+
+上述结果来自本地实验。SeaweedFS 和 Valkey 首次主工作区复测的进程启动不稳定，后续重跑通过。另补充了 ClickHouse 虚拟环境步骤和 S3 对象键说明。[文档修订](https://github.com/mengxiangsama/middleware-component-lab/commit/6220363fd06873e15c7b72e2b6a47826d5643ce7)
