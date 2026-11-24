@@ -192,3 +192,9 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 ### 搭配 Go 条件更新批次进度
 
 多个 Worker 维护同一个批次计数时，用 JetStream KV 保存数值和 revision。Go 客户端读出旧值和 revision，计算新值后调用 `Update`。遇到确定的版本冲突时重新读取、重新计算并在限定次数内重试。[运行双连接联调实验](../../labs/nats-kv-cas/README.md) · [NATS KV 语义](https://docs.nats.io/nats-concepts/jetstream/key-value-store)
+
+## Eclipse Mosquitto
+
+Mosquitto 提供 MQTT 发布订阅。设备端通过 Paho 用固定 Client ID 建立持久会话并订阅设备主题。客户端短时离线期间，Broker 可为该会话排队匹配的 QoS 1 消息。设备重连时检查 `session_present` 决定是否重新订阅。[Mosquitto 配置手册](https://mosquitto.org/man/mosquitto-conf-5.html) · [Paho 客户端](https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html)
+
+运行 [Mosquitto + Paho MQTT 离线指令](../../labs/mosquitto-offline-qos1/README.md)，核对离线发布、重新连接和清理会话三步。

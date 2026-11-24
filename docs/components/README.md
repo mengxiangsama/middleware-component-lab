@@ -13,6 +13,7 @@
 | [Apache Kafka](messaging.md#apache-kafka) | 分区事件流、消费组、位点提交和历史回放。**可运行** · [Java Client 位点恢复与独立重放](../../labs/kafka-offset-replay/README.md)。 |
 | [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递 |
 | [NATS JetStream](messaging.md#nats-jetstream) | Subject 过滤、Stream 保留、持久 Consumer、ACK 和键值桶。**联调实测** · [搭配 SQLite 防止积分重复入账](../../labs/nats-jetstream-sqlite/README.md) · [搭配 Go 更新带版本的批次进度](../../labs/nats-kv-cas/README.md)。 |
+| [Eclipse Mosquitto](messaging.md#eclipse-mosquitto) | MQTT Broker、主题、QoS 和客户端会话。**联调实测** · [搭配 Paho 恢复离线指令](../../labs/mosquitto-offline-qos1/README.md)。 |
 
 **可运行** · [RocketMQ 事务消息实验](../../README.md#run-locally)，包含提交、回滚、事务回查和消费去重。 [RocketMQ 顺序消息实验](messaging.md#订单顺序消息)按订单核对创建、支付和发货的事件序列。
 

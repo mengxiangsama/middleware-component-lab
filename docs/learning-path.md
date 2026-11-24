@@ -34,6 +34,8 @@
 
 多个 Worker 都要更新批次进度时，运行 [NATS JetStream KV + Go](../labs/nats-kv-cas/README.md)，核对旧 revision 被拒绝后的重读与最终累计值。
 
+设备需要在短时断网后继续接收指令时，运行 [Mosquitto + Paho MQTT](../labs/mosquitto-offline-qos1/README.md)，核对同 ID 重连后自动收到离线发布的消息。
+
 ## 缓存与检索
 
 需要分页导出正在更新的订单索引时，运行 [OpenSearch + Python PIT 分页](../labs/opensearch-pit-pagination/README.md)。保持查询和排序条件一致，核对中途新增或更新的订单在两种查询中的结果。
