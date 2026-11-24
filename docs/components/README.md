@@ -54,6 +54,12 @@
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 
+## 数据库连接
+
+| 组件 | 常见用法 |
+| --- | --- |
+| [HikariCP](database-connectivity.md#hikaricp) | JDBC 连接复用、获取超时和池状态。**联调实测** · [搭配 H2 验证连接池耗尽](../../labs/hikaricp-pool/README.md)。 |
+
 ## 数据同步与处理
 
 [SQL 数据同步操作](data-pipelines.md#sql-数据同步)包含首次全量、后续增量和源目标校验。SQL 结构版本管理可查看下表的 Flyway 与 Liquibase。

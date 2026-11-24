@@ -20,6 +20,7 @@
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
 | 预发和生产怎样共用发布清单并拦截错误字段 | [Kustomize + kubeconform](labs/kustomize-overlays/README.md)，对照环境差异，并用 Kubernetes Schema 校验渲染结果。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
+| 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
