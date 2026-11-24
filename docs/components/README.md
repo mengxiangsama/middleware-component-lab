@@ -66,6 +66,7 @@
 | --- | --- |
 | [HikariCP](database-connectivity.md#hikaricp) | JDBC 连接复用、获取超时和池状态。**联调实测** · [搭配 H2 验证连接池耗尽](../../labs/hikaricp-pool/README.md)。 |
 | [MyBatis](database-connectivity.md#mybatis) | Java Mapper、参数绑定和结果映射。**联调实测** · [搭配 H2 验证库存条件扣减](../../labs/mybatis-stock-update/README.md)。 |
+| [SQLite](database-connectivity.md#sqlite) | 本地文件库、事务与 WAL。**联调实测** · [搭配 JDBC 在写入期间保持报表快照](../../labs/sqlite-wal-snapshot/README.md)。 |
 
 ## 数据同步与处理
 

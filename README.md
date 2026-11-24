@@ -30,6 +30,7 @@
 | 怎样在本机核对指定日期的 Parquet 订单 | [DuckDB + Parquet](labs/duckdb-parquet-report/README.md)，安装实验依赖后运行 `python labs/duckdb-parquet-report/verify.py` 检查分区筛选与金额。 |
 | 支付事件乱序到达时怎样按付款时间汇总 | [Flink 事件时间窗口](labs/flink-event-time/README.md)，运行 `./mvnw -B -f labs/flink-event-time/pom.xml clean verify` 核对两个窗口和迟到输出。 |
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
+| 报表读取期间怎样继续登记新发货 | [SQLite + JDBC 读写快照](labs/sqlite-wal-snapshot/README.md)，运行 `./mvnw -B -f labs/sqlite-wal-snapshot/pom.xml clean verify` 核对报表金额与写入竞争。 |
 | CSV 导入接口临时失败时怎样重投和归档 | [Camel File + HTTP](labs/camel-file-http-import/README.md)，运行 `./mvnw -B -f labs/camel-file-http-import/pom.xml clean verify` 验证重投及成功后的文件移动。 |
 | 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |

@@ -13,3 +13,9 @@ HikariCP 是 JVM 内的 JDBC 连接池。应用向同一个 `DataSource` 借取�
 MyBatis 将 Java 接口方法映射到 SQL。通过 XML 或注解配置语句，用 JDBC 参数绑定传入值并映射结果。接入时配置数据源、创建 `SqlSessionFactory` 并注册 Mapper。写入操作可检查受影响行数，用于识别执行结果是否满足业务条件。[Java API](https://mybatis.org/mybatis-3/java-api.html)
 
 运行 [MyBatis + H2 库存条件扣减](../../labs/mybatis-stock-update/README.md)，核对两次并发更新的影响行数和最终库存。
+
+## SQLite
+
+SQLite 将关系数据存入本地文件。适合单机工具、门店应用和本机任务。Java 通过 Xerial SQLite JDBC 打开文件，多个连接共享同一数据库。启用 WAL 后，读事务可以保留自己的快照，同时一个写事务仍能提交。[Xerial JDBC](https://github.com/xerial/sqlite-jdbc) · [SQLite WAL](https://www.sqlite.org/wal.html)
+
+运行 [SQLite + JDBC 发货报表快照](../../labs/sqlite-wal-snapshot/README.md)，核对写入前后的两套读结果，以及第二个写事务和旧快照升级写事务时的错误码。
