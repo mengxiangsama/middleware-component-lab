@@ -166,3 +166,7 @@ Flyway 管理数据库结构的版本化变更，适合将建表、加列等脚�
 
 - **常用功能**。在 changelog 中用 changeset 管理变更。配置测试数据库和 changelog 后运行 `validate` 校验文件，`update-sql` 查看将执行的 SQL，`update` 应用并在 `DATABASECHANGELOG` 记录。changeset 通过 ID、作者和路径标识。 [update 命令](https://docs.liquibase.com/community/reference-guide-5-0/init-update-and-rollback-commands/update) · [validate 命令](https://docs.liquibase.com/community/reference-guide-5-0-3/database-inspection-change-tracking-and-utility-commands/validate)
 - **验证**。在接近目标库版本的环境试跑迁移、核对数据与 changeset 记录，并对能回滚的 changeset 单独执行回滚演练。检查非事务 DDL 失败时数据库的实际结构。跨库持续同步的组件见 [SQL 数据同步](data-pipelines.md#sql-数据同步)。
+
+### 搭配 H2 按标签回退订单表
+
+订单表刚增加业务列时，可以先在 H2 演练回退。把旧表结构标记为 `orders-v1`，部署新列后用 `rollback-sql` 查看删列语句，再执行回退并检查旧行、表结构和 `DATABASECHANGELOG`。实验还会重跑更新，核对已应用的 changeset 是否被重复登记。[实验步骤和验证命令](../../labs/liquibase-rollback/README.md)。

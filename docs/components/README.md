@@ -77,7 +77,7 @@
 | [Apicurio Registry](data-pipelines.md#apicurio-registry) | Kafka 消息 Schema 登记、版本与兼容性 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |
 | [Flyway](release-tools.md#flyway) | 版本化 SQL、迁移记录与校验和。**可运行** · [订单表版本化迁移与校验](release-tools.md#订单表版本化迁移与校验)。**联调实测** · [搭配 Spring Boot 自动迁移](release-tools.md#搭配-spring-boot-启动时迁移)。 |
-| [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览与结构变更 |
+| [Liquibase](release-tools.md#liquibase) | Changelog、SQL 预览、结构变更与版本标签回退。**联调实测** · [搭配 H2 回退订单表](../../labs/liquibase-rollback/README.md)。 |
 
 ## 分布式日志
 
