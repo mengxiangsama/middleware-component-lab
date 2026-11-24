@@ -38,7 +38,7 @@
 | [OpenSearch](search-cache.md#opensearch) | 索引管理、检索、聚合与批量操作 |
 | [Meilisearch](search-cache.md#meilisearch) | 全文检索、异步索引、过滤和排序。**联调实测** · [商品搜索、库存过滤与价格排序](../../labs/meilisearch-storefront/README.md)。 |
 | [Redis](search-cache.md#redis) | 键值缓存、计数、集合、排行、Streams、事务和 Functions。**联调实测** · [广播 Caffeine 失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。 |
-| [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和租约 |
+| [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和限流。**联调实测** · [搭配 Valkey 共享报价服务额度](../../labs/redisson-shared-rate/README.md)。 |
 | [Lettuce](search-cache.md#lettuce) | Java 同步、异步和 Reactive Redis 命令。**联调实测** · [RESP3 价格缓存与失效](../../labs/valkey-client-cache/README.md)。 |
 | [Valkey](search-cache.md#valkey) | 键值与数据结构命令、过期和故障转移。**联调实测** · [搭配 Lettuce 按键推送失效](../../labs/valkey-client-cache/README.md)。 |
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载和淘汰。**可运行** · [异步刷新](search-cache.md#热点商品详情异步刷新)。**联调实测** · [搭配 Spring Cache 处理商品改价](search-cache.md#搭配-spring-cache-处理商品改价) · [Redis 广播失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。 |

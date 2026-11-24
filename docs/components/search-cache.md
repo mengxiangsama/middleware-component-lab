@@ -1105,6 +1105,10 @@ test ! -e "$lab_dir"
 - `tryLock` 要明确等待时间和租约，确认取得锁后执行操作，并在 `finally` 中释放。释放时若已失去所有权，`unlock` 会报错。未显式指定租约的常规用法依赖 watchdog 续租，显式租约到期会释放。进程长暂停或网络异常可能让旧持有者失锁后继续执行。
 - `RFencedLock` 可以取回 fencing token。资源端要随写入原子校验并记录已接受的最大 token，拒绝较小 token。验证持锁进程暂停超过租约、新持有者提交后旧进程恢复、续租失败和主从切换。[锁和 fencing](https://redisson.pro/docs/data-and-services/locks-and-synchronizers/#lock-reliability-and-fencing)
 
+### 搭配 Valkey 共享报价接口额度
+
+多个报价服务实例共用同一个供应商额度时，可让它们连接到同一 Valkey 并使用同名 `RRateLimiter`。配置 `RateType.OVERALL`，在发出请求前用 `tryAcquire()` 申请许可。运行 [Redisson + Valkey 跨 JVM 验证](../../labs/redisson-shared-rate/README.md)，核对两个独立 JVM 取用两份额度后，第三次申请被拒绝。[RRateLimiter](https://redisson.pro/docs/data-and-services/objects/#ratelimiter)
+
 ## Lettuce
 
 - Lettuce 是 Java Redis 命令客户端，提供同步、异步和响应式 API。单节点可用 `RedisClient`，集群用 `RedisClusterClient`。通过 `connect()` 取得连接，先验证 `PING`、`SET` 和 `GET`，退出时关闭连接与客户端。
