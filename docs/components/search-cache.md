@@ -1110,6 +1110,10 @@ test ! -e "$lab_dir"
 - Valkey 提供共享内存键值服务。用支持目标拓扑的客户端或 `valkey-cli` 连到测试实例，从 `PING`、`SET`、`GET` 和 `TTL` 验证基本读写和过期，再测试应用实际使用的脚本、数据类型和命令。[命令参考](https://valkey.io/commands/)
 - Redis 迁移到 Valkey 前按版本核对 RESP、命令、脚本、模块及 RDB/AOF 格式。异步复制切换时有数据丢失窗口，验证存量键值、TTL、持久化恢复和故障转移后的读写。[Valkey 迁移指南](https://valkey.io/topics/migration/) · [Valkey 复制](https://valkey.io/topics/replication/)
 
+### 搭配 Lettuce 跟踪商品价格
+
+对读多写少的价格键，[Lettuce](#lettuce) 可用专用 RESP3 连接启用 `CLIENT TRACKING ON`，在本地缓存读到的价格。另一连接改价后，Valkey 向读端推送该键失效。用 [Valkey 客户端价格缓存实验](../../labs/valkey-client-cache/README.md) 核对命中时 `GET` 次数是否保持不变，以及失效是否只让改价的键重新加载。
+
 ## Caffeine
 
 - JVM 应用接入 Caffeine 后，用 `Caffeine.newBuilder()` 指定容量或权重上限与过期策略。使用 `Cache.get(key, loader)` 按需加载，或者用 `build(loader)` 创建 `LoadingCache`。显式失效用 `invalidate`。

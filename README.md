@@ -27,6 +27,7 @@
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
+| 商品价格怎样本地命中并跟踪改价 | [Valkey + Lettuce 客户端缓存](labs/valkey-client-cache/README.md)，核对 RESP3 失效前后的服务端 GET 次数。 |
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
 | 怎样让带标记的商品查询走灰度版本 | [Spring Cloud Gateway Header 路由实验](labs/spring-cloud-gateway/README.md)，运行 `./mvnw -B -f labs/spring-cloud-gateway/pom.xml verify` 核对实际转发。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
@@ -49,6 +50,8 @@ Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `s
 运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml clean verify` 可验证 Quartz 用同一个 H2 文件库跨重启补跑，无需 Docker。
 
 运行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml test` 可联调商品缓存与数据库事务，使用内嵌 H2。用本地 Redis 验证双实例时，执行 `./mvnw -B -f labs/spring-cache-caffeine/pom.xml -Dtest=RedisPriceCacheIT -Dlab.redis.port=16379 test`。
+
+运行 `VALKEY_SERVER=/absolute/path/to/valkey-server ./mvnw -B -f labs/valkey-client-cache/pom.xml verify`，验证 Valkey 与 Lettuce 的缓存命中、改价失效和重新加载。
 
 在仓库根目录运行 `sh labs/fluent-bit-java-multiline/verify.sh` 可验证多行采集，需要 Docker、Shell 和 `jq`。运行 `sh labs/fluent-bit-java-multiline/verify-loki.sh` 可联调 Loki 写入与查询，另需 Docker Compose 和 `curl`。
 
