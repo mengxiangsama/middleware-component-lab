@@ -14,6 +14,7 @@
 | 订单落库后怎样可靠地向其他服务发布消息 | [RocketMQ 事务消息实验](#run-locally)，启动 Broker 和示例应用，用 HTTP 请求观察提交、回滚、事务回查和消费去重。 |
 | 订单支付消息重投后怎样避免积分重复发放 | [NATS JetStream + SQLite](labs/nats-jetstream-sqlite/README.md)，实测 Worker 提交后断开、Broker 重投与数据库去重。 |
 | 发货消费者重启与补数时怎样控制读取位置 | [Kafka 消费位点恢复与独立重放](labs/kafka-offset-replay/README.md)，运行 `./mvnw -B -f labs/kafka-offset-replay/pom.xml clean verify`。 |
+| 坏的订单消息总是处理失败时怎样隔离 | [ActiveMQ Artemis + Jakarta JMS](labs/artemis-jms-dead-letter/README.md)，运行 `./mvnw -B -f labs/artemis-jms-dead-letter/pom.xml clean verify` 核对重投、死信与正常提交。 |
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 订单服务调用库存时怎样共用请求的超时预算 | [gRPC + Protocol Buffers](labs/grpc-deadline/README.md)，运行 `./mvnw -B -f labs/grpc-deadline/pom.xml clean verify` 验证两跳调用和取消。 |

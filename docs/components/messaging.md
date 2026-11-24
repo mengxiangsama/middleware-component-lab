@@ -1,6 +1,6 @@
 # 消息队列与事件流
 
-本页收录消息队列与事件流组件的典型用法、接入步骤和投递边界。仓库附 RocketMQ、Kafka 和 NATS JetStream 的可运行实验。
+本页收录消息队列与事件流组件的典型用法、接入步骤和投递边界。仓库附 ActiveMQ Artemis、RocketMQ、Kafka 和 NATS JetStream 的可运行实验。
 
 ## RabbitMQ
 
@@ -9,6 +9,16 @@
 - **确认与重试**｜Publisher Confirm 反映 Broker 侧接收结果。即使无队列匹配，发布也可能收到 confirm。要求至少匹配一条路由时，应处理 `mandatory` 返回。消费侧在业务提交后手动 ACK，按错误类型设计有限重试和 Dead Letter Exchange。设置 prefetch 限制未确认消息数，并核对所用队列类型的死信投递保证。 [确认机制](https://www.rabbitmq.com/docs/confirms) · [死信交换机](https://www.rabbitmq.com/docs/dlx)
 - **顺序与重放**｜队列按 FIFO 入队和出队。多消费者、优先级和重投都会影响实际处理顺序。需要顺序时核对单活消费者和应用内处理并发。普通队列 ACK 后无法作为历史日志重读，需要从历史位点重放时评估 RabbitMQ Streams 及其保留策略。 [队列顺序](https://www.rabbitmq.com/docs/queues#message-ordering) · [Streams](https://www.rabbitmq.com/docs/streams)
 - **验证**｜发布到未绑定的路由键应告警。消费者提交后断线使消息重投时，同一事件只产生一次业务写入。让死信目标暂时不可用，检查原消息的去向及恢复结果。
+
+## Apache ActiveMQ Artemis
+
+Artemis 是消息 Broker。生产者发到地址，Broker 按路由类型把消息交给绑定的队列。接入任务队列时，先创建 `ANYCAST` 地址及其队列，然后用 [Jakarta JMS](#jakarta-jms) 客户端连接 Broker 进行事务消费。按源地址设置投递上限、重投间隔和死信地址，确认死信地址已有绑定队列。[地址模型](https://artemis.apache.org/components/artemis/documentation/latest/address-model.html) · [重投与死信](https://artemis.apache.org/components/artemis/documentation/latest/undelivered-messages.html)
+
+运行 [订单消息死信实验](../../labs/artemis-jms-dead-letter/README.md)，在真实 Broker 上核对重投计数、原始消息属性和正常订单提交。
+
+## Jakarta JMS
+
+Jakarta Messaging（JMS）是 Java 消息客户端规范。应用由 Broker 提供的 `ConnectionFactory` 创建上下文，选择队列、发送消息和接收消息。选择 `SESSION_TRANSACTED` 后，客户端通过提交或回滚结束本次消息事务。示例使用 [Apache ActiveMQ Artemis](#apache-activemq-artemis) 按源地址执行重投和死信规则。[Jakarta Messaging 3.1](https://jakarta.ee/specifications/messaging/3.1/)
 
 ## Apache RocketMQ
 

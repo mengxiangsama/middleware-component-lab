@@ -7,6 +7,8 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [RabbitMQ](messaging.md#rabbitmq) | 工作队列、Exchange 路由、发布确认和消费 ACK |
+| [Apache ActiveMQ Artemis](messaging.md#apache-activemq-artemis) | 地址、队列、投递与死信。**联调实测** · [搭配 Jakarta JMS 隔离坏消息](../../labs/artemis-jms-dead-letter/README.md)。 |
+| [Jakarta JMS](messaging.md#jakarta-jms) | Java 消息发送、消费、确认与事务 API。**联调实测** · [用事务回滚触发重投](../../labs/artemis-jms-dead-letter/README.md)。 |
 | [Apache RocketMQ](messaging.md#apache-rocketmq) | 普通、顺序、定时、事务消息，以及重试和死信 |
 | [Apache Kafka](messaging.md#apache-kafka) | 分区事件流、消费组、位点提交和历史回放。**可运行** · [Java Client 位点恢复与独立重放](../../labs/kafka-offset-replay/README.md)。 |
 | [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递 |
