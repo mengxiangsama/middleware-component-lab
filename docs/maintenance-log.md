@@ -121,3 +121,25 @@
 | DuckDB + Parquet | 核对指定日期订单时希望跳过其他日期的明细文件。 | 两个分区写入成功，所选日期两个渠道金额吻合，物理计划显示 `Scanning Files: 1/2`。 | [9435a49](https://github.com/mengxiangsama/middleware-component-lab/commit/9435a49c3b246758d1e485683756af9144847292) |
 
 上述结果来自本地实验。SeaweedFS 和 Valkey 首次主工作区复测的进程启动不稳定，后续重跑通过。另补充了 ClickHouse 虚拟环境步骤和 S3 对象键说明。[文档修订](https://github.com/mengxiangsama/middleware-component-lab/commit/6220363fd06873e15c7b72e2b6a47826d5643ce7)
+
+## 2026-11-24 · 17:29 起的手动维护
+
+从 `b9ddac9` 起查阅 `main` 的组件目录、现有实验和近期提交。优先补齐覆盖较少的 SQLite、Caddy、MQTT、SFTP 和 Temporal 等组件组合，同时为只介绍了原理的 RabbitMQ、Apicurio Registry 和 OpenSearch 增加可复现的行为对照。各主题补上首页入口、适用场景、接入步骤、跑法和官方资料。
+
+| 主题 | 选题理由 | 本地实测结果 | 提交 |
+| --- | --- | --- | --- |
+| SQLite + JDBC | 对账报表打开时仍需继续登记发货。 | 旧读事务始终看到 1200 分，新事务读到 2000 分。验证了两个写冲突错误码。 | [fb13b85](https://github.com/mengxiangsama/middleware-component-lab/commit/fb13b8525ad0ea55a615eaa5ec6aba0f12375155) |
+| NATS JetStream KV + Go | 两个 Worker 的批次计数更新可能互相覆盖。 | 同 revision 的第二次写入被拒绝，重读再加 3 后计数为 15、revision 为 3。 | [c9991d6](https://github.com/mengxiangsama/middleware-component-lab/commit/c9991d6fc170a33da268dfac273b75a1e4d2a164) |
+| Caddy + Python HTTP API | 本机 HTTP 服务需要 HTTPS 测试入口和路径转发。 | 客户端默认拒绝证书，加载本次 CA 后成功。后端收到原始 Host 和 HTTPS 转发信息，未匹配路径不进后端。 | [5062cbb](https://github.com/mengxiangsama/middleware-component-lab/commit/5062cbb12dbad8f6610eb4c4526fd13cfb9528df) |
+| RabbitMQ + Java | 排查收到发布 ACK 后消息仍未到队列。 | 有路由消息收到 ACK 并入队，无路由消息也收到 ACK，同时返回 `312 NO_ROUTE`。 | [a73a8fb](https://github.com/mengxiangsama/middleware-component-lab/commit/a73a8fbabc34fdd5e80cfcdebb5bee0d92107ab5) |
+| OpenFeature + flagd | 结算服务只向试点门店启用新版运费预估。 | 真实 gRPC 求值返回试点 `true`、普通门店 `false`，未找到开关时返回应用默认值和 `FLAG_NOT_FOUND`。 | [eaa2a0f](https://github.com/mengxiangsama/middleware-component-lab/commit/eaa2a0f22ca01e4d12a1a58dccff66165ce8d46b) |
+| MySQL InnoDB + JDBC | 多个 Worker 从同一张表领取发货任务。 | A 持锁 101，B 跳过并提交 102，A 回滚后 C 领取并提交 101。 | [5e16647](https://github.com/mengxiangsama/middleware-component-lab/commit/5e1664746d46514f0b6e600dbf9350d6632463a8) |
+| Apache MINA SSHD + SFTP | 合作方只应读到上传完成的整份文件。 | 不匹配的主机密钥被拒绝。SFTP v6 确认同目录原子更名，最终 CSV 的 42 字节完全一致。 | [1450f9a](https://github.com/mengxiangsama/middleware-component-lab/commit/1450f9ad2a22e8af5b2f9c383506511696810d7a) |
+| Prometheus + Blackbox Exporter | 从应用外监控就绪端点，区分抓取异常与应用未就绪。 | 模拟 Actuator 的 HTTP 端点返回 200 → 503 → 200。真实 Prometheus 查到 `probe_success` 为 1 → 0 → 1，`up` 始终为 1。 | [e82e0b2](https://github.com/mengxiangsama/middleware-component-lab/commit/e82e0b22376f0cd3ab4fda84db217626af3feef8) |
+| Vector + HTTP | 转发发货日志前限制字段，并能查出坏记录。 | 接收端收到 1 条仅含允许字段的发货事件，诊断输出为 2 条，只含分类和原因。 | [887e4c2](https://github.com/mengxiangsama/middleware-component-lab/commit/887e4c29116392f382357a942b9438e072730edd) |
+| Apicurio Registry + Avro | 升级订单事件时检查以前写入的消息能否读。 | 带默认值的字段版本注册成功，无默认值的必填字段返回 400，已发布版本仍只有 1、2。 | [a1077dd](https://github.com/mengxiangsama/middleware-component-lab/commit/a1077dd673f520d13324f25e82461fd7a9124e3d) |
+| OpenSearch + Python | 对账跨页期间仍会补录或更新订单。 | 原 PIT 保留 `O103=PAID`，新查询看到 `O105` 与 `O103=FULFILLED`。PIT 已关闭。 | [1050591](https://github.com/mengxiangsama/middleware-component-lab/commit/105059100d864e25ad95b950a0da1ced65155df6) |
+| Mosquitto + Paho MQTT | 设备短时掉线后需要接回离线指令。 | 使用同一 Client ID 重连后收到一条 QoS 1 非保留消息 `mode=eco`，并确认清理会话后不会恢复。 | [ac17198](https://github.com/mengxiangsama/middleware-component-lab/commit/ac1719826566b953e92bb8e52dbf51702c96cf14) |
+| Temporal + Go | 库存已写入却返回 503 时，工作流需要有限重试。 | 真实 Temporal 两次尝试，收到 503、200，工作流拿到原预留号，带幂等键的库存测试服务只写入一笔。 | [00ee42f](https://github.com/mengxiangsama/middleware-component-lab/commit/00ee42f042aca1dbd66d52562ab88707e80834de) |
+
+Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch 使用官方发行包复测，Mosquitto 使用官方源码构建的本机 Broker 复测。每个实验的环境、运行命令和验证范围见各自教程。上轮延后的根项目 Maven 回归成功，11 项通过，3 项按原条件跳过。
