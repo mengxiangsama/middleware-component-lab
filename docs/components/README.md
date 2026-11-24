@@ -25,6 +25,8 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Netty](network-programming.md#netty) | Java 异步网络编程、协议编解码及长连接管理。**可运行** · [WebSocket 回显](../../labs/netty-websocket/README.md)、[读空闲时回收长连接](network-programming.md#读空闲时回收长连接)。 |
+| [gRPC](network-programming.md#grpc) | 服务间调用、状态码、截止时间和取消。**联调实测** · [订单查询的两跳超时](../../labs/grpc-deadline/README.md)。 |
+| [Protocol Buffers](network-programming.md#protocol-buffers) | 消息结构定义、序列化及代码生成。**联调实测** · [生成订单与库存的 RPC 接口](../../labs/grpc-deadline/README.md)。 |
 
 ## 搜索、缓存与分析
 

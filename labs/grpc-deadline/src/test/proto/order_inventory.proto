@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package middlewarelab.deadline;
+
+option java_package = "io.github.middlewarelab.grpcdeadline";
+option java_multiple_files = true;
+
+service OrderService {
+  rpc CheckAvailability (StockRequest) returns (AvailabilityReply);
+}
+
+service InventoryService {
+  rpc ReadStock (StockRequest) returns (StockReply);
+}
+
+message StockRequest {
+  string sku = 1;
+}
+
+message StockReply {
+  int32 quantity = 1;
+}
+
+message AvailabilityReply {
+  string sku = 1;
+  int32 quantity = 2;
+}

@@ -46,3 +46,13 @@ channel.pipeline().addLast(new IdleStateHandler(10, 0, 0), new CloseOnReadIdle()
 - [Netty 4.2 IdleStateHandler API](https://netty.io/4.2/api/io/netty/handler/timeout/IdleStateHandler.html)
 - [Netty 4.2 EmbeddedChannel API](https://netty.io/4.2/api/io/netty/channel/embedded/EmbeddedChannel.html)
 - [Netty 4.2.21.Final IdleStateHandler 源码](https://github.com/netty/netty/blob/netty-4.2.21.Final/handler/src/main/java/io/netty/handler/timeout/IdleStateHandler.java)
+
+## gRPC
+
+gRPC 通过远程方法连接服务。用 [Protocol Buffers](#protocol-buffers) 定义服务和消息，在 Java 构建中生成两端接口。客户端从 Channel 创建 Stub，并为 RPC 指定截止时间。服务处理方法在当前 gRPC Context 中继续发起调用时，下游使用剩余预算。[gRPC Java 接入示例](https://grpc.io/docs/languages/java/basics/) · [截止时间传播](https://grpc.io/docs/guides/deadlines/)
+
+运行 [订单查询调用库存实验](../../labs/grpc-deadline/README.md)，用两个本机服务验证完整响应、下游收到的截止时间和客户端超时。
+
+## Protocol Buffers
+
+Protocol Buffers 用 `.proto` 定义可跨语言生成代码的消息结构。消息字段按数字编号识别。接入时先定义请求与返回类型，再用 `protoc` 生成对应语言的消息。如果还要通过 [gRPC](#grpc) 调用服务，在 `.proto` 声明服务，并用对应的 gRPC 插件生成 Stub。[Proto3 指南](https://protobuf.dev/programming-guides/proto3/) · [实验接口](../../labs/grpc-deadline/src/test/proto/order_inventory.proto)
