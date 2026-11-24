@@ -1,0 +1,40 @@
+data_dir = "${LAB_VECTOR_DATA_DIR}"
+
+[sources.shipments]
+type = "stdin"
+
+[transforms.shape]
+type = "remap"
+inputs = ["shipments"]
+drop_on_error = true
+source = '''
+event, err = parse_json(.message)
+if err != null {
+  . = {"kind": "rejected", "reason": "malformed_json"}
+} else if !is_string(event.order_id) || !is_string(event.event) {
+  . = {"kind": "rejected", "reason": "invalid_fields"}
+} else {
+  . = {"kind": "shipment", "order_id": event.order_id, "event": event.event}
+}
+'''
+
+[transforms.routes]
+type = "route"
+inputs = ["shape"]
+route.accepted = '.kind == "shipment"'
+route.rejected = '.kind == "rejected"'
+
+[sinks.intake]
+type = "http"
+inputs = ["routes.accepted"]
+uri = "http://127.0.0.1:9000/logs"
+method = "post"
+healthcheck.enabled = false
+batch.max_events = 1
+encoding.codec = "json"
+framing.method = "newline_delimited"
+
+[sinks.rejections]
+type = "console"
+inputs = ["routes.rejected"]
+encoding.codec = "json"

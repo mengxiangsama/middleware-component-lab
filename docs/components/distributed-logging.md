@@ -53,6 +53,12 @@ filter { mutate { remove_field => ["access_token"] } }
 output { stdout { codec => rubydebug } }
 ```
 
+## Vector
+
+Vector 将日志接进 source，使用 Remap 和 Vector Remap Language 校验、筛选或重建事件，再用 Route 把不同结果发给各自的 sink。发送业务日志前，可按允许字段生成新的记录，并为坏行生成固定原因。[Remap](https://vector.dev/docs/reference/configuration/transforms/remap/) · [Route](https://vector.dev/docs/reference/configuration/transforms/route/)
+
+运行 [Vector + HTTP 日志接收端](../../labs/vector-log-routing/README.md)，核对合格的发货事件只带允许字段，坏记录走诊断输出。
+
 ## Grafana Loki
 
 Loki 负责集中存储和查询日志。已使用 Fluent Bit 采集应用文件时，沿用同一条采集链路即可送入 Loki。示例见 [搭配 Fluent Bit 采集和查询 Java 堆栈](#搭配-loki-集中检索完整堆栈)。

@@ -96,6 +96,8 @@
 
 如果 Java 堆栈在下游被拆成多条日志，先用 [Fluent Bit 多行日志实验](../labs/fluent-bit-java-multiline/README.md) 核对事件边界。再跑 [Fluent Bit + Loki](../labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，按服务和错误正文查回一条完整的订单异常。
 
+需要控制发送给接收端的日志字段时，运行 [Vector + HTTP](../labs/vector-log-routing/README.md)，核对允许字段和拒绝原因。
+
 用 [Prometheus](components/service-tools.md#prometheus) 找出错误率或延迟变化的时间段，用 [OpenTelemetry](components/service-tools.md#opentelemetry) 和 [Tempo](components/observability-tools.md#grafana-tempo) 定位耗时的调用，再用 [Loki](components/distributed-logging.md#grafana-loki) 按时间和服务筛选日志，并用 Trace ID 核对同一次请求。
 
 运行 [OpenTelemetry Collector + Tempo](../labs/otel-collector-tempo/README.md)，先用两条模拟 span 核对 OTLP 转发及 Trace ID 查询，再接入真实应用确认跨服务传播。

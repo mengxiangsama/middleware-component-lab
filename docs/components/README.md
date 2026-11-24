@@ -96,6 +96,7 @@
 | --- | --- |
 | [Fluent Bit](distributed-logging.md#fluent-bit) | 采集和转发日志。**可运行** · [合并 Java 异常堆栈](distributed-logging.md#合并-java-异常堆栈)。**联调实测** · [搭配 Loki 查完整异常](distributed-logging.md#搭配-loki-集中检索完整堆栈)。 |
 | [Logstash](distributed-logging.md#logstash) | Input、Filter、Output，日志解析、字段处理与持久队列 |
+| [Vector](distributed-logging.md#vector) | 日志输入、VRL 变换与路由。**联调实测** · [将允许字段转发到 HTTP 接收端](../../labs/vector-log-routing/README.md)。 |
 | [Grafana Loki](distributed-logging.md#grafana-loki) | 集中存储、按标签和正文查日志。**联调实测** · [搭配 Fluent Bit 采集 Java 堆栈](distributed-logging.md#搭配-loki-集中检索完整堆栈)。 |
 | [Kibana](observability-tools.md#kibana) | Elasticsearch Data View、Discover 与 KQL |
 
