@@ -12,6 +12,8 @@
 - **最小接入**。在 `prometheus.yml` 的 `alerting.alertmanagers` 配置接收地址，用 `rule_files` 加载告警规则。在 Alertmanager 的 `route` 设置默认 `receiver`，用 `group_by: [alertname, job]` 合并同类告警，再为测试接收方配置 `webhook_configs`。按告警标签分发时，在子路由配置 `matchers`。 [Prometheus 发送配置](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alertmanager_config) · [告警规则](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) · [Alertmanager 路由和接收方](https://prometheus.io/docs/alerting/latest/configuration/)
 - **验证**。以 `up{job="demo"} == 0` 建测试规则，停止同一 job 的两个已配置目标。让两个告警在 `group_wait` 内进入同组，核对 Webhook 是否收到包含两个实例的通知。恢复目标并确认告警消除后，给其中一个实例配置短时 Silence 再演练。确认 Prometheus 仍显示两个告警，Webhook 仅通知未被静默的实例。测试恢复通知时确认接收方已启用 `send_resolved`。
 
+运行 [Prometheus + Alertmanager 实验](../../labs/alertmanager-webhook/README.md)，让两个订单实例同时抓取失败，核对同一分组的触发与恢复通知各包含两个实例。
+
 ## Grafana Tempo
 
 - **常用功能**。保存并查询分布式请求的 trace，通过 Trace ID 定位一次请求，或用 TraceQL 找到指定服务的错误 span。 [Tracing 入门](https://grafana.com/docs/tempo/latest/set-up-for-tracing/) · [TraceQL 示例](https://grafana.com/docs/tempo/latest/traceql/construct-traceql-queries/)

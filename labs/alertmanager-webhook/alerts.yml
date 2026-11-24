@@ -1,0 +1,8 @@
+groups:
+  - name: orders
+    rules:
+      - alert: OrdersMetricsUnreachable
+        expr: up{job="orders"} == 0
+        for: 3s
+        annotations:
+          summary: 'Cannot scrape order metrics from {{ $labels.instance }}'

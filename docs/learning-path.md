@@ -70,7 +70,7 @@
 
 ## 指标、日志与链路
 
-告警上线前，先运行 [Prometheus 告警规则实验](../labs/prometheus-rules/README.md)，用固定样本核对短暂故障不触发、持续故障触发、恢复解除，以及等待时间重置。通过后再接真实抓取和 [Alertmanager](components/observability-tools.md#alertmanager) 通知。
+告警上线前，先运行 [Prometheus 告警规则实验](../labs/prometheus-rules/README.md)，用固定样本核对短暂故障不触发、持续故障触发、恢复解除，以及等待时间重置。再运行 [Prometheus + Alertmanager 实验](../labs/alertmanager-webhook/README.md)，核对两个实例的故障和恢复是否分别合成一条 Webhook 通知。
 
 如果 Java 堆栈在下游被拆成多条日志，先用 [Fluent Bit 多行日志实验](../labs/fluent-bit-java-multiline/README.md) 核对事件边界。再跑 [Fluent Bit + Loki](../labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，按服务和错误正文查回一条完整的订单异常。
 

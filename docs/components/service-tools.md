@@ -313,7 +313,7 @@ first=in-stock third=in-stock
 | 指标抓取、目标发现与重标记 | 待补。应用暴露 `/metrics` 后，可在 `scrape_configs` 添加目标，用 `up{job="demo"}` 检查抓取。 [官方快速开始](https://prometheus.io/docs/prometheus/latest/getting_started/) |
 | PromQL 与 HTTP 查询 API | 待补。可用 `rate(http_requests_total[5m])` 查看计数器的每秒速率。 |
 | 记录规则 | 待补。定期计算表达式并将结果写成新的时间序列。 |
-| 告警规则与 Alertmanager 对接 | 待补。服务端评估告警状态，再将触发的告警交给 Alertmanager 路由。 |
+| 告警规则与 Alertmanager 对接 | **联调实测**。[合并订单服务触发与恢复通知](../../labs/alertmanager-webhook/README.md)。 |
 | 规则语法检查与告警单元测试 | 已有教程。[测试订单服务抓取失败告警](#测试订单服务抓取失败告警) |
 | 本地时序存储、远程读写与联邦 | 待补。按部署需求设置本地保留策略、对接远程存储或从其他 Prometheus 抓取选定序列。 |
 
