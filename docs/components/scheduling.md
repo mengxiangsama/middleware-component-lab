@@ -22,7 +22,8 @@ Quartz 是嵌入 Java 应用的调度库。应用用 `JobDetail` 描述执行内
 | --- | --- |
 | 作业定义、参数和一次性触发器（`JobDetail`、`JobDataMap`、`SimpleTrigger`） | 已有教程 · [用 JDBC 保存对账任务](#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | 作业并发限制 `@DisallowConcurrentExecution` | 已有教程 · [按 JobKey 串行执行对账任务](#按-jobkey-串行执行对账任务)。 |
-| 作业参数更新 `@PersistJobDataAfterExecution`、执行失败处理和监听器 | 待补。 |
+| 作业参数更新 `@PersistJobDataAfterExecution` | 联调实测 · [重启后继续处理下一批](../../labs/quartz-jdbc/README.md#重启后继续处理下一批)。 |
+| 执行失败处理和监听器 | 待补。 |
 | 一次性触发器的 misfire 策略 | 联调实测 · [FireNow 重启补跑](#搭配-spring-boot-用-jdbc-恢复错过的触发)。Cron、时区和日历排除另见 [CronScheduleBuilder](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/CronScheduleBuilder.html)。 |
 | JDBC JobStore 持久化 | 联调实测 · [同库重启恢复触发器](#搭配-spring-boot-用-jdbc-恢复错过的触发)。多实例故障转移见 [Quartz 集群文档](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/configuration/ConfigJDBCJobStoreClustering.html)。 |
 

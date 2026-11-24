@@ -37,6 +37,22 @@
 
 本实验覆盖单调度器正常关闭、重启和一次性触发器补跑。运行中的任务如果被强制中断，以及多实例故障转移，需要单独验证。业务对账仍应按门店与业务日期处理幂等。
 
+## 重启后继续处理下一批
+
+按页处理订单时，可以在同一个持久化任务的 `JobDataMap` 中记录下一页。任务上使用 `@PersistJobDataAfterExecution`，让 Quartz 将修改后的任务数据保存到 JDBC JobStore。用 `@DisallowConcurrentExecution` 让同一 `JobKey` 的执行串行，避免并发进度更新互相覆盖。
+
+1. 初次登记任务时设置 `nextPage="1"` 并调用 `storeDurably()`，让一次性触发结束后 Quartz 仍保留这个任务。
+2. 执行时从 `context.getJobDetail().getJobDataMap()` 读写游标，运行完一批再推进。需要从触发器读取临时配置时可用 `getMergedJobDataMap()`，更新持久游标仍写回 `JobDetail`。
+3. 用相同的调度器名称和 JDBC 数据源启动下一个调度器。Quartz 会恢复原任务与数据。示例启用 `org.quartz.jobStore.useProperties=true`，将游标保存为字符串。业务对账与进度之间的事务、幂等和故障恢复仍由业务数据模型处理。
+
+从根目录运行 [游标测试](src/test/java/io/github/quartzlab/QuartzJobCheckpointTest.java)。
+
+```sh
+./mvnw -B -f labs/quartz-jdbc/pom.xml -Dtest=QuartzJobCheckpointTest test
+```
+
+2026-11-24 在 macOS 26.5 ARM64、JDK 17.0.16、Quartz 2.5.2 和 H2 2.3.232 上，第一次调度器执行两次后将游标保存为 `3`。正常关闭后用同一 H2 文件启动一个新调度器，读取到 `3`，再次执行后写为 `4`。验证范围为 JDBC 中的游标持久化和单调度器正常重启，示例用页号模拟业务进度。[Quartz JobDataMap](https://www.quartz-scheduler.org/api/2.5.x/org/quartz/JobDataMap.html) · [持久化作业数据](https://www.quartz-scheduler.org/documentation/quartz-2.5.x/tutorials/tutorial-lesson-03.html)
+
 ## 官方资料
 
 - [Quartz 官方仓库](https://github.com/quartz-scheduler/quartz) · [Quartz 2.5.2 发布记录](https://github.com/quartz-scheduler/quartz/releases/tag/v2.5.2)

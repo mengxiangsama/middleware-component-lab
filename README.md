@@ -32,6 +32,7 @@
 | CSV 导入接口临时失败时怎样重投和归档 | [Camel File + HTTP](labs/camel-file-http-import/README.md)，运行 `./mvnw -B -f labs/camel-file-http-import/pom.xml clean verify` 验证重投及成功后的文件移动。 |
 | 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
+| 定时任务重启后怎样从下一批接着跑 | [Quartz JDBC 作业进度](labs/quartz-jdbc/README.md#重启后继续处理下一批)，运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml -Dtest=QuartzJobCheckpointTest test` 验证游标恢复。 |
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
 | 后台改门店接单上限后怎样更新本地配置 | [ZooKeeper + Apache Curator](labs/curator-zookeeper-cache/README.md)，运行 `./mvnw -B -f labs/curator-zookeeper-cache/pom.xml clean verify` 核对初始加载、更新和删除。 |
 | 门店查询实例故障后怎样从可用列表摘除 | [Consul + HTTP 服务发现](labs/consul-health-discovery/README.md)，运行 `python3 labs/consul-health-discovery/verify.py --consul /absolute/path/to/consul` 验证健康筛选和恢复。 |
