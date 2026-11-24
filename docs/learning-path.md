@@ -72,6 +72,8 @@
 
 共用 Kubernetes YAML 并按环境修改发布配置时，运行 [Kustomize + kubeconform 实验](../labs/kustomize-overlays/README.md)。渲染预发和生产 overlay，核对副本数和镜像标签，再用 Schema 拦截错误字段。
 
+两个版本的业务逻辑可以在同一个应用进程里共存时，运行 [OpenFeature + flagd](../labs/openfeature-flagd/README.md)。对照不同门店的求值原因，并核对规则缺失时的默认值。
+
 新版应用依赖订单表新增字段时，运行 [Spring Boot + Flyway 启动迁移](../labs/flyway/README.md)，核对历史数据在应用就绪时可读、重启不重复执行，以及修改已执行脚本会阻止启动。
 
 先用 [Sentinel](components/service-tools.md#sentinel) 或 [Resilience4j](components/service-tools.md#resilience4j) 练习限流、熔断或调用隔离。发布时用 [Kubernetes 探针](components/release-tools.md#kubernetes-probes)观察实例何时可接流量，再参考[全链路灰度的逐跳验证](components/traffic-routing.md#逐跳验证)和 [Argo Rollouts](components/release-tools.md#argo-rollouts) 设置观察窗口。

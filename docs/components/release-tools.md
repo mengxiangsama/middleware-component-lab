@@ -88,6 +88,12 @@ scrape_configs:
 
 应用侧测试读取 `/actuator/metrics/jvm.memory.used` 和 `/actuator/prometheus`，分别核对 JSON 读数和 `jvm_memory_used_bytes` 指标。接入 Prometheus 服务端后，可用 `up{job="orders"}` 确认抓取，再查询 `jvm_memory_used_bytes{job="orders"}`。[本地验证命令](../../README.md#应用信息和指标) · [Spring Boot 的 Prometheus 指标导出](https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html#actuator.metrics.export.prometheus)。
 
+## OpenFeature 与 flagd
+
+OpenFeature 提供类型化功能开关 API，应用在请求上下文中传入业务条件，并提供失败时的默认值。flagd provider 把求值交给 flagd。flagd 按规则选择变体并返回原因，便于核对试点范围。[OpenFeature Go SDK](https://openfeature.dev/docs/reference/sdks/server/go/) · [flagd 规则定义](https://flagd.dev/reference/flag-definitions/)
+
+运行 [Go 结算服务按门店灰度](../../labs/openfeature-flagd/README.md)，核对同一个客户在不同门店看到的运费预估版本，以及旗标不存在时的稳定行为。
+
 ## Argo Rollouts
 
 - **灰度发布**。安装控制器与 CRD，使用 `Rollout` 的 `strategy.canary` 设置分步发布。下例在 10% 步骤暂停，检查后执行 `kubectl argo rollouts promote demo`，或用 `kubectl argo rollouts abort demo` 停止此次灰度。仅用副本数时，权重按副本比例近似。需要请求级流量控制时配置 stable/canary Service 和受支持的 `trafficRouting`。 [Canary 策略](https://argoproj.github.io/argo-rollouts/features/canary/) · [快速开始与操作](https://argoproj.github.io/argo-rollouts/getting-started/)

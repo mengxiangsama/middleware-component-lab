@@ -23,6 +23,7 @@
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 两个订单实例同时出故障时怎样只发一条告警 | [Prometheus + Alertmanager](labs/alertmanager-webhook/README.md)，在本地 Webhook 核对合并后的触发和恢复通知。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
+| 同一结算服务怎样只对指定门店启用新功能 | [OpenFeature + flagd](labs/openfeature-flagd/README.md)，运行 `sh labs/openfeature-flagd/verify.sh` 核对试点门店、普通门店和缺少旗标三种结果。 |
 | 预发和生产怎样共用发布清单并拦截错误字段 | [Kustomize + kubeconform](labs/kustomize-overlays/README.md)，对照环境差异，并用 Kubernetes Schema 校验渲染结果。 |
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 发版失败时怎样撤销新列并保留旧订单 | [Liquibase + H2 按标签回退](labs/liquibase-rollback/README.md)，运行 `./mvnw -B -f labs/liquibase-rollback/pom.xml clean verify` 检查列结构、订单数据和迁移记录。 |

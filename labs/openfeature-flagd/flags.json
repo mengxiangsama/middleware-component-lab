@@ -1,0 +1,20 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "new-shipping-estimate": {
+      "state": "ENABLED",
+      "variants": {
+        "pilot": true,
+        "stable": false
+      },
+      "defaultVariant": "stable",
+      "targeting": {
+        "if": [
+          { "===": [{ "var": "storeId" }, "store-sh-01"] },
+          "pilot",
+          null
+        ]
+      }
+    }
+  }
+}
