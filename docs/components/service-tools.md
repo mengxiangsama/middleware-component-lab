@@ -76,7 +76,7 @@ Resilience4j 是嵌入 JVM 的调用侧库，无独立服务端或容器。仓�
 | 主要功能 | 状态 | 用途 |
 | --- | --- | --- |
 | Retry 重试 | 已有教程 | [按异常类型有限重试](#按异常类型有限重试) |
-| CircuitBreaker 熔断 | 待补 | 按失败率或慢调用率阻断调用，半开时试探恢复。 |
+| CircuitBreaker 熔断 | 已有教程 | [搭配 Retry 保护库存 HTTP 查询](../../labs/resilience4j-inventory/README.md)。 |
 | RateLimiter 限流 | 待补 | 按周期分配调用许可。 |
 | Bulkhead 并发隔离 | 已有教程 | [用信号量限制库存查询的并发](#用信号量限制库存查询的并发)。有界线程池隔离待补。 |
 | TimeLimiter 异步超时 | 待补 | 为异步结果设置等待上限。 |
@@ -99,6 +99,8 @@ resilience4j:
 
 - **运行边界**。熔断关注统计与阻断，限制并发要单独使用 Bulkhead。Retry 的 `maxAttempts` 包含首次调用。核对 HTTP 客户端是否也会重试，超时后还要观察实际 I/O 或异步任务是否停止。
 - **验证**。让测试调用连续抛出被计入失败率的异常，记录实际下游请求数、熔断是否打开和后续请求是否被拒绝。恢复接口后等待开路窗口，再发请求验证半开试探和恢复。若启用重试，单独记录每次业务调用到达下游的次数。 [事件与指标](https://resilience4j.readme.io/docs/getting-started-3)
+
+需要同时处理短暂 503 和持续故障时，运行 [Resilience4j + Java HttpClient 库存实验](../../labs/resilience4j-inventory/README.md)。Retry 在外层决定是否安排下一次尝试，CircuitBreaker 在内层决定是否允许发送 HTTP 请求。实验直接在库存 HTTP 服务端核对请求次数。
 
 ### 按异常类型有限重试
 

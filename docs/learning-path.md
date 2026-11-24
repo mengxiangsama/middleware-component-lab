@@ -64,6 +64,8 @@
 
 先用 [Sentinel](components/service-tools.md#sentinel) 或 [Resilience4j](components/service-tools.md#resilience4j) 练习限流、熔断或调用隔离。发布时用 [Kubernetes 探针](components/release-tools.md#kubernetes-probes)观察实例何时可接流量，再参考[全链路灰度的逐跳验证](components/traffic-routing.md#逐跳验证)和 [Argo Rollouts](components/release-tools.md#argo-rollouts) 设置观察窗口。
 
+库存 HTTP 接口出现 503 时，运行 [Resilience4j 库存实验](../labs/resilience4j-inventory/README.md)，核对有限重试、熔断打开时的下游请求数和半开恢复。
+
 让测试下游固定增加延迟，记录正常、保护触发和恢复三个阶段的延迟、错误和调用次数。发出有灰度标记和无灰度标记的请求，逐跳核对实例版本。让灰度版本出现可控错误，确认中止发布后流量回到稳定版本。
 
 ## 指标、日志与链路
