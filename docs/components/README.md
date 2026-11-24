@@ -68,7 +68,7 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [MySQL Replication](data-pipelines.md#mysql-replication) | 原生主从复制、binlog、GTID、延迟和状态检查 |
-| [PostgreSQL Logical Replication](data-pipelines.md#postgresql-logical-replication) | Publication、Subscription、行标识、复制槽和 WAL |
+| [PostgreSQL Logical Replication](data-pipelines.md#postgresql-logical-replication) | Publication、Subscription、行标识、复制槽和 WAL。**联调实测** · [订单表初始复制、增量与暂停恢复](../../labs/postgres-logical-replication/README.md)。 |
 | [Canal](data-pipelines.md#canal) | MySQL binlog 订阅、获取批次与确认 |
 | [阿里云 DTS](data-pipelines.md#阿里云-dts) | 托管迁移、全量和增量同步、订阅与任务监控 |
 | [Apache Flink](data-pipelines.md#apache-flink) | DataStream 或 SQL、事件时间、窗口和状态恢复 |

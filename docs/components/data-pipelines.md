@@ -63,6 +63,8 @@ CREATE SUBSCRIPTION lab_orders_sub
 - **复制边界**。发布 `UPDATE` 和 `DELETE` 时，通常用主键作为 replica identity。无主键时可指定满足条件的唯一索引，或在验证定位成本后用 `REPLICA IDENTITY FULL`。DDL 和序列值需分别处理。增列时可先更新订阅端再更新发布端，切到目标端写入前检查序列位置。消费者停滞时复制槽会保留 WAL，需关注源库磁盘和 `pg_replication_slots.restart_lsn`。若达到 `max_slot_wal_keep_size` 后所需 WAL 已被清理，应核对水位并重新建立一致性基线。 [发布与 replica identity](https://www.postgresql.org/docs/current/logical-replication-publication.html) · [复制限制](https://www.postgresql.org/docs/current/logical-replication-restrictions.html) · [WAL 保留参数](https://www.postgresql.org/docs/current/runtime-config-replication.html)
 - **验证**。先在订阅端读到 `1001`，然后在发布端新增 `1002`、更新 `1001`，确认目标追平后再删除 `1002`。用同一主键范围核对结果。暂停订阅后再提交一条变更，观察发布端 slot 保留和订阅端 `pg_stat_subscription`，恢复后检查变更追平。 [监控](https://www.postgresql.org/docs/current/logical-replication-monitoring.html) · [订阅管理](https://www.postgresql.org/docs/current/sql-altersubscription.html)
 
+[运行 PostgreSQL 订单表逻辑复制实验](../../labs/postgres-logical-replication/README.md)。两实例通过真实复制协议传输数据，测试读取订阅端的具体行，并核对暂停、恢复及撤掉订阅前后的复制槽。
+
 ## Canal
 
 - **常用用法**。启用 MySQL binlog 并核查所选版本要求的日志格式、权限和保留期。创建订阅实例并限定库表。直连客户端执行 `subscribe`、`getWithoutAck`，读取变更类型和行数据，目标落地后 `ack`，处理失败时 `rollback`。对测试表做一次新增、修改和删除，核对三类事件。 [Canal Client API](https://github.com/alibaba/canal/wiki/ClientAPI)
