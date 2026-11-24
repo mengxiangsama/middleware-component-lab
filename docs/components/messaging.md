@@ -186,3 +186,7 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 ### 搭配 SQLite 防止重投导致积分重复入账
 
 订单支付事件可能在积分事务已提交、ACK 未发出时被重投。用 SQLite 主键约束去重，在同一事务登记事件 ID 和更新积分，再向 JetStream 确认。[运行联调实验](../../labs/nats-jetstream-sqlite/README.md)，核对两次投递的 Stream 序号和最终积分余额。
+
+### 搭配 Go 条件更新批次进度
+
+多个 Worker 维护同一个批次计数时，用 JetStream KV 保存数值和 revision。Go 客户端读出旧值和 revision，计算新值后调用 `Update`。遇到确定的版本冲突时重新读取、重新计算并在限定次数内重试。[运行双连接联调实验](../../labs/nats-kv-cas/README.md) · [NATS KV 语义](https://docs.nats.io/nats-concepts/jetstream/key-value-store)

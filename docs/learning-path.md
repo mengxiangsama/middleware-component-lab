@@ -30,6 +30,8 @@
 
 需要确认提交积分后断开连接会不会重复入账时，运行 [NATS JetStream + SQLite 实验](../labs/nats-jetstream-sqlite/README.md)，将同一消息的两次投递和最终余额对照起来。
 
+多个 Worker 都要更新批次进度时，运行 [NATS JetStream KV + Go](../labs/nats-kv-cas/README.md)，核对旧 revision 被拒绝后的重读与最终累计值。
+
 ## 缓存与检索
 
 用同一批测试商品分别练习 [Redis](components/search-cache.md#redis) 的按键读取和 [Elasticsearch](components/search-cache.md#elasticsearch) 的关键词检索。有进程内热点数据时，再比较 [Caffeine](components/search-cache.md#caffeine) 和共享缓存的更新方式。
