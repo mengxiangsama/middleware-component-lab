@@ -1,0 +1,7 @@
+modules:
+  http_readiness:
+    prober: http
+    timeout: 1s
+    http:
+      valid_status_codes: [200]
+      follow_redirects: false

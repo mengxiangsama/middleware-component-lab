@@ -6,6 +6,12 @@
 - **最小接入**。在 Connections 添加 Prometheus 数据源，填写 Grafana 服务端可访问的 URL 和所需认证，保存并测试连接。在 Explore 选择该数据源，查询 `up` 并缩小时间范围。新建 Dashboard，添加使用同一数据源和查询的 Time series 面板，再保存仪表盘。 [第一个仪表盘](https://grafana.com/docs/grafana/latest/fundamentals/getting-started/first-dashboards/)
 - **验证**。保留 Prometheus 的抓取配置，停止一个测试目标。确认 Explore 和面板在同一时间段都显示该目标的 `up` 从 1 变为 0。连接测试成功但图表为空时，用固定时间范围验证原始查询，再检查面板数据源、变量和查询条件。
 
+## Blackbox Exporter
+
+Blackbox Exporter 从监控节点访问目标并暴露探测指标。Prometheus 将要探测的 URL 作为 `target` 传给 Exporter 的 `/probe`。用 `up` 判断指标抓取，用 `probe_success` 与 `probe_http_status_code` 判断 HTTP 端点的表现。[多目标 Exporter](https://prometheus.io/docs/guides/multi-target-exporter/) · [HTTP 探测模块](https://github.com/prometheus/blackbox_exporter/blob/v0.29.1/CONFIGURATION.md#http_probe)
+
+运行 [Prometheus + Blackbox Exporter 就绪探测](../../labs/prometheus-blackbox-http/README.md)，核对模拟 Actuator 端点返回 503 时的探测指标，并观察恢复。
+
 ## Alertmanager
 
 - **常用功能**。接收 Prometheus 已触发的告警，按标签分组和路由，去重后发给通知接收方。Silence 用标签匹配和期限临时静默通知。Inhibition 在匹配的源告警存在时抑制目标告警通知，例如同一 `cluster` 的上游故障抑制次生告警。 [告警分组、抑制和静默](https://prometheus.io/docs/alerting/latest/alertmanager/)
