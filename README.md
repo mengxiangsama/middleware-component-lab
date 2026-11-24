@@ -23,6 +23,7 @@
 | 新版应用如何在启动时升级旧订单表 | [Spring Boot + Flyway](labs/flyway/README.md)，验证自动迁移、重启和脚本校验失败时的启动行为。 |
 | 发版失败时怎样撤销新列并保留旧订单 | [Liquibase + H2 按标签回退](labs/liquibase-rollback/README.md)，运行 `./mvnw -B -f labs/liquibase-rollback/pom.xml clean verify` 检查列结构、订单数据和迁移记录。 |
 | 订单查询拿不到数据库连接时怎样定位 | [HikariCP + H2](labs/hikaricp-pool/README.md)，运行 `./mvnw -B -f labs/hikaricp-pool/pom.xml clean verify` 验证连接池满载和归还后的恢复。 |
+| 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 多个日结进程怎样选出当前执行者 | [etcd 租约选主](labs/etcd-leader-election/README.md)，实测接手和旧执行者的条件写入拒绝。 |
 | 后台改门店接单上限后怎样更新本地配置 | [ZooKeeper + Apache Curator](labs/curator-zookeeper-cache/README.md)，运行 `./mvnw -B -f labs/curator-zookeeper-cache/pom.xml clean verify` 核对初始加载、更新和删除。 |

@@ -54,11 +54,12 @@
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 
-## 数据库连接
+## 数据库连接与访问
 
 | 组件 | 常见用法 |
 | --- | --- |
 | [HikariCP](database-connectivity.md#hikaricp) | JDBC 连接复用、获取超时和池状态。**联调实测** · [搭配 H2 验证连接池耗尽](../../labs/hikaricp-pool/README.md)。 |
+| [MyBatis](database-connectivity.md#mybatis) | Java Mapper、参数绑定和结果映射。**联调实测** · [搭配 H2 验证库存条件扣减](../../labs/mybatis-stock-update/README.md)。 |
 
 ## 数据同步与处理
 
