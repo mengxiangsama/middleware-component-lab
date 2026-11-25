@@ -14,6 +14,12 @@ MyBatis 将 Java 接口方法映射到 SQL。通过 XML 或注解配置语句，
 
 运行 [MyBatis + H2 库存条件扣减](../../labs/mybatis-stock-update/README.md)，核对两次并发更新的影响行数和最终库存。
 
+## H2
+
+H2 是 Java SQL 数据库，可用 JDBC 以嵌入式方式运行。需要在重新打开连接后保留数据时，用 `jdbc:h2:file:...` 指向本地文件。业务表与框架元数据表可以放在同一个数据库，由同一个事务提交。[H2 数据库 URL](https://h2database.com/html/features.html#database_url)
+
+在 [Spring Batch 发货导入](scheduling.md#搭配-h2-续跑发货对账导入)中，H2 保存 CSV 的导入结果和步骤检查点。实验重新打开文件库后读取已提交行，再按持久化进度续跑。[运行方法](../../labs/spring-batch-chunk-restart/README.md)
+
 ## SQLite
 
 SQLite 将关系数据存入本地文件。适合单机工具、门店应用和本机任务。Java 通过 Xerial SQLite JDBC 打开文件，多个连接共享同一数据库。启用 WAL 后，读事务可以保留自己的快照，同时一个写事务仍能提交。[Xerial JDBC](https://github.com/xerial/sqlite-jdbc) · [SQLite WAL](https://www.sqlite.org/wal.html)

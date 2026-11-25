@@ -75,6 +75,14 @@ Temporal 运行带状态的工作流。Workflow 安排步骤，Activity 执行 H
 
 运行 [Temporal + Go 库存预留实验](../../labs/temporal-activity-retry/README.md)，核对接口先写入再返回 503、第二次请求复用预留号，以及 Workflow 返回的结果。
 
+## Spring Batch
+
+Spring Batch 在 Java 里运行分批处理作业。Job 由一个或多个 Step 组成。典型 Step 由 reader 读取数据，由 writer 按 chunk 写入，并在事务内提交。使用 JDBC `JobRepository` 保存 Job、Step 和读取进度。用作业名称和标识参数表示同一次导入，失败后可以继续这一作业实例。[分批处理](https://docs.spring.io/spring-batch/reference/5.2/step/chunk-oriented-processing.html) · [作业重启](https://docs.spring.io/spring-batch/reference/5.2/job/configuring.html#restartability)
+
+### 搭配 H2 续跑发货对账导入
+
+用 [H2 文件库](database-connectivity.md#h2)保存发货数据和框架元数据。把固定 CSV 接到 `FlatFileItemReader`，由 JDBC writer 插入业务表，保持 writer 和仓库使用同一个事务管理器。运行[发货 CSV 导入实验](../../labs/spring-batch-chunk-restart/README.md)，检查第二批回滚、检查点持久化和相同作业实例的续跑。
+
 ## ElasticJob
 
 - Apache ShardingSphere ElasticJob 提供分布式分片调度。ElasticJob-Lite 用 ZooKeeper 注册协调，Java 作业实现 `SimpleJob`，在 `ShardingContext` 读取分片序号和参数。设置任务名、总分片数、Cron 和 ZooKeeper 命名空间后，用 `ScheduleJobBootstrap` 启动。

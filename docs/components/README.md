@@ -59,6 +59,7 @@
 | [PowerJob](scheduling.md#powerjob) | Worker 接入、单机或广播执行、Map/MapReduce 和工作流 |
 | [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。**联调实测** · [恢复错过的触发](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发) · [用 JDBC 保存和恢复任务游标](../../labs/quartz-jdbc/README.md#重启后继续处理下一批)。 |
 | [Temporal](scheduling.md#temporal) | Workflow、Activity、重试和时间限制。**联调实测** · [搭配 Go 和 HTTP 库存服务验证重试](../../labs/temporal-activity-retry/README.md)。 |
+| [Spring Batch](scheduling.md#spring-batch) | Java 批处理、分批提交、作业元数据与续跑。**联调实测** · [搭配 H2 恢复发货 CSV 导入](../../labs/spring-batch-chunk-restart/README.md)。 |
 | [ElasticJob](scheduling.md#elasticjob) | 注册中心、作业分片、分片执行和故障转移 |
 | [Apache DolphinScheduler](scheduling.md#apache-dolphinscheduler) | DAG、定时发布、失败重跑和补数据 |
 
@@ -68,6 +69,7 @@
 | --- | --- |
 | [HikariCP](database-connectivity.md#hikaricp) | JDBC 连接复用、获取超时和池状态。**联调实测** · [搭配 H2 验证连接池耗尽](../../labs/hikaricp-pool/README.md)。 |
 | [MyBatis](database-connectivity.md#mybatis) | Java Mapper、参数绑定和结果映射。**联调实测** · [搭配 H2 验证库存条件扣减](../../labs/mybatis-stock-update/README.md)。 |
+| [H2](database-connectivity.md#h2) | 嵌入式 SQL、内存和文件数据库。**联调实测** · [搭配 Spring Batch 保存导入检查点](../../labs/spring-batch-chunk-restart/README.md)。 |
 | [SQLite](database-connectivity.md#sqlite) | 本地文件库、事务与 WAL。**联调实测** · [搭配 JDBC 在写入期间保持报表快照](../../labs/sqlite-wal-snapshot/README.md)。 |
 | [MySQL InnoDB](database-connectivity.md#mysql-innodb) | 行级锁、锁定读与事务。**联调实测** · [搭配 JDBC 领取发货任务](../../labs/mysql-skip-locked/README.md)。 |
 

@@ -58,6 +58,8 @@
 
 如果关停期间可能错过门店日结，运行 [Spring Boot + Quartz JDBC 补跑](../labs/quartz-jdbc/README.md)。先检查重启后仍有原触发器，再核对补跑写入的门店和业务日期。
 
+文件导入中途失败后需要继续处理时，运行 [Spring Batch + H2](../labs/spring-batch-chunk-restart/README.md)，用同一导入编号重跑，核对已提交行、持久化检查点和续跑写入数。
+
 多副本共享日结执行资格时，运行 [etcd 租约选主实验](../labs/etcd-leader-election/README.md)，核对旧任务失去租约后何时接手，以及旧进程写入是否被拦截。
 
 发货任务以数据库行保存时，运行 [MySQL + JDBC 任务领取](../labs/mysql-skip-locked/README.md)。让一个事务持有行锁，核对其他连接可领取另一行，以及回滚后的接手。
