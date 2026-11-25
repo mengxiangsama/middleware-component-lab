@@ -143,3 +143,11 @@
 | Temporal + Go | 库存已写入却返回 503 时，工作流需要有限重试。 | 真实 Temporal 两次尝试，收到 503、200，工作流拿到原预留号，带幂等键的库存测试服务只写入一笔。 | [00ee42f](https://github.com/mengxiangsama/middleware-component-lab/commit/00ee42f042aca1dbd66d52562ab88707e80834de) |
 
 Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch 使用官方发行包复测，Mosquitto 使用官方源码构建的本机 Broker 复测。每个实验的环境、运行命令和验证范围见各自教程。上轮延后的根项目 Maven 回归成功，11 项通过，3 项按原条件跳过。
+
+## 2026-11-25 · Spring Batch 发货 CSV 分批导入续跑
+
+同步 `a735e02` 后检查根 README、组件目录、教程与近期提交。现有 Quartz JDBC 教程已覆盖应用自行保存的游标，Temporal 覆盖远程 Activity 重试，Camel 覆盖整份 CSV 的 HTTP 重投。候选方向还包括给 Pulsar 的 `Key_Shared` 补上真实 Broker 路由验证。Spring Batch 此前缺少组件说明和可运行示例，本轮选择用本地文件库验证框架保存的读取位置，以及业务写入和检查点如何在同一 chunk 的事务中提交。[Spring Batch 官方失败重启示例](https://github.com/spring-projects/spring-batch/blob/v5.2.6/spring-batch-samples/README.md#fail-restart-sample) · [Pulsar 订阅类型](https://pulsar.apache.org/docs/concepts-messaging/#key_shared)
+
+在 macOS 26.5 ARM64、OpenJDK 17.0.16、Spring Batch 5.2.6 和 H2 2.3.232 上执行 `./mvnw -B -f labs/spring-batch-chunk-restart/pom.xml clean verify` 两次，两次各 1 项通过。第二批写入后故意抛出异常。第一次执行状态为 `FAILED`，数据库保留 2 行，重新查询的读取检查点为 2。用相同标识参数创建新的执行，读取并写入余下 3 行，最终 5 行的编号和金额与 CSV 一致，状态为 `COMPLETED`。
+
+验证范围为同一 JVM 内重建作业运行对象、重新打开 H2 文件库、受控失败回滚和续跑。根 README、组件索引和学习路线已补上入口，Spring Batch 与 H2 手册已互相链接。[运行教程](../labs/spring-batch-chunk-restart/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/f26aea37f375da800858f755e01c4fa0bf2a97a2)
