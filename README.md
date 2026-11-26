@@ -15,6 +15,7 @@
 | 订单支付消息重投后怎样避免积分重复发放 | [NATS JetStream + SQLite](labs/nats-jetstream-sqlite/README.md)，实测 Worker 提交后断开、Broker 重投与数据库去重。 |
 | 两个 Worker 更新同一个批次进度时怎样避免覆盖 | [NATS JetStream KV + Go](labs/nats-kv-cas/README.md)，运行 `(cd labs/nats-kv-cas && go run -mod=readonly .)` 检查版本冲突与重试。 |
 | 发货消费者重启与补数时怎样控制读取位置 | [Kafka 消费位点恢复与独立重放](labs/kafka-offset-replay/README.md)，运行 `./mvnw -B -f labs/kafka-offset-replay/pom.xml clean verify`。 |
+| 多个发货消费者怎样分摊订单并保持同一订单的事件顺序 | [Pulsar Key_Shared + Java](labs/pulsar-key-shared/README.md)，运行 `sh labs/pulsar-key-shared/verify.sh` 核对同键路由和状态顺序。 |
 | 坏的订单消息总是处理失败时怎样隔离 | [ActiveMQ Artemis + Jakarta JMS](labs/artemis-jms-dead-letter/README.md)，运行 `./mvnw -B -f labs/artemis-jms-dead-letter/pom.xml clean verify` 核对重投、死信与正常提交。 |
 | 收到 Broker 确认后怎样核对消息确实有路由 | [RabbitMQ + Java 发布确认](labs/rabbitmq-publisher-confirms/README.md)，运行 `sh labs/rabbitmq-publisher-confirms/verify.sh` 对照入队和 `NO_ROUTE` 返回。 |
 | 设备短时断网后怎样接回离线指令 | [Mosquitto + Paho MQTT](labs/mosquitto-offline-qos1/README.md)，安装实验依赖后运行 `python labs/mosquitto-offline-qos1/verify.py` 核对会话恢复。 |

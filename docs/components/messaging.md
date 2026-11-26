@@ -177,6 +177,10 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 - **保留与事务**｜要重放已确认数据，应配置保留并验证订阅位点能否回退到需要的历史。未确认消息的过期配置与已确认消息的保留策略分别管理。Pulsar 事务可协调自身的写入和确认，调用外部系统时需设计应用级恢复。 [保留与过期](https://pulsar.apache.org/docs/concepts-messaging/#message-retention-and-expiry) · [事务](https://pulsar.apache.org/docs/txn-why/)
 - **验证**｜以同一业务键验证 consumer 增减、批处理及 nack 后的处理结果。确认过期消息如何影响订阅积压，以及延迟发现故障后是否还有足够历史恢复。
 
+### 搭配 Java 按订单键分发发货事件
+
+生产者用订单号设置消息键。两个 Java 消费者打开同一个 `Key_Shared` 订阅，在本例分别声明不重叠的哈希范围，消费后逐条确认。运行 [Pulsar Key_Shared 发货实验](../../labs/pulsar-key-shared/README.md)，核对每个订单的创建、支付和发货是否由同一个消费者按序收到。[Pulsar 4.0 Key_Shared 说明](https://pulsar.apache.org/docs/4.0.x/concepts-messaging/#key_shared)
+
 ## NATS JetStream
 
 - **适用与代价**｜适合已有 NATS Subject 路由、还需要持久化消息和按需重放的服务。Stream 接收匹配 Subject 的消息，具有状态的 Consumer 保存消费进度。不同业务使用各自的 Consumer，处理相同任务的一组 worker 可共享 durable pull consumer。需要给 Stream 设置保留、存储与复制边界。 [JetStream 概念](https://docs.nats.io/concepts/jetstream) · [Pull Consumer](https://docs.nats.io/learn/jetstream/pull-consumers)
