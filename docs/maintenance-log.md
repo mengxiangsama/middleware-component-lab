@@ -151,3 +151,11 @@ Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch �
 在 macOS 26.5 ARM64、OpenJDK 17.0.16、Spring Batch 5.2.6 和 H2 2.3.232 上执行 `./mvnw -B -f labs/spring-batch-chunk-restart/pom.xml clean verify` 两次，两次各 1 项通过。第二批写入后故意抛出异常。第一次执行状态为 `FAILED`，数据库保留 2 行，重新查询的读取检查点为 2。用相同标识参数创建新的执行，读取并写入余下 3 行，最终 5 行的编号和金额与 CSV 一致，状态为 `COMPLETED`。
 
 验证范围为同一 JVM 内重建作业运行对象、重新打开 H2 文件库、受控失败回滚和续跑。根 README、组件索引和学习路线已补上入口，Spring Batch 与 H2 手册已互相链接。[运行教程](../labs/spring-batch-chunk-restart/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/f26aea37f375da800858f755e01c4fa0bf2a97a2)
+
+## 2026-11-26 · Pulsar Key_Shared 按订单分发发货事件
+
+同步 `faa0e64` 后检查根 README、组件目录、现有实验和近期提交。RabbitMQ 已实测路由返回，Kafka 已实测消费位点，Pulsar 仍只有订阅模式说明。另一个候选是 Kafka Connect 的 FileStream 联调。优先选择昨日已列出的 Pulsar 缺口，因为现有消息教程尚无 Pulsar 实验，并且可以用一个真实 Broker 验证同一个订阅如何按订单分工。[Pulsar Key_Shared 语义](https://pulsar.apache.org/docs/4.0.x/concepts-messaging/#key_shared) · [Kafka Connect FileStream 官方用法](https://kafka.apache.org/44/kafka-connect/user-guide/)
+
+在 macOS 26.5 ARM64、Docker Engine 27.3.1 和 OpenJDK 17.0.16 上运行 `sh labs/pulsar-key-shared/verify.sh`，再用 `PULSAR_LAB_PORT=16651 sh labs/pulsar-key-shared/verify.sh` 复跑。Broker 使用官方 `apachepulsar/pulsar:4.0.14` 的 `linux/arm64` 镜像，Java Client 同为 4.0.14。镜像清单摘要为 `sha256:d404b4db9b809cd4e8b65fc2120a97dbc024c222fc2d53041d900c7d5a5f1f2d`。两次各 1 项测试通过，均收到 48 条消息。两个 Java 消费者分别收到 5 和 11 个订单，每个订单的 `CREATED → PAID → SHIPPED` 完整且有序。
+
+本轮覆盖单节点、单 Topic、稳定的两个消费者、固定范围路由和逐条确认调用。首页、组件目录、消息手册和学习路线均补上入口。[运行教程](../labs/pulsar-key-shared/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/9f0698ce8621650e8e979010c338d14ae1b8b66f)
