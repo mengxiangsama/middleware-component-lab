@@ -160,6 +160,7 @@
 | [ZooKeeper](service-tools.md#zookeeper) | znode、会话、版本与 Watch。**联调实测** · [搭配 Curator 监听门店配置](../../labs/curator-zookeeper-cache/README.md)。 |
 | [Apache Curator](service-tools.md#apache-curator) | ZooKeeper Java 客户端、会话管理和常用协调组件。**联调实测** · [CuratorCache 单节点快照](../../labs/curator-zookeeper-cache/README.md)。 |
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。**可运行** · [按异常类型有限重试](service-tools.md#按异常类型有限重试)。**联调实测** · [搭配 Java HttpClient 保护库存查询](../../labs/resilience4j-inventory/README.md)。 |
+| [Toxiproxy](service-tools.md#toxiproxy) | 用 TCP 代理注入延迟等网络异常。**联调实测** · [搭配 Java HttpClient 验证超时和恢复](../../labs/toxiproxy-http-timeout/README.md)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
 | [Open Policy Agent](service-tools.md#open-policy-agent) | 用 Rego 对请求做策略决策，由应用执行结果。**联调实测** · [搭配 Python 网关按仓库授权查运单](../../labs/opa-shipment-authorization/README.md)。 |
 | [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出。**联调实测** · [Java HTTP 调用传播 Trace Context](../../labs/otel-java-http-propagation/README.md) · [Collector 搭配 Tempo 转发 trace](../../labs/otel-collector-tempo/README.md)。 |

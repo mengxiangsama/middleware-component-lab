@@ -59,6 +59,7 @@
 | 商品搜索怎样筛出有库存的结果并按价格排序 | [Meilisearch 商品搜索实验](labs/meilisearch-storefront/README.md)，运行 `python3 labs/meilisearch-storefront/verify.py` 核对异步写入、过滤和价格顺序。 |
 | 对账导出翻页时怎样避免被新的订单变更打乱 | [OpenSearch + Python PIT 分页](labs/opensearch-pit-pagination/README.md)，运行 `sh labs/opensearch-pit-pagination/run.sh /path/to/opensearch-3.10.0`，对照快照和最新查询。 |
 | 多个报价服务实例怎样共享供应商调用额度 | [Redisson + Valkey 全局限流](labs/redisson-shared-rate/README.md)，运行 `VALKEY_SERVER=/absolute/path/to/valkey-server ./mvnw -B -f labs/redisson-shared-rate/pom.xml clean verify`。 |
+| 库存接口响应很慢时怎样实测 Java 请求超时 | [Toxiproxy + Java HttpClient](labs/toxiproxy-http-timeout/README.md)，准备 JDK 17 和 Toxiproxy 2.13.0 后运行 `java labs/toxiproxy-http-timeout/HttpTimeoutDemo.java /path/to/toxiproxy-server`。 |
 | 库存接口持续返回 503 时怎样限制重试并恢复 | [Resilience4j + Java HttpClient](labs/resilience4j-inventory/README.md)，检查熔断后下游请求数和半开恢复。 |
 | 怎样让带标记的商品查询走灰度版本 | [Spring Cloud Gateway Header 路由实验](labs/spring-cloud-gateway/README.md)，运行 `./mvnw -B -f labs/spring-cloud-gateway/pom.xml verify` 核对实际转发。 |
 | 订单状态怎样通过代理逐条到达客户端 | [NGINX + SSE 流式响应实验](labs/nginx-sse/README.md)，运行 `python3 labs/nginx-sse/verify.py` 核对首条事件在流结束前到达。 |

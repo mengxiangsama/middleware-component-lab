@@ -313,6 +313,12 @@ first=in-stock third=in-stock
 
 **官方文档**。 [Bulkhead 配置与 Java 用法](https://resilience4j.readme.io/docs/bulkhead) · [2.3.0 Bulkhead API](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-bulkhead/src/main/java/io/github/resilience4j/bulkhead/Bulkhead.java) · [2.3.0 BulkheadConfig](https://raw.githubusercontent.com/resilience4j/resilience4j/v2.3.0/resilience4j-bulkhead/src/main/java/io/github/resilience4j/bulkhead/BulkheadConfig.java)
 
+## Toxiproxy
+
+Toxiproxy 在测试环境转发 TCP 连接，通过控制 API 动态添加或删除延迟等故障。创建代理后，将被测客户端的目标改为代理的监听地址，连接、请求和后端仍使用各自的协议。可以分别控制上行和下行。控制 API 应仅供实验操作访问。[代理和 toxic 配置](https://github.com/Shopify/toxiproxy/tree/v2.13.0#toxics)
+
+运行 [Toxiproxy + Java HttpClient](../../labs/toxiproxy-http-timeout/README.md)，核对正常库存查询、仅增加响应延迟时的请求超时，以及移除延迟后恢复。实验用后端请求数确认超时的请求确实到达过后端。
+
 ## Apache Seata
 
 - **常用功能**：事务协调器管理全局事务。AT 依赖受支持的关系数据库、数据源代理和回滚日志。TCC 使用显式 Try/Confirm/Cancel，Saga 使用补偿，XA 依赖参与方支持 XA。
