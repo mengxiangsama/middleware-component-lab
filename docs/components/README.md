@@ -160,7 +160,7 @@
 | [Apache Curator](service-tools.md#apache-curator) | ZooKeeper Java 客户端、会话管理和常用协调组件。**联调实测** · [CuratorCache 单节点快照](../../labs/curator-zookeeper-cache/README.md)。 |
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。**可运行** · [按异常类型有限重试](service-tools.md#按异常类型有限重试)。**联调实测** · [搭配 Java HttpClient 保护库存查询](../../labs/resilience4j-inventory/README.md)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
-| [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出。**联调实测** · [Collector 搭配 Tempo 转发 trace](../../labs/otel-collector-tempo/README.md)。 |
+| [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出。**联调实测** · [Java HTTP 调用传播 Trace Context](../../labs/otel-java-http-propagation/README.md) · [Collector 搭配 Tempo 转发 trace](../../labs/otel-collector-tempo/README.md)。 |
 | [Micrometer](service-tools.md#micrometer) | 在 Java 中记录计数、耗时和分布。**联调实测** · [搭配 Actuator 与 Prometheus 查看发货耗时](../../labs/micrometer-actuator-timer/README.md)。 |
 | [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警。**联调实测** · [抓取应用业务指标并查询耗时桶](../../labs/micrometer-actuator-timer/README.md)。**可运行** · [测试订单服务抓取失败告警](service-tools.md#测试订单服务抓取失败告警)，含 [pending 状态与等待重置验证](../../labs/prometheus-rules/README.md)。 |
 | [Blackbox Exporter](observability-tools.md#blackbox-exporter) | HTTP 等协议的外部探测与状态诊断。**联调实测** · [搭配 Prometheus 验证就绪、失败与恢复](../../labs/prometheus-blackbox-http/README.md)。 |

@@ -116,7 +116,7 @@
 
 先用 [Micrometer Timer + Actuator + Prometheus](../labs/micrometer-actuator-timer/README.md) 实测业务请求如何进入累计耗时桶，再用查询确定慢的是通过请求还是拒绝请求。
 
-运行 [OpenTelemetry Collector + Tempo](../labs/otel-collector-tempo/README.md)，先用两条模拟 span 核对 OTLP 转发及 Trace ID 查询，再接入真实应用确认跨服务传播。
+运行 [OpenTelemetry Java + JDK HTTP](../labs/otel-java-http-propagation/README.md)，核对真实库存请求怎样把两侧 span 连成一条 trace。随后运行 [OpenTelemetry Collector + Tempo](../labs/otel-collector-tempo/README.md)，用两条模拟 span 核对 OTLP 转发及 Trace ID 查询。
 
 先确认应用日志包含 Trace ID，再给测试下游的一条调用加延迟。观察指标变化，找出变慢的 span，并关联调用两端的日志。若请求经过消息队列，也核对生产端到消费端的追踪上下文是否成功传递。
 

@@ -64,6 +64,7 @@
 | 怎样让门店把对账 CSV 直接上传到对象存储 | [SeaweedFS + AWS SDK 预签名 URL](labs/seaweedfs-s3-presign/README.md)，运行 `(cd labs/seaweedfs-s3-presign && WEED_BINARY=/absolute/path/to/weed go test -count=1 -v ./...)`。 |
 | 订单报错后怎样集中检索完整 Java 堆栈 | [Fluent Bit + Loki](labs/fluent-bit-java-multiline/README.md#搭配-loki-集中检索完整堆栈)，从文件采集到按服务查异常，也可以[单独验证多行合并](labs/fluent-bit-java-multiline/README.md#验证方法)。 |
 | 发货日志怎样筛选字段并区分坏记录 | [Vector + HTTP 日志接收端](labs/vector-log-routing/README.md)，运行 `python3 labs/vector-log-routing/verify.py --vector /absolute/path/to/vector` 核对转发内容与拒绝原因。 |
+| 订单服务和库存服务怎样接出同一条调用链 | [OpenTelemetry Java + JDK HTTP](labs/otel-java-http-propagation/README.md)，运行 `./mvnw -B -f labs/otel-java-http-propagation/pom.xml clean verify` 核对 `traceparent` 与 span 父子关系。 |
 | 下单变慢时怎样查入口和库存调用各花多久 | [OpenTelemetry Collector + Grafana Tempo](labs/otel-collector-tempo/README.md)，按一个 Trace ID 核对两段 span 的父子关系和耗时。 |
 
 这些 Java 实验都需要 Java 17+，在仓库根目录运行自带的 Maven Wrapper。RocketMQ 事务消息的端到端演示还需要 Docker Compose，Spring Modulith 的测试使用内嵌 H2。Prometheus 规则实验只需 Docker 和 Shell，运行 `sh labs/prometheus-rules/verify.sh`。

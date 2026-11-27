@@ -325,6 +325,8 @@ first=in-stock third=in-stock
 - **最小接入**：启动应用时传入 `-javaagent`，设置 `OTEL_SERVICE_NAME`，选择 OTLP 导出协议和接收端。使用 Collector 时，配置 receiver、processor 和 exporter，并把它们接入对应信号的 pipeline。 [Java Agent 快速开始](https://opentelemetry.io/docs/zero-code/java/agent/getting-started/) · [Collector 配置](https://opentelemetry.io/docs/collector/configuration/)
 - **验证**：发一次跨服务调用，检查上下游 trace 是否关联，检查对应指标和日志是否到达预定接收端。短暂关闭接收端，观察导出队列、重试和丢弃。采样和进程内缓冲会影响信号的完整性。
 
+用 JDK `HttpClient` 调库存且需要手动接入追踪时，在发出请求前由 Java SDK 将 CLIENT span 的上下文写入 `traceparent`，接收端提取后建 SERVER span。 [跨 HTTP 传播实验](../../labs/otel-java-http-propagation/README.md)核对实际请求头、两侧 Trace ID、父 span ID，以及请求头缺失或无效时的行为。
+
 [Collector 搭配 Grafana Tempo 实验](../../labs/otel-collector-tempo/README.md)实测 OTLP/HTTP 接收、OTLP/gRPC 导出，以及按 Trace ID 读回父子 span。
 
 ## Micrometer
