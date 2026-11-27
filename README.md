@@ -22,6 +22,7 @@
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
 | 订单服务调用库存时怎样共用请求的超时预算 | [gRPC + Protocol Buffers](labs/grpc-deadline/README.md)，运行 `./mvnw -B -f labs/grpc-deadline/pom.xml clean verify` 验证两跳调用和取消。 |
+| 发货资格检查变慢时怎样查达标次数 | [Micrometer Timer + Actuator + Prometheus](labs/micrometer-actuator-timer/README.md)，查询检查通过和拒绝的次数及耗时桶。 |
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
 | 两个订单实例同时出故障时怎样只发一条告警 | [Prometheus + Alertmanager](labs/alertmanager-webhook/README.md)，在本地 Webhook 核对合并后的触发和恢复通知。 |
 | 发布前怎样发现 Helm 环境参数填错 | [Helm 参数校验实验](labs/helm-values-schema/README.md)，用 `values.schema.json` 检查端口类型、取值范围和键名拼写。 |
@@ -74,6 +75,8 @@
 使用 Go 1.24+ 运行 `(cd labs/etcd-leader-election && go run .)`，验证 etcd 租约过期后的任务接手和写入保护。
 
 将 Prometheus 3.16.0 和 Alertmanager 0.35.0 加入 `PATH` 后，在仓库根目录运行 `python3 labs/alertmanager-webhook/verify.py`，验证真实抓取到 Webhook 的告警链路。
+
+发货耗时实验需要 JDK 17+、Python 3 和 Prometheus 3.16.0。先运行 `./mvnw -B -ntp -f labs/micrometer-actuator-timer/pom.xml clean package`，再运行 `python3 labs/micrometer-actuator-timer/verify.py /path/to/prometheus`。
 
 Helm 参数校验实验需要 Helm 4.3.2 和 Shell。在仓库根目录运行 `sh labs/helm-values-schema/verify.sh`，无需 Kubernetes 集群。
 

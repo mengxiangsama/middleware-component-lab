@@ -327,14 +327,20 @@ first=in-stock third=in-stock
 
 [Collector 搭配 Grafana Tempo 实验](../../labs/otel-collector-tempo/README.md)实测 OTLP/HTTP 接收、OTLP/gRPC 导出，以及按 Trace ID 读回父子 span。
 
+## Micrometer
+
+Micrometer 在 Java 应用内记录指标，通过 `MeterRegistry` 将计数、计时和状态交给不同的监控后端。Spring Boot 自动配置注册表。接入时可用 `Counter` 记录发生次数，用 `Timer` 同时记录操作次数、累计耗时和可选的直方图桶。检查结果可以作标签，订单或用户 ID 适合保留在日志和追踪中。[Micrometer 概念](https://docs.micrometer.io/micrometer/reference/concepts.html) · [Spring Boot 指标配置](https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html)
+
+运行 [Actuator + Prometheus 发货耗时实验](../../labs/micrometer-actuator-timer/README.md)，核对通过、拒绝及超过 50 毫秒的检查次数。
+
 ## Prometheus
 
 采集 Spring Boot 应用的 JVM 指标，见 [Actuator 搭配 Prometheus](release-tools.md#搭配-prometheus-采集应用指标)。下方告警规则实验使用官方镜像 `prom/prometheus:v3.16.0` 中的 `promtool` 直接注入样本，无需启动应用或 Prometheus 服务端。[3.16.0 发布记录](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)
 
 | 3.16.0 主要功能 | 教程状态 |
 | --- | --- |
-| 指标抓取、目标发现与重标记 | 待补。应用暴露 `/metrics` 后，可在 `scrape_configs` 添加目标，用 `up{job="demo"}` 检查抓取。 [官方快速开始](https://prometheus.io/docs/prometheus/latest/getting_started/) |
-| PromQL 与 HTTP 查询 API | 待补。可用 `rate(http_requests_total[5m])` 查看计数器的每秒速率。 |
+| 指标抓取、目标发现与重标记 | **联调实测** · [抓取 Actuator 静态目标](../../labs/micrometer-actuator-timer/README.md)。服务发现与重标记见 [配置参考](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)。 |
+| PromQL 与 HTTP 查询 API | **联调实测** · [查询 Timer 累计次数和耗时桶](../../labs/micrometer-actuator-timer/README.md#从指标回答业务问题)。 |
 | 记录规则 | 待补。定期计算表达式并将结果写成新的时间序列。 |
 | 告警规则与 Alertmanager 对接 | **联调实测**。[合并订单服务触发与恢复通知](../../labs/alertmanager-webhook/README.md)。 |
 | 规则语法检查与告警单元测试 | 已有教程。[测试订单服务抓取失败告警](#测试订单服务抓取失败告警) |

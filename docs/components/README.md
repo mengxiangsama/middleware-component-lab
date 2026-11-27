@@ -111,7 +111,7 @@
 | [Kubernetes Deployment](release-tools.md#kubernetes-deployment) | 分批替换 Pod、滚动状态与修订回滚 |
 | [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
 | [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移) · [搭配 Quartz 重启补跑](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
-| [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 健康探针、应用信息与 JVM 指标。**可运行** · [HTTP 探针](release-tools.md#搭配-kubernetes-使用-http-探针) · [导出 Prometheus 指标](release-tools.md#搭配-prometheus-采集应用指标)。 |
+| [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 健康探针、应用信息与 JVM 指标。**可运行** · [HTTP 探针](release-tools.md#搭配-kubernetes-使用-http-探针) · [导出 JVM 指标](release-tools.md#搭配-prometheus-采集应用指标)。**联调实测** · [导出发货业务耗时](../../labs/micrometer-actuator-timer/README.md)。 |
 | [Argo Rollouts](release-tools.md#argo-rollouts) | 灰度权重、观察与自动分析、晋级或中止 |
 | [OpenFeature 与 flagd](release-tools.md#openfeature-与-flagd) | 类型化功能开关、请求上下文、规则求值和默认值。**联调实测** · [搭配 Go 按门店灰度运费预估](../../labs/openfeature-flagd/README.md)。 |
 
@@ -161,7 +161,8 @@
 | [Resilience4j](service-tools.md#resilience4j) | Java 调用侧熔断、限流、并发隔离与异步超时。**可运行** · [按异常类型有限重试](service-tools.md#按异常类型有限重试)。**联调实测** · [搭配 Java HttpClient 保护库存查询](../../labs/resilience4j-inventory/README.md)。 |
 | [Apache Seata](service-tools.md#apache-seata) | AT、TCC、Saga、XA 与全局事务协调 |
 | [OpenTelemetry](service-tools.md#opentelemetry) | Java Agent、追踪、指标、日志与 OTLP 导出。**联调实测** · [Collector 搭配 Tempo 转发 trace](../../labs/otel-collector-tempo/README.md)。 |
-| [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警。**可运行** · [测试订单服务抓取失败告警](service-tools.md#测试订单服务抓取失败告警)，含 [pending 状态与等待重置验证](../../labs/prometheus-rules/README.md)。 |
+| [Micrometer](service-tools.md#micrometer) | 在 Java 中记录计数、耗时和分布。**联调实测** · [搭配 Actuator 与 Prometheus 查看发货耗时](../../labs/micrometer-actuator-timer/README.md)。 |
+| [Prometheus](service-tools.md#prometheus) | 抓取指标、PromQL、记录规则和告警。**联调实测** · [抓取应用业务指标并查询耗时桶](../../labs/micrometer-actuator-timer/README.md)。**可运行** · [测试订单服务抓取失败告警](service-tools.md#测试订单服务抓取失败告警)，含 [pending 状态与等待重置验证](../../labs/prometheus-rules/README.md)。 |
 | [Blackbox Exporter](observability-tools.md#blackbox-exporter) | HTTP 等协议的外部探测与状态诊断。**联调实测** · [搭配 Prometheus 验证就绪、失败与恢复](../../labs/prometheus-blackbox-http/README.md)。 |
 | [Alertmanager](observability-tools.md#alertmanager) | 告警路由、分组、抑制、静默与通知。**联调实测** · [搭配 Prometheus 合并订单告警](../../labs/alertmanager-webhook/README.md)。 |
 | [Grafana](observability-tools.md#grafana) | 数据源、Explore 和仪表盘 |

@@ -88,6 +88,8 @@ scrape_configs:
 
 应用侧测试读取 `/actuator/metrics/jvm.memory.used` 和 `/actuator/prometheus`，分别核对 JSON 读数和 `jvm_memory_used_bytes` 指标。接入 Prometheus 服务端后，可用 `up{job="orders"}` 确认抓取，再查询 `jvm_memory_used_bytes{job="orders"}`。[本地验证命令](../../README.md#应用信息和指标) · [Spring Boot 的 Prometheus 指标导出](https://docs.spring.io/spring-boot/3.5/reference/actuator/metrics.html#actuator.metrics.export.prometheus)。
 
+应用需要记录发货资格检查的耗时时，增加 Micrometer 的业务 Timer，按检查结果导出累计桶，再由 Prometheus 抓取。实验同时验证应用导出、实际抓取和即时查询。[发货耗时实验](../../labs/micrometer-actuator-timer/README.md)
+
 ## OpenFeature 与 flagd
 
 OpenFeature 提供类型化功能开关 API，应用在请求上下文中传入业务条件，并提供失败时的默认值。flagd provider 把求值交给 flagd。flagd 按规则选择变体并返回原因，便于核对试点范围。[OpenFeature Go SDK](https://openfeature.dev/docs/reference/sdks/server/go/) · [flagd 规则定义](https://flagd.dev/reference/flag-definitions/)
