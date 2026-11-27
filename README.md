@@ -54,6 +54,7 @@
 | 门店查询实例故障后怎样从可用列表摘除 | [Consul + HTTP 服务发现](labs/consul-health-discovery/README.md)，运行 `python3 labs/consul-health-discovery/verify.py --consul /absolute/path/to/consul` 验证健康筛选和恢复。 |
 | 怎样检查应用健康和 JVM 指标 | [Actuator 健康探针](#actuator-健康探针) · [应用信息和指标](#应用信息和指标) |
 | 监控端能抓到指标时，怎样发现应用其实未就绪 | [Prometheus + Blackbox Exporter](labs/prometheus-blackbox-http/README.md)，准备两个官方二进制后运行 `python3 labs/prometheus-blackbox-http/verify.py`，对照抓取、探测与状态码。 |
+| Java 集群的共享内存数据怎样在一个节点退出后接管 | [Hazelcast IMap + Java](labs/hazelcast-imap-backup/README.md)，运行 `./mvnw -B -f labs/hazelcast-imap-backup/pom.xml clean verify` 核对同步备份和接管。 |
 | 商品改价后怎样更新多实例缓存 | [Spring Cache + Caffeine](labs/spring-cache-caffeine/README.md) · [Redis 广播失效与并发读价](labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并) |
 | 商品价格怎样本地命中并跟踪改价 | [Valkey + Lettuce 客户端缓存](labs/valkey-client-cache/README.md)，核对 RESP3 失效前后的服务端 GET 次数。 |
 | 商品搜索怎样筛出有库存的结果并按价格排序 | [Meilisearch 商品搜索实验](labs/meilisearch-storefront/README.md)，运行 `python3 labs/meilisearch-storefront/verify.py` 核对异步写入、过滤和价格顺序。 |

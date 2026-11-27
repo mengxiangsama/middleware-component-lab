@@ -1126,6 +1126,12 @@ test ! -e "$lab_dir"
 
 对读多写少的价格键，[Lettuce](#lettuce) 可用专用 RESP3 连接启用 `CLIENT TRACKING ON`，在本地缓存读到的价格。另一连接改价后，Valkey 向读端推送该键失效。用 [Valkey 客户端价格缓存实验](../../labs/valkey-client-cache/README.md) 核对命中时 `GET` 次数是否保持不变，以及失效是否只让改价的键重新加载。
 
+## Hazelcast
+
+Hazelcast `IMap` 通过键分区。服务成员加入同一集群后，通过同一个逻辑 Map 查询和写入，分区归属与副本由集群管理。配置同步备份时，集群会把一份副本放到另一个成员，同步写入需要等待副本确认。一个成员退出后，由持有副本的成员接手分区。[Java 内嵌集群](https://docs.hazelcast.com/hazelcast/5.7/getting-started/get-started-java) · [同步备份](https://docs.hazelcast.com/hazelcast/5.7/data-structures/backing-up-maps)
+
+运行 [Hazelcast IMap + Java](../../labs/hazelcast-imap-backup/README.md)，对照订单状态更新、B 的备份数量与 A 终止后的分区归属。若服务仍用各 JVM 独立的本地缓存，可另做 [Caffeine + Redis 失效实验](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。
+
 ## Caffeine
 
 - JVM 应用接入 Caffeine 后，用 `Caffeine.newBuilder()` 指定容量或权重上限与过期策略。使用 `Cache.get(key, loader)` 按需加载，或者用 `build(loader)` 创建 `LoadingCache`。显式失效用 `invalidate`。

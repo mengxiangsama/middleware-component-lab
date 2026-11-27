@@ -44,6 +44,8 @@
 
 用同一批测试商品分别练习 [Redis](components/search-cache.md#redis) 的按键读取和 [Elasticsearch](components/search-cache.md#elasticsearch) 的关键词检索。有进程内热点数据时，再比较 [Caffeine](components/search-cache.md#caffeine) 和共享缓存的更新方式。
 
+如果 Java 实例需要共享一份逻辑订单状态，运行 [Hazelcast IMap + Java](../labs/hazelcast-imap-backup/README.md)，把订单状态写入分区并同步到备份，再观察主成员退出后的读取。
+
 涉及商品价格时，先运行 [Spring Cache + Caffeine 改价实验](../labs/spring-cache-caffeine/README.md)，核对提交后只清除对应商品、回滚时原缓存仍可用。
 
 部署多实例后，运行 [Redis 广播失效与回源合并](../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)，确认各实例都清除了旧价，再核对并发请求各触发几次回源。

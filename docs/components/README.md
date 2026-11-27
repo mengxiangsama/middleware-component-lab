@@ -42,6 +42,7 @@
 | [Redisson](search-cache.md#redisson) | Java 分布式集合、锁、信号量和限流。**联调实测** · [搭配 Valkey 共享报价服务额度](../../labs/redisson-shared-rate/README.md)。 |
 | [Lettuce](search-cache.md#lettuce) | Java 同步、异步和 Reactive Redis 命令。**联调实测** · [RESP3 价格缓存与失效](../../labs/valkey-client-cache/README.md)。 |
 | [Valkey](search-cache.md#valkey) | 键值与数据结构命令、过期和故障转移。**联调实测** · [搭配 Lettuce 按键推送失效](../../labs/valkey-client-cache/README.md)。 |
+| [Hazelcast](search-cache.md#hazelcast) | Java 分布式内存数据和分区备份。**联调实测** · [搭配 Java 验证订单状态同步备份与接管](../../labs/hazelcast-imap-backup/README.md)。 |
 | [Caffeine](search-cache.md#caffeine) | JVM 进程内缓存、加载和淘汰。**可运行** · [异步刷新](search-cache.md#热点商品详情异步刷新)。**联调实测** · [搭配 Spring Cache 处理商品改价](search-cache.md#搭配-spring-cache-处理商品改价) · [Redis 广播失效](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。 |
 | [Spring Cache](search-cache.md#spring-cache) | 用注解声明读取、写入和失效策略。**联调实测** · [搭配 Caffeine 处理商品改价](search-cache.md#搭配-spring-cache-处理商品改价)。 |
 | [ClickHouse](search-cache.md#clickhouse) | 列式存储、批量写入和分析聚合。**联调实测** · [用 chDB 验证支付增量汇总](../../labs/clickhouse-payment-rollup/README.md)。 |
