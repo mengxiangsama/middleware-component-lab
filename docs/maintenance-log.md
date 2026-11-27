@@ -159,3 +159,11 @@ Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch �
 在 macOS 26.5 ARM64、Docker Engine 27.3.1 和 OpenJDK 17.0.16 上运行 `sh labs/pulsar-key-shared/verify.sh`，再用 `PULSAR_LAB_PORT=16651 sh labs/pulsar-key-shared/verify.sh` 复跑。Broker 使用官方 `apachepulsar/pulsar:4.0.14` 的 `linux/arm64` 镜像，Java Client 同为 4.0.14。镜像清单摘要为 `sha256:d404b4db9b809cd4e8b65fc2120a97dbc024c222fc2d53041d900c7d5a5f1f2d`。两次各 1 项测试通过，均收到 48 条消息。两个 Java 消费者分别收到 5 和 11 个订单，每个订单的 `CREATED → PAID → SHIPPED` 完整且有序。
 
 本轮覆盖单节点、单 Topic、稳定的两个消费者、固定范围路由和逐条确认调用。首页、组件目录、消息手册和学习路线均补上入口。[运行教程](../labs/pulsar-key-shared/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/9f0698ce8621650e8e979010c338d14ae1b8b66f)
+
+## 2026-11-27 · Kafka Connect FileStream 在 Worker 重启后续跑
+
+同步 `6d8f6ee` 后检查首页、组件手册、实验和近期提交。Kafka 位点重放实验已覆盖 Java 消费者，Pulsar 昨日刚完成双消费者按键分发，掉线接管可另做验证。Kafka Connect 此前只有组件说明，本轮选用官方 FileStream 插件补齐 Source、Kafka 和 Sink 之间的文件传输，以及 Worker 重启后两端如何各自恢复位点。[Kafka Connect 4.4 用户指南](https://kafka.apache.org/44/kafka-connect/user-guide/) · [FileStream Source 实现](https://github.com/apache/kafka/blob/4.4.0/connect/file/src/main/java/org/apache/kafka/connect/file/FileStreamSourceTask.java)
+
+在 macOS 26.5 ARM64、OpenJDK 17.0.16 和 Python 3.13.7 上运行 `python3 labs/kafka-connect-filestream/verify.py /path/to/kafka_2.13-4.4.0`。Kafka Broker、Connect Worker 和 FileStream 插件均为官方 4.4.0，二进制包按 Apache 发布的 SHA-512 校验。两次实际运行均得到同样的位点和输出。Worker 正常停止前核对到 2 行、Source 位置 42、Sink 下一条位点 2。停机期间追加 2 行，重启后最终输出 `shipment-101` 到 `shipment-104` 各一行，Source 位置为 84，Sink 下一条位点为 4。
+
+实验覆盖真实的单节点 KRaft Kafka、一个 standalone Worker、单分区、ASCII 追加文件与正常停止恢复。首页已更新运行命令，组件索引标记联调实测，Kafka 和 Connect 手册已互相链接。[运行教程](../labs/kafka-connect-filestream/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/3ff40952207a2cd11cf5e75c7fa4e34777c070f7)
