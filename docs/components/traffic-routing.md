@@ -14,6 +14,10 @@ Caddy 可以终止 TLS，并按路径把请求转发给 HTTP 上游。本地实�
 
 运行 [Caddy + Python HTTPS 商品 API](../../labs/caddy-tls-proxy/README.md)，核对默认客户端的证书拒绝、指定 CA 后的成功响应、转发字段与非匹配路径。
 
+### 搭配 HTTP 就绪探针摘流与回切
+
+用 `health_uri` 定时探测上游就绪状态，并在 `lb_policy first` 下优先选择配置中第一个可用上游。接入 Spring Boot 时，健康路径可以填启用后的 [Actuator readiness](release-tools.md#搭配-kubernetes-使用-http-探针)。运行 [Caddy + 双 HTTP 实例](../../labs/caddy-active-health/README.md)，观察首选实例的 readiness 返回 503 后被摘除，以及恢复 200 后请求回到首选实例。[主动健康检查](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#active-health-checks)
+
 ## Istio
 
 在测试网格中准备同一个 Service 下的两个版本，给 Pod 分别标记 `version: stable` 和 `version: canary`。用 `DestinationRule` 将标签声明为同名的 subset，用 `VirtualService` 按请求选择 subset。下面是一跳的规则，将测试命名空间和 Service 名替换为实际值。Header 键使用小写，HTTP 路由从上到下选第一条命中的规则。可先用官方 Bookinfo 跑同类操作。[请求路由](https://istio.io/latest/docs/tasks/traffic-management/request-routing/) · [VirtualService](https://istio.io/latest/docs/reference/config/networking/virtual-service/) · [DestinationRule](https://istio.io/latest/docs/reference/config/networking/destination-rule/)

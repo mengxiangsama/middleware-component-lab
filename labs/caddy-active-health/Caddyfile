@@ -1,0 +1,17 @@
+{
+	admin off
+}
+
+http://127.0.0.1:{$CADDY_LAB_PROXY_PORT:8090} {
+	bind 127.0.0.1
+
+	reverse_proxy 127.0.0.1:{$CADDY_LAB_PRIMARY_PORT:8091} 127.0.0.1:{$CADDY_LAB_STANDBY_PORT:8092} {
+		lb_policy first
+		health_uri /readyz
+		health_interval 1s
+		health_timeout 500ms
+		health_status 200
+		health_fails 1
+		health_passes 1
+	}
+}
