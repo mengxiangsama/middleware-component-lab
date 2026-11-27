@@ -14,6 +14,12 @@
 - Broadcast 在目标 Worker 上运行。Map 分发子任务，MapReduce 再汇总子任务结果。任务重试或 Worker 离线会改变分片执行时序，分片处理与汇总均可能重复执行。
 - 验证部分分片完成后 Worker 退出、重跑时已完成分片的处理、汇总失败后恢复，以及工作流依赖失败时的状态。[PowerJob 官方功能与文档入口](https://github.com/PowerJob/PowerJob)
 
+## ShedLock
+
+多副本应用的 Spring `@Scheduled` 会各自触发。ShedLock 为方法增加一个共享的、有时间上限的锁。用 `JdbcTemplateLockProvider` 让各副本访问同一个数据库的锁表，同一个任务复用同一锁名。锁被占用时，本次调用跳过。设置 `lockAtMostFor` 时要留足最长运行时间，需要防止顺序重跑重复入账时再按业务日期做幂等。[Spring 集成与 JDBC 提供者](https://github.com/lukas-krecan/ShedLock/tree/shedlock-parent-7.12.0#usage)
+
+运行 [Spring Scheduling + ShedLock + H2](../../labs/shedlock-jdbc/README.md)，在两个独立 Spring 上下文中核对锁行、跳过和释放后的新调用。持久化触发器和错过计划补跑见 [Quartz JDBC](#搭配-spring-boot-用-jdbc-恢复错过的触发)。
+
 ## Quartz
 
 Quartz 是嵌入 Java 应用的调度库。应用用 `JobDetail` 描述执行内容，用 `Trigger` 描述什么时候执行。单机可以用内存存储，计划需要跨重启时可落到数据库。并发示例使用 Quartz 2.5.0，Spring Boot JDBC 示例使用 2.5.2，两者都用 JDK 17。

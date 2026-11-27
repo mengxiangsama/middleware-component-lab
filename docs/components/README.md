@@ -57,6 +57,7 @@
 | --- | --- |
 | [XXL-JOB](scheduling.md#xxl-job) | 执行器注册、Cron、路由、分片广播和失败重试 |
 | [PowerJob](scheduling.md#powerjob) | Worker 接入、单机或广播执行、Map/MapReduce 和工作流 |
+| [ShedLock](scheduling.md#shedlock) | 协调多个 Spring 实例上的同名定时任务。**联调实测** · [搭配 JDBC 共享日报任务锁](../../labs/shedlock-jdbc/README.md)。 |
 | [Quartz](scheduling.md#quartz) | Job 与 Trigger、持久化和 misfire。**可运行** · [按 JobKey 串行执行对账任务](scheduling.md#按-jobkey-串行执行对账任务)。**联调实测** · [恢复错过的触发](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发) · [用 JDBC 保存和恢复任务游标](../../labs/quartz-jdbc/README.md#重启后继续处理下一批)。 |
 | [Temporal](scheduling.md#temporal) | Workflow、Activity、重试和时间限制。**联调实测** · [搭配 Go 和 HTTP 库存服务验证重试](../../labs/temporal-activity-retry/README.md)。 |
 | [Spring Batch](scheduling.md#spring-batch) | Java 批处理、分批提交、作业元数据与续跑。**联调实测** · [搭配 H2 恢复发货 CSV 导入](../../labs/spring-batch-chunk-restart/README.md)。 |

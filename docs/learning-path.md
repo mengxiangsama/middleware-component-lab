@@ -56,6 +56,8 @@
 
 从 [Quartz](components/scheduling.md#quartz) 的触发器和错过触发策略开始，再看 [XXL-JOB](components/scheduling.md#xxl-job) 或 [PowerJob](components/scheduling.md#powerjob) 的执行器和失败重试。需要多个任务按依赖补数时，参考 [DolphinScheduler](components/scheduling.md#apache-dolphinscheduler) 的工作流。
 
+如果每个应用副本都会触发同一个日报，运行 [Spring Scheduling + ShedLock + JDBC](../labs/shedlock-jdbc/README.md)，对照锁行和实际写入，观察 A 持锁时 B 跳过、A 结束后 B 新触发的结果。
+
 如果定时对账与人工补跑可能同时运行，先做 [Quartz 同一 JobKey 并发限制实验](components/scheduling.md#按-jobkey-串行执行对账任务)，观察同一门店的补跑何时开始，以及另一家门店能否同时执行。
 
 如果关停期间可能错过门店日结，运行 [Spring Boot + Quartz JDBC 补跑](../labs/quartz-jdbc/README.md)。先检查重启后仍有原触发器，再核对补跑写入的门店和业务日期。

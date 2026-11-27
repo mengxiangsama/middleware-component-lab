@@ -43,6 +43,7 @@
 | CSV 导入接口临时失败时怎样重投和归档 | [Camel File + HTTP](labs/camel-file-http-import/README.md)，运行 `./mvnw -B -f labs/camel-file-http-import/pom.xml clean verify` 验证重投及成功后的文件移动。 |
 | 怎样把完整的对账 CSV 交给合作方读取 | [Apache MINA SSHD + SFTP](labs/sftp-staged-upload/README.md)，运行 `./mvnw -B -ntp -f labs/sftp-staged-upload/pom.xml test` 核对主机密钥、临时文件和最终内容。 |
 | 两个请求同时购买最后一件商品怎样防止超卖 | [MyBatis + H2 条件更新](labs/mybatis-stock-update/README.md)，运行 `./mvnw -B -f labs/mybatis-stock-update/pom.xml clean verify` 核对成功次数和最终余量。 |
+| 多个 Spring 应用副本怎样避免同时跑同一份日报 | [Spring Scheduling + ShedLock + JDBC](labs/shedlock-jdbc/README.md)，运行 `./mvnw -B -f labs/shedlock-jdbc/pom.xml clean test` 核对持锁时跳过和释放后的执行。 |
 | 应用重启后怎样补跑错过的门店对账 | [Spring Boot + Quartz JDBC](labs/quartz-jdbc/README.md)，核对原触发器、misfire 和补跑记录。 |
 | 定时任务重启后怎样从下一批接着跑 | [Quartz JDBC 作业进度](labs/quartz-jdbc/README.md#重启后继续处理下一批)，运行 `./mvnw -B -f labs/quartz-jdbc/pom.xml -Dtest=QuartzJobCheckpointTest test` 验证游标恢复。 |
 | 发货 CSV 导入中途失败时怎样从上次提交处续跑 | [Spring Batch + H2](labs/spring-batch-chunk-restart/README.md)，运行 `./mvnw -B -f labs/spring-batch-chunk-restart/pom.xml clean verify` 核对失败批次回滚与续跑。 |
