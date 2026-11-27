@@ -20,7 +20,7 @@ scrape_configs:
 
 ## 运行与验证
 
-准备 JDK 17+、Python 3 和 [Prometheus 3.16.0 官方二进制](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)。把命令中的路径换成本机解压后的二进制。在仓库根目录执行：
+准备 JDK 17+、Python 3 和 [Prometheus 3.16.0 官方二进制](https://github.com/prometheus/prometheus/releases/tag/v3.16.0)。从仓库根目录依次运行以下命令，路径填本机解压后的 `prometheus`。
 
 ```sh
 ./mvnw -B -ntp -f labs/micrometer-actuator-timer/pom.xml clean package

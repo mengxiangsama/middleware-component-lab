@@ -4,7 +4,7 @@
 
 ## 接入步骤
 
-1. 业务表 `shipment_order` 保存订单状态，`shipment_outbox` 保存应用准备发送的事件。两次写入用同一个数据库连接和事务。 [PostgreSQL 事务](https://www.postgresql.org/docs/17/tutorial-transactions.html)
+1. 业务表 `shipment_order` 保存订单状态，`shipment_outbox` 保存应用准备发送的事件。两次写入用同一个数据库连接和事务。表结构和事务写入见 [Java 集成测试](src/test/java/io/github/middlewarelab/debezium/ShipmentOutboxTest.java)。[PostgreSQL 事务](https://www.postgresql.org/docs/17/tutorial-transactions.html)
 
    ```sql
    BEGIN;
