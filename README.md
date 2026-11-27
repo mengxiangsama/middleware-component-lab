@@ -33,6 +33,7 @@
 | 发版失败时怎样撤销新列并保留旧订单 | [Liquibase + H2 按标签回退](labs/liquibase-rollback/README.md)，运行 `./mvnw -B -f labs/liquibase-rollback/pom.xml clean verify` 检查列结构、订单数据和迁移记录。 |
 | 订单表怎样从主库同步到报表库 | [PostgreSQL 逻辑复制](labs/postgres-logical-replication/README.md)，运行 `./mvnw -B -f labs/postgres-logical-replication/pom.xml clean verify` 验证全量、增量和暂停恢复。 |
 | 下游怎样从订单表读到新增、修改和删除事件 | [Debezium + PostgreSQL](labs/debezium-postgres-events/README.md)，运行 `./mvnw -B -f labs/debezium-postgres-events/pom.xml clean verify`，核对快照和 CDC 事件。 |
+| 保存发货状态时怎样让下游只收到已提交的事件 | [PostgreSQL 事务 Outbox + Debezium](labs/debezium-postgres-outbox/README.md)，运行 `./mvnw -B -f labs/debezium-postgres-outbox/pom.xml clean verify` 核对事务和事件映射。 |
 | Worker 重启后怎样继续传输新增的发货文件记录 | [Kafka Connect FileStream + Kafka](labs/kafka-connect-filestream/README.md)，运行 `python3 labs/kafka-connect-filestream/verify.py /path/to/kafka_2.13-4.4.0` 核对输出和两端位点。 |
 | 订单消息增加字段时怎样检查旧消息仍可读 | [Apicurio Registry + Avro](labs/apicurio-avro-compatibility/README.md)，运行 `python3 labs/apicurio-avro-compatibility/verify.py /path/to/quarkus-run.jar` 核对版本兼容与拒绝。 |
 | 支付看板怎样增量汇总并跨批去重 | [ClickHouse + chDB](labs/clickhouse-payment-rollup/README.md)，用 Python 核对北京时间分日、回填和买家去重。 |

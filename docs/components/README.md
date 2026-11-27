@@ -87,7 +87,7 @@
 | [阿里云 DTS](data-pipelines.md#阿里云-dts) | 托管迁移、全量和增量同步、订阅与任务监控 |
 | [Apache Flink](data-pipelines.md#apache-flink) | DataStream 或 SQL、事件时间、窗口和状态恢复。**可运行** · [付款窗口与迟到输出](../../labs/flink-event-time/README.md)。 |
 | [Flink CDC](data-pipelines.md#flink-cdc) | 数据库快照、增量捕获、Schema 演进和 Pipeline |
-| [Debezium](data-pipelines.md#debezium) | 数据库连接器、变更事件、快照和 offset 恢复。**联调实测** · [搭配 PostgreSQL 读取订单 CDC](../../labs/debezium-postgres-events/README.md)。 |
+| [Debezium](data-pipelines.md#debezium) | 数据库连接器、变更事件、快照和 offset 恢复。**联调实测** · [搭配 PostgreSQL 读取订单 CDC](../../labs/debezium-postgres-events/README.md) · [路由发货事务 Outbox 事件](../../labs/debezium-postgres-outbox/README.md)。 |
 | [Apache Kafka Connect](data-pipelines.md#apache-kafka-connect) | Source/Sink 插件、Worker、REST 与位点管理。**联调实测** · [搭配 Kafka 传输追加文件并续跑](../../labs/kafka-connect-filestream/README.md)。 |
 | [Apicurio Registry](data-pipelines.md#apicurio-registry) | 消息 Schema 登记、版本与兼容性。**联调实测** · [搭配 Avro 检查订单事件的演进](../../labs/apicurio-avro-compatibility/README.md)。 |
 | [Apache SeaTunnel](data-pipelines.md#apache-seatunnel) | Source、Transform、Sink 数据集成任务 |

@@ -123,6 +123,10 @@ CREATE SUBSCRIPTION lab_orders_sub
 
 在 Java 服务中直接消费订单事件时，可使用 [Debezium Engine + PostgreSQL 实验](../../labs/debezium-postgres-events/README.md)。测试经真实 `pgoutput` 读取初始快照和三类变更，并检查事件的 `op`、主键、`before` 与 `after`。
 
+### 搭配 PostgreSQL 事务 Outbox
+
+订单状态和待发布事件写入同一个数据库事务。Debezium 只订阅 Outbox 表，Event Router 根据业务类型设置主题、根据订单号设置消息键，并把稳定事件 ID 放入消息头。运行 [发货事务 Outbox](../../labs/debezium-postgres-outbox/README.md)，对照回滚和提交后的数据库行数，并核对 Java Engine 收到的事件。[Outbox Event Router](https://debezium.io/documentation/reference/3.2/transformations/outbox-event-router.html)
+
 ## Apache SeaTunnel
 
 - 适合通过 Source、Transform、Sink 组合完成异构迁移、批量装载或 CDC 同步。优先确认具体连接器能否处理全量与增量衔接、类型映射、主键 upsert、删除和 DDL，并核查引擎与连接器版本的兼容性。 [SeaTunnel CDC 管道](https://seatunnel.apache.org/docs/architecture/cdc-pipeline-architecture/)

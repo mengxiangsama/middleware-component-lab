@@ -80,6 +80,8 @@
 
 先走一遍 [SQL 数据同步](components/data-pipelines.md#sql-数据同步)的全量、增量和校验步骤。需要把变更送入事件流时，阅读 [Debezium](components/data-pipelines.md#debezium) 与 [Kafka Connect](components/data-pipelines.md#apache-kafka-connect)。需要同步或转换数据时，可沿 [Flink CDC](components/data-pipelines.md#flink-cdc) 的 Pipeline 接入步骤练习。
 
+发货状态和待投递消息需要一起提交时，运行 [PostgreSQL 事务 Outbox + Debezium](../labs/debezium-postgres-outbox/README.md)，核对回滚后两表均无记录，以及提交后下游收到的订单键和事件 ID。
+
 在测试表完成首次全量后，各做一次插入、更新和删除。记录连接器位点，暂停任务并产生新变更，再恢复任务。核对源表和目标表的主键集合、关键字段和删除结果，并观察积压是否回落。行数可以先用来筛查差异，再按主键定位不一致。
 
 在本机做多查询报表时，运行 [SQLite + JDBC 快照实验](../labs/sqlite-wal-snapshot/README.md)。保持报表事务打开，再让另一连接提交发货，核对事务内外看到的金额。
