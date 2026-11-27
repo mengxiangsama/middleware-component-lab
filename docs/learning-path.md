@@ -72,6 +72,8 @@
 
 ## 数据同步与恢复
 
+本地追加文件需要经过 Kafka 传给下游时，运行 [Kafka Connect FileStream + Kafka](../labs/kafka-connect-filestream/README.md)，对照 Worker 重启前后的输出行数、Source 文件位置和 Sink 消费位点。
+
 先走一遍 [SQL 数据同步](components/data-pipelines.md#sql-数据同步)的全量、增量和校验步骤。需要把变更送入事件流时，阅读 [Debezium](components/data-pipelines.md#debezium) 与 [Kafka Connect](components/data-pipelines.md#apache-kafka-connect)。需要同步或转换数据时，可沿 [Flink CDC](components/data-pipelines.md#flink-cdc) 的 Pipeline 接入步骤练习。
 
 在测试表完成首次全量后，各做一次插入、更新和删除。记录连接器位点，暂停任务并产生新变更，再恢复任务。核对源表和目标表的主键集合、关键字段和删除结果，并观察积压是否回落。行数可以先用来筛查差异，再按主键定位不一致。

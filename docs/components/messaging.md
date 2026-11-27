@@ -169,6 +169,8 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 
 消费者处理发货事件后提交下一条记录的 offset。同组消费者重启时使用已提交的位点继续读取，独立重建消费者用 `assign` 和 `seek` 定点读取。运行 [Kafka Java Client + KRaft 实验](../../labs/kafka-offset-replay/README.md)，核对正常恢复和历史重放的订单号，以及原消费组位点是否变化。
 
+配置化接入文件等外部系统时，参见 [Kafka Connect FileStream](data-pipelines.md#搭配-kafka-传输文件并按位点续跑)，用 Source、Kafka Topic 和 Sink 连通两份发货文件并验证重启续跑。
+
 ## Apache Pulsar
 
 - **适用与代价**｜适合同时需要多租户、多个独立订阅及按订阅分摊工作。以 Tenant 和 Namespace 组织 Topic 与策略，Subscription 记录独立消费进度。Broker 与 BookKeeper 分开扩容，部署和故障定位涉及更多组件。 [架构](https://pulsar.apache.org/docs/concepts-architecture-overview/) · [消息与订阅](https://pulsar.apache.org/docs/concepts-messaging/)

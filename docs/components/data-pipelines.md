@@ -102,6 +102,10 @@ CREATE SUBSCRIPTION lab_orders_sub
 - 支持位点管理接口的版本可用 `GET /connectors/{name}/offsets` 查看位点。Source 位点由插件定义，sink 使用 Kafka 消费位点。调整或重置位点前先停任务，并核对回放范围和外部目标已有数据。按错误阶段配置重试和容忍策略，在支持的 sink 错误路径配置 DLQ。跳过坏记录会使主目标缺少该记录，需核对 DLQ 及处理结果。Exactly-once 依赖连接器和 worker 配置，source 需要支持此机制的 distributed worker，sink 还需验证外部写入与恢复。 [Kafka Connect 位点、错误及交付语义](https://kafka.apache.org/44/kafka-connect/user-guide/)
 - 写入可识别的记录后重启 worker，记录任务迁移与恢复前后的位点和目标内容。再投递一条无法转换的测试记录，观察任务停止或记录进入 DLQ 是否符合配置。在 sink 已落地、消费位点尚未提交时中断任务，核对恢复后是否产生额外写入。
 
+### 搭配 Kafka 传输文件并按位点续跑
+
+将 FileStream 插件接入 standalone Worker，使用 Source 从追加文件逐行读取，用 [Kafka](messaging.md#apache-kafka) Topic 传递，再由 Sink 追加到目标文件。Worker 本地保存 Source 的文件位置，Kafka 保存 Sink 的消费组位点。运行 [FileStream 发货记录实验](../../labs/kafka-connect-filestream/README.md)，观察 Worker 重启前后的两端位点及输出。[Kafka Connect 4.4 用户指南](https://kafka.apache.org/44/kafka-connect/user-guide/)
+
 ## Apicurio Registry
 
 - **常用用法**。集中登记 Avro、JSON Schema 或 Protobuf 等消息 Schema。用 `groupId` 归类、用 `artifactId` 标识 Schema，按 version 管理演进。每个版本有独立的 `globalId`，内容相同的多个版本可共享 `contentId`。在控制台创建一项 Avro artifact 并上传首版，例如 `lab/orders-value` 的版本 `1`，Schema 可使用含 `id: long` 和 `status: string` 的 `OrderStatus` record。 [核心概念](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-registry-concepts-glossary.html) · [控制台注册](https://www.apicur.io/registry/docs/apicurio-registry/3.3.x/getting-started/assembly-managing-registry-artifacts-ui.html)
