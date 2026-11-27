@@ -30,7 +30,7 @@
 
 需要按订单依次处理创建、支付和发货时，运行 [RocketMQ 订单顺序消息实验](components/messaging.md#订单顺序消息)，按订单核对事件序列、队列号和队列位点。
 
-需要在同一个订阅下让两个消费者分摊订单时，运行 [Pulsar Key_Shared + Java](../labs/pulsar-key-shared/README.md)，按订单号核对接收者和状态顺序。
+需要在同一个订阅下让两个消费者分摊订单时，运行 [Pulsar Key_Shared + Java](../labs/pulsar-key-shared/README.md)，按订单号核对接收者和状态顺序。接着用 [AUTO_SPLIT 掉线接手](../labs/pulsar-key-shared/README.md#auto_split-消费者接手) 对照 A、B 收到的 Message ID。
 
 需要确认提交积分后断开连接会不会重复入账时，运行 [NATS JetStream + SQLite 实验](../labs/nats-jetstream-sqlite/README.md)，将同一消息的两次投递和最终余额对照起来。
 

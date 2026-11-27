@@ -183,6 +183,8 @@ Broker 5.5.0 默认开启时间轮，粒度为 1 秒，最多可定时到 Broker
 
 生产者用订单号设置消息键。两个 Java 消费者打开同一个 `Key_Shared` 订阅，在本例分别声明不重叠的哈希范围，消费后逐条确认。运行 [Pulsar Key_Shared 发货实验](../../labs/pulsar-key-shared/README.md)，核对每个订单的创建、支付和发货是否由同一个消费者按序收到。[Pulsar 4.0 Key_Shared 说明](https://pulsar.apache.org/docs/4.0.x/concepts-messaging/#key_shared)
 
+消费者数量需要随故障或扩缩容变化时，可以用 `AUTO_SPLIT` 让 Broker 管理键的分配。运行 [消费者掉线接手](../../labs/pulsar-key-shared/README.md#auto_split-消费者接手)，核对 A 未确认就退出时 B 收到同一 Message ID，以及其确认后的同键下一条消息。处理写入时按业务事件 ID 去重。
+
 ## NATS JetStream
 
 - **适用与代价**｜适合已有 NATS Subject 路由、还需要持久化消息和按需重放的服务。Stream 接收匹配 Subject 的消息，具有状态的 Consumer 保存消费进度。不同业务使用各自的 Consumer，处理相同任务的一组 worker 可共享 durable pull consumer。需要给 Stream 设置保留、存储与复制边界。 [JetStream 概念](https://docs.nats.io/concepts/jetstream) · [Pull Consumer](https://docs.nats.io/learn/jetstream/pull-consumers)

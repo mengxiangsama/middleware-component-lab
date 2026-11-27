@@ -11,7 +11,7 @@
 | [Jakarta JMS](messaging.md#jakarta-jms) | Java 消息发送、消费、确认与事务 API。**联调实测** · [用事务回滚触发重投](../../labs/artemis-jms-dead-letter/README.md)。 |
 | [Apache RocketMQ](messaging.md#apache-rocketmq) | 普通、顺序、定时、事务消息，以及重试和死信 |
 | [Apache Kafka](messaging.md#apache-kafka) | 分区事件流、消费组、位点提交和历史回放。**可运行** · [Java Client 位点恢复与独立重放](../../labs/kafka-offset-replay/README.md)。 |
-| [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递。**联调实测** · [搭配 Java 按订单键分发事件](../../labs/pulsar-key-shared/README.md)。 |
+| [Apache Pulsar](messaging.md#apache-pulsar) | 持久主题、订阅模式、确认和重投递。**联调实测** · [搭配 Java 按订单键分发事件](../../labs/pulsar-key-shared/README.md) · [消费者掉线后的接手](../../labs/pulsar-key-shared/README.md#auto_split-消费者接手)。 |
 | [NATS JetStream](messaging.md#nats-jetstream) | Subject 过滤、Stream 保留、持久 Consumer、ACK 和键值桶。**联调实测** · [搭配 SQLite 防止积分重复入账](../../labs/nats-jetstream-sqlite/README.md) · [搭配 Go 更新带版本的批次进度](../../labs/nats-kv-cas/README.md)。 |
 | [Eclipse Mosquitto](messaging.md#eclipse-mosquitto) | MQTT Broker、主题、QoS 和客户端会话。**联调实测** · [搭配 Paho 恢复离线指令](../../labs/mosquitto-offline-qos1/README.md)。 |
 
