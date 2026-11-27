@@ -104,6 +104,8 @@
 
 让测试下游固定增加延迟，记录正常、保护触发和恢复三个阶段的延迟、错误和调用次数。发出有灰度标记和无灰度标记的请求，逐跳核对实例版本。让灰度版本出现可控错误，确认中止发布后流量回到稳定版本。
 
+如果运单接口需要按角色和仓库授予访问权限，运行 [OPA + Python 网关](../labs/opa-shipment-authorization/README.md)，用同仓库、跨仓库和决策不可用的请求核对放行与拒绝。
+
 ## 指标、日志与链路
 
 需要从应用外观察就绪端点时，运行 [Prometheus + Blackbox Exporter](../labs/prometheus-blackbox-http/README.md)，对照三种状态下的 `up`、`probe_success` 和 HTTP 状态码。

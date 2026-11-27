@@ -319,6 +319,12 @@ first=in-stock third=in-stock
 - **最小接入**：以 AT 为例，配置 Seata Server 和应用事务组，确认数据源与 SQL 在支持范围内。给各参与数据源创建对应版本的 `undo_log`，启用代理，在发起端使用 `@GlobalTransactional` 并验证 XID 传到参与方。 [官方快速开始](https://seata.apache.org/docs/user/quickstart/)
 - **验证**：让最后一个参与方失败，核对前序变更、全局状态与回滚结果。检查全局锁冲突、事务超时和协调器重启。事务范围以登记的参与方为准，外部操作需要查对应的参与方式。 [事务模式与术语](https://seata.apache.org/docs/overview/what-is-seata/)
 
+## Open Policy Agent
+
+OPA 用 Rego 根据输入求值。HTTP 网关在认证并查询业务数据后，将操作、角色和资源归属交给 OPA 的 Data API，再按返回的决策放行或拒绝。把策略与处理业务请求的代码分开，便于直接测试同仓库、跨仓库及默认拒绝的输入。[HTTP API 授权示例](https://www.openpolicyagent.org/docs/http-api-authorization) · [Data API](https://www.openpolicyagent.org/docs/rest-api#get-a-document-with-input)
+
+运行 [OPA + Python 网关实验](../../labs/opa-shipment-authorization/README.md)，核对身份缺失、授权拒绝和策略服务不可用时的 HTTP 响应。
+
 ## OpenTelemetry
 
 - **常用功能**：采集和导出追踪、指标、日志。可先用 Java Agent 自动接入常用框架，再按需用 API 增加业务 span 或指标。
