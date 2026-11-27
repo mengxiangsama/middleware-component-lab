@@ -167,3 +167,20 @@ Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch �
 在 macOS 26.5 ARM64、OpenJDK 17.0.16 和 Python 3.13.7 上运行 `python3 labs/kafka-connect-filestream/verify.py /path/to/kafka_2.13-4.4.0`。Kafka Broker、Connect Worker 和 FileStream 插件均为官方 4.4.0，二进制包按 Apache 发布的 SHA-512 校验。两次实际运行均得到同样的位点和输出。Worker 正常停止前核对到 2 行、Source 位置 42、Sink 下一条位点 2。停机期间追加 2 行，重启后最终输出 `shipment-101` 到 `shipment-104` 各一行，Source 位置为 84，Sink 下一条位点为 4。
 
 实验覆盖真实的单节点 KRaft Kafka、一个 standalone Worker、单分区、ASCII 追加文件与正常停止恢复。首页已更新运行命令，组件索引标记联调实测，Kafka 和 Connect 手册已互相链接。[运行教程](../labs/kafka-connect-filestream/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/3ff40952207a2cd11cf5e75c7fa4e34777c070f7)
+
+## 2026-11-27 · 晚间半小时维护
+
+从 `119898e` 开始，查看首页、组件手册、实验和近期提交。此前 Kafka Connect 已验证文件位点恢复，Spring Batch 已验证分批续跑，Pulsar 已验证固定分组。可观测性教程已有 JVM 指标和模拟 span，仍缺实际业务计时及真实 HTTP 传播。其余轮次优先补可在本机反复验证的任务协调、访问控制、网络故障、就绪切换和共享内存接管。各轮的官方文档、配置、运行命令和适用范围见相应教程。
+
+| 组件组合 | 选题理由 | 实测结果 | 提交 |
+| --- | --- | --- | --- |
+| [Micrometer Timer + Actuator + Prometheus](../labs/micrometer-actuator-timer/README.md) | 现有 Actuator 示例只查 JVM 指标，需要练习应用业务耗时怎么进入监控查询。 | Spring Boot 3.5.16、Micrometer 1.15.12、真实 Prometheus 3.16.0。两次实测均抓取成功。通过 2 次、拒绝 1 次。通过请求在 50 ms、250 ms 和总次数分别为 1、2、2。慢检查实测约 151–155 ms。 | [92aecb5](https://github.com/mengxiangsama/middleware-component-lab/commit/92aecb51c7a6f88c5546b8c6f011d4c9fcdc78ce) |
+| [OpenTelemetry Java + JDK HTTP](../labs/otel-java-http-propagation/README.md) | 原 Collector + Tempo 教程用预置 span，真实应用 HTTP 传递上下文需要单独验证。 | Java SDK 1.62.0，3 项通过。真实本机 HTTP 的 `traceparent` 连接客户端和服务端 span。两侧 Trace ID 相等，服务端指向远端父 span，缺失或无效传播头各自生成独立根 span。两侧使用内存 exporter。 | [a65f50b](https://github.com/mengxiangsama/middleware-component-lab/commit/a65f50bb93ebb2aa89bb768988e1c4aded05ad16) |
+| [Pulsar Key_Shared AUTO_SPLIT + Java](../labs/pulsar-key-shared/README.md#auto_split-消费者接手) | 固定范围教程没有覆盖消费者退出后谁接手同键事件。 | Pulsar 4.0.14 官方本机包经 SHA-512 校验。三次运行均通过固定分组及接手两项测试。集成复测中 A 未确认的 `PACKED`（`6:0:-1`）在其 JVM 退出后交给 B，B 确认后收到了同键 `SHIPPED`（`6:1:-1`）。 | [10f0882](https://github.com/mengxiangsama/middleware-component-lab/commit/10f088231c3c7151d31d486054eba6d3eb1856c5) |
+| [Spring Scheduling + ShedLock + JDBC](../labs/shedlock-jdbc/README.md) | Quartz 已覆盖计划持久化。普通 Spring 定时方法在多个副本上执行时，需要共享锁。 | ShedLock 7.12.0、Spring JDBC 6.2.19、H2 2.3.232。两个 Spring 上下文共享 H2 文件库，1 项测试通过并复测。A 持锁时 B 跳过且无报表写入，A 释放后新触发 B，最终按序记录 A、B。 | [6320395](https://github.com/mengxiangsama/middleware-component-lab/commit/6320395cdd5fa2c5d16409b24ba01ed208e86c6d) |
+| [OPA + Python HTTP 网关](../labs/opa-shipment-authorization/README.md) | 组件目录有功能灰度，缺少按业务资源和角色做访问决策的例子。 | OPA 1.23.0，5 项 Rego 和 5 项本机 HTTP 联调通过。同仓操作员返回 200，跨仓和访客返回 403，无身份返回 401，策略服务不可用返回 503 且响应不含运单。 | [287c12f](https://github.com/mengxiangsama/middleware-component-lab/commit/287c12f677d3e8a43fed4e59226ed971dd2c62e7) |
+| [Toxiproxy + Java HttpClient](../labs/toxiproxy-http-timeout/README.md) | 现有 Resilience4j 库存示例模拟 HTTP 503，补充已经到达后端但尚未收到响应的超时。 | Toxiproxy 2.13.0，注入 3,500 ms 下行延迟后约 1,001–1,002 ms 触发 `HttpTimeoutException`，后端确实收到第 2 次请求。移除延迟后 HTTP 200，累计收到 3 次请求。 | [dcd0282](https://github.com/mengxiangsama/middleware-component-lab/commit/dcd0282d03c36d7deb1fde8dd3af8b3ae89ba915) |
+| [Caddy + HTTP 就绪探针](../labs/caddy-active-health/README.md) | 现有 Caddy 教程覆盖 TLS。补上探针如何驱动 HTTP 流量摘除和回切。 | Caddy 2.11.9，经过 SHA-512 校验。两次实测都得到主、备、主三个阶段各 5 次 HTTP 200。切换时主实例直连 `/inventory` 仍为 200，但 `/readyz` 为 503。 | [c6ae2c8](https://github.com/mengxiangsama/middleware-component-lab/commit/c6ae2c889c8379ec948a732994dd7786f297c8bb) |
+| [Hazelcast IMap + Java](../labs/hazelcast-imap-backup/README.md) | Caffeine 教程已有各实例失效通知，补充共享分区数据的一次成员故障接管。 | Hazelcast 5.7.0 Community，三次实测。两个 TCP 成员各有独立端口，B 在 A 终止前有 1 个备份条目、0 个主条目，接手成为唯一成员及分区主成员后仍读到 `SHIPPED`。 | [5d6aa64](https://github.com/mengxiangsama/middleware-component-lab/commit/5d6aa6496c29801141ef250b96ef218e25e7805b) |
+
+本地为 macOS 26.5 ARM64，Java 实验使用 OpenJDK 17.0.16，Pulsar 本机 Broker 与客户端验证使用 OpenJDK 21.0.5，Python 使用 3.13.7。根项目 `./mvnw -B -ntp verify` 通过，11 项通过，原有 3 项需要 RocketMQ Broker 的测试按条件跳过。用官方本机 `promtool 3.16.0` 检查及执行既有告警规则，均成功。

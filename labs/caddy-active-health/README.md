@@ -21,7 +21,7 @@ python3 -B labs/caddy-active-health/verify.py --caddy /absolute/path/to/caddy
 | 阶段 | 首选实例直连 | 从 Caddy 请求 `/inventory` |
 | --- | --- | --- |
 | 主备就绪 | `/readyz` 200 | 连续 5 次 200，均由 `primary` 处理 |
-| 首选暂时退出 | `/readyz` 503，`/inventory` 仍返回 200 | 等待探测生效后连续 5 次 200，均由 `standby` 处理 |
+| 首选暂时未就绪 | `/readyz` 503，`/inventory` 仍返回 200 | 等待探测生效后连续 5 次 200，均由 `standby` 处理 |
 | 首选恢复 | `/readyz` 恢复为 200 | 等待探测生效后连续 5 次 200，均由 `primary` 处理 |
 
 这里保留了首选实例业务接口的成功响应，用来验证切换由主动探测的结果驱动。脚本在每次切换后等待实际业务流量达到预期，而固定的探测间隔决定状态变化何时可见。退出时停止本轮实例。

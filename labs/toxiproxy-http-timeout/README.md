@@ -14,7 +14,7 @@
 
 ## 接入步骤
 
-1. 创建代理，把 `listen` 绑定到调用方可访问的端口，将 `upstream` 指向库存服务。应用使用代理监听端口作为库存服务地址。实验把三个监听端口都限制在 `127.0.0.1`。代理的监听端口随运行分配，通过控制 API 读取实际地址。[代理配置](https://github.com/Shopify/toxiproxy/blob/v2.13.0/README.md#configuration)
+1. 创建代理，把 `listen` 绑定到调用方可访问的端口，将 `upstream` 指向库存服务。应用使用代理监听端口作为库存服务地址。实验把三个监听端口都限制在 `127.0.0.1`。代理的监听端口随运行分配，通过控制 API 读取实际地址。[代理配置](https://github.com/Shopify/toxiproxy/blob/v2.13.0/README.md#2-populating-toxiproxy)
 2. 在 Java 客户端用 `HttpClient.Builder.connectTimeout` 给建立新连接设置 2 秒上限，用 `HttpRequest.Builder.timeout` 给本次请求设置 1 秒。本实验延迟的是已到达后端的查询响应，验证等待响应时抛出 `HttpTimeoutException`。[JDK 17 连接超时](https://docs.oracle.com/en/java/javase/17/docs/api/java.net.http/java/net/http/HttpClient.Builder.html#connectTimeout(java.time.Duration)) · [JDK 17 请求超时](https://docs.oracle.com/en/java/javase/17/docs/api/java.net.http/java/net/http/HttpRequest.Builder.html#timeout(java.time.Duration))
 3. 通过 `POST /proxies/{name}/toxics` 添加 `latency`，方向设为 `downstream`，延迟设为 3500 毫秒，`jitter` 设为 0。复现后用 `DELETE /proxies/{name}/toxics/slow-response` 移除延迟，再发同一个查询。[延迟注入](https://github.com/Shopify/toxiproxy/blob/v2.13.0/README.md#latency) · [控制 API](https://github.com/Shopify/toxiproxy/blob/v2.13.0/README.md#http-api)
 

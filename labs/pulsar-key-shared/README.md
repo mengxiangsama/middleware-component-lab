@@ -39,7 +39,7 @@ PULSAR_LAB_URL=pulsar://127.0.0.1:6650 ./mvnw -B -f labs/pulsar-key-shared/pom.x
 
 ## 实测记录
 
-2026-11-26 在 macOS 26.5 ARM64、Docker Engine 27.3.1 和 OpenJDK 17.0.16 上运行。真实 Broker 和 Java Client 均为 Pulsar 4.0.14，镜像运行在 `linux/arm64`。默认端口 16650 和备用端口 16651 各运行一次，两次都通过。A 接收 5 个订单，B 接收 11 个订单。48 条消息全部收到，每个订单都按 `CREATED → PAID → SHIPPED` 交给同一个消费者。
+2026-11-26 在 macOS 26.5 ARM64、Docker Engine 27.3.1 和 OpenJDK 17.0.16 上运行。真实 Broker 和 Java Client 均为 Pulsar 4.0.14，镜像运行在 `linux/arm64`。当时仅运行固定范围的 `OrderKeySharedTest`，默认端口 16650 和备用端口 16651 各通过一次。A 接收 5 个订单，B 接收 11 个订单。48 条消息全部收到，每个订单都按 `CREATED → PAID → SHIPPED` 交给同一个消费者。
 
 2026-11-27 在 macOS 26.5 ARM64、OpenJDK 21.0.5 和 SHA-512 校验通过的 Pulsar 4.0.14 本机包上运行，两项测试均通过。`AUTO_SPLIT` 实验中，A 收到 `order-2001` 的 `PACKED`，消息 ID 为 `5:0:-1`。A 的 JVM 退出后，B 收到相同 ID 并完成 ACK，随后收到同键的 `SHIPPED`，新 ID 为 `5:1:-1`。这些 ID 来自本次运行。
 

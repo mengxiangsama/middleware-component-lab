@@ -10,7 +10,7 @@
 
 ## 运行测试
 
-使用 Python 3.9+ 和 [OPA CLI](https://www.openpolicyagent.org/docs/#running-opa)。本实验用 OPA 1.23.0、Python 3.13.7 验证。将 `OPA_BIN` 设成已安装的 `opa` 命令或二进制绝对路径，从仓库根目录运行。
+使用 Python 3.9+ 和 [OPA CLI](https://www.openpolicyagent.org/docs#1-download-opa)。本实验用 OPA 1.23.0、Python 3.13.7 验证。将 `OPA_BIN` 设成已安装的 `opa` 命令或二进制绝对路径，从仓库根目录运行。
 
 ```bash
 LAB=labs/opa-shipment-authorization

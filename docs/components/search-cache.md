@@ -1128,7 +1128,7 @@ test ! -e "$lab_dir"
 
 ## Hazelcast
 
-Hazelcast `IMap` 通过键分区。服务成员加入同一集群后，通过同一个逻辑 Map 查询和写入，分区归属与副本由集群管理。配置同步备份时，集群会把一份副本放到另一个成员，同步写入需要等待副本确认。一个成员退出后，由持有副本的成员接手分区。[Java 内嵌集群](https://docs.hazelcast.com/hazelcast/5.7/getting-started/get-started-java) · [同步备份](https://docs.hazelcast.com/hazelcast/5.7/data-structures/backing-up-maps)
+Hazelcast `IMap` 通过键分区。服务成员加入同一集群后，通过同一个逻辑 Map 查询和写入，分区归属与副本由集群管理。集群健康且有可用备份成员时，同步写入会等待副本确认。主成员退出后，持有存活副本的成员可以接手分区。[Java 内嵌集群](https://docs.hazelcast.com/hazelcast/5.7/getting-started/get-started-java) · [同步备份](https://docs.hazelcast.com/hazelcast/5.7/data-structures/backing-up-maps)
 
 运行 [Hazelcast IMap + Java](../../labs/hazelcast-imap-backup/README.md)，对照订单状态更新、B 的备份数量与 A 终止后的分区归属。若服务仍用各 JVM 独立的本地缓存，可另做 [Caffeine + Redis 失效实验](../../labs/spring-cache-caffeine/README.md#多实例改价通知与回源合并)。
 
