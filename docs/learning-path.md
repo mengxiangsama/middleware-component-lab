@@ -92,6 +92,8 @@
 
 ## 服务保护与灰度
 
+发布流水线需要按候选接口的响应决定是否继续时，运行 [Grafana k6 + HTTP 库存 API](../labs/k6-http-release-gate/README.md)，核对错误率、业务检查通过率和进程退出码。
+
 发布前要确认环境覆盖参数合法时，运行 [Helm Schema 实验](../labs/helm-values-schema/README.md)。用本地渲染核对副本数和 Service 端口，并确认参数拼错或越界时 Helm 会报错。
 
 共用 Kubernetes YAML 并按环境修改发布配置时，运行 [Kustomize + kubeconform 实验](../labs/kustomize-overlays/README.md)。渲染预发和生产 overlay，核对副本数和镜像标签，再用 Schema 拦截错误字段。

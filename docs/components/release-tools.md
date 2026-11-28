@@ -96,6 +96,12 @@ OpenFeature 提供类型化功能开关 API，应用在请求上下文中传入�
 
 运行 [Go 结算服务按门店灰度](../../labs/openfeature-flagd/README.md)，核对同一个客户在不同门店看到的运费预估版本，以及旗标不存在时的稳定行为。
 
+## Grafana k6
+
+Grafana k6 用 JavaScript 定义请求场景，调度虚拟用户发送实际请求，再汇总 HTTP 指标和业务检查结果。发布前可以给候选 API 设置 `http_req_failed`、`checks` 和最少完成迭代数阈值，让流水线按退出状态决定是否继续。给业务检查准备结果已知的测试数据，便于判断出错的是接口响应还是业务结果。[k6 运行阈值](https://grafana.com/docs/k6/latest/using-k6/thresholds/)
+
+运行 [k6 + HTTP 库存 API](../../labs/k6-http-release-gate/README.md)，对照稳定版与含 503 的候选版，核对请求数、错误率和退出码。上线后的业务指标采集可参考 [Actuator + Prometheus](#搭配-prometheus-采集应用指标)。
+
 ## Argo Rollouts
 
 - **灰度发布**。安装控制器与 CRD，使用 `Rollout` 的 `strategy.canary` 设置分步发布。下例在 10% 步骤暂停，检查后执行 `kubectl argo rollouts promote demo`，或用 `kubectl argo rollouts abort demo` 停止此次灰度。仅用副本数时，权重按副本比例近似。需要请求级流量控制时配置 stable/canary Service 和受支持的 `trafficRouting`。 [Canary 策略](https://argoproj.github.io/argo-rollouts/features/canary/) · [快速开始与操作](https://argoproj.github.io/argo-rollouts/getting-started/)

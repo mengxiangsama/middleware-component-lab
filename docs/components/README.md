@@ -114,6 +114,7 @@
 | [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
 | [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移) · [搭配 Quartz 重启补跑](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 健康探针、应用信息与 JVM 指标。**可运行** · [HTTP 探针](release-tools.md#搭配-kubernetes-使用-http-探针) · [导出 JVM 指标](release-tools.md#搭配-prometheus-采集应用指标)。**联调实测** · [导出发货业务耗时](../../labs/micrometer-actuator-timer/README.md)。 |
+| [Grafana k6](release-tools.md#grafana-k6) | 用脚本发送请求、统计指标，并按阈值给出退出状态。**联调实测** · [搭配 HTTP 库存 API 做发布门禁](../../labs/k6-http-release-gate/README.md)。 |
 | [Argo Rollouts](release-tools.md#argo-rollouts) | 灰度权重、观察与自动分析、晋级或中止 |
 | [OpenFeature 与 flagd](release-tools.md#openfeature-与-flagd) | 类型化功能开关、请求上下文、规则求值和默认值。**联调实测** · [搭配 Go 按门店灰度运费预估](../../labs/openfeature-flagd/README.md)。 |
 
