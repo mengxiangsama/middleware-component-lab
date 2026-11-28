@@ -31,6 +31,8 @@ livenessProbe:
 
 **验证**。延长冷启动，检查 startup 探针期间容器没有被过早重启。分别让 readiness 与 liveness 失败，核对 EndpointSlice 就绪状态和重启计数。liveness 使用应用自身状态，避免共享数据库或缓存抖动同时重启所有实例。 [探针触发行为](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
 
+如果应用使用 gRPC，可复用同一个数字端口，并用 `service` 区分就绪和存活检查。运行 [gRPC Java 与官方 CLI 探针](../../labs/grpc-health-probe/README.md) 核对 Health RPC，在部署时使用[内建 gRPC 探针配置](../../labs/grpc-health-probe/README.md#搭配-kubernetes-探针)。
+
 ## Spring Boot
 
 Spring Boot 用 starter 集中接入数据源等基础设施，通过自动配置完成应用初始化。应用配置 JDBC 数据源时，可让 Flyway 在启动阶段检查迁移历史并执行版本化 SQL。需要让新版应用就绪后能直接读取升级过的订单表时，见 [搭配 Flyway 启动时迁移](#搭配-spring-boot-启动时迁移)。[Spring Boot 启动说明](https://docs.spring.io/spring-boot/3.5/reference/features/spring-application.html)。

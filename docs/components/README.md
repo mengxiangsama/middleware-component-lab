@@ -28,7 +28,7 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Netty](network-programming.md#netty) | Java 异步网络编程、协议编解码及长连接管理。**可运行** · [WebSocket 回显](../../labs/netty-websocket/README.md)、[读空闲时回收长连接](network-programming.md#读空闲时回收长连接)。 |
-| [gRPC](network-programming.md#grpc) | 服务间调用、状态码、截止时间和取消。**联调实测** · [订单查询的两跳超时](../../labs/grpc-deadline/README.md)。 |
+| [gRPC](network-programming.md#grpc) | 服务间调用、状态码、截止时间、取消与健康检查。**联调实测** · [订单查询的两跳超时](../../labs/grpc-deadline/README.md) · [标准 Health 服务的就绪与存活](../../labs/grpc-health-probe/README.md)。 |
 | [Protocol Buffers](network-programming.md#protocol-buffers) | 消息结构定义、序列化及代码生成。**联调实测** · [生成订单与库存的 RPC 接口](../../labs/grpc-deadline/README.md)。 |
 
 ## 搜索、缓存与分析
@@ -111,7 +111,7 @@
 | 组件 | 常见用法 |
 | --- | --- |
 | [Kubernetes Deployment](release-tools.md#kubernetes-deployment) | 分批替换 Pod、滚动状态与修订回滚 |
-| [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启 |
+| [Kubernetes Probes](release-tools.md#kubernetes-probes) | 启动、就绪与存活检查，及对应的摘流或重启。 [gRPC 接入示例](../../labs/grpc-health-probe/README.md#搭配-kubernetes-探针) |
 | [Spring Boot](release-tools.md#spring-boot) | 应用启动、自动配置和数据源。**联调实测** · [搭配 Flyway 升级订单表](release-tools.md#搭配-spring-boot-启动时迁移) · [搭配 Quartz 重启补跑](scheduling.md#搭配-spring-boot-用-jdbc-恢复错过的触发)。 |
 | [Spring Boot Actuator](release-tools.md#spring-boot-actuator) | 健康探针、应用信息与 JVM 指标。**可运行** · [HTTP 探针](release-tools.md#搭配-kubernetes-使用-http-探针) · [导出 JVM 指标](release-tools.md#搭配-prometheus-采集应用指标)。**联调实测** · [导出发货业务耗时](../../labs/micrometer-actuator-timer/README.md)。 |
 | [Grafana k6](release-tools.md#grafana-k6) | 用脚本发送请求、统计指标，并按阈值给出退出状态。**联调实测** · [搭配 HTTP 库存 API 做发布门禁](../../labs/k6-http-release-gate/README.md)。 |

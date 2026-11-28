@@ -108,6 +108,8 @@
 
 库存 HTTP 接口出现 503 时，运行 [Resilience4j 库存实验](../labs/resilience4j-inventory/README.md)，核对有限重试、熔断打开时的下游请求数和半开恢复。
 
+应用通过 gRPC 提供库存查询时，运行 [gRPC Java + grpc_health_probe](../labs/grpc-health-probe/README.md)，核对依赖未就绪时存活和就绪探针的差别，再按文档设置 Kubernetes 容器探针。
+
 需要让 HTTP 入口根据就绪状态在主备实例间切换时，运行 [Caddy 主动健康检查](../labs/caddy-active-health/README.md)，对照后端探针状态和代理实际选择的实例。
 
 本地 HTTP 服务需要 HTTPS 测试入口时，运行 [Caddy + Python](../labs/caddy-tls-proxy/README.md)，验证连接使用的 CA、代理传递的协议和路径匹配。

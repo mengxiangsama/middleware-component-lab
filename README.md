@@ -21,6 +21,7 @@
 | 设备短时断网后怎样接回离线指令 | [Mosquitto + Paho MQTT](labs/mosquitto-offline-qos1/README.md)，安装实验依赖后运行 `python labs/mosquitto-offline-qos1/verify.py` 核对会话恢复。 |
 | 同一服务内，订单支付后怎样给用户发积分 | [Spring Modulith 订单积分实验](#spring-modulith-订单积分实验)，用集成测试复现失败重投、重复投递和投递记录清理。 |
 | 客户端怎样建立长连接并双向收发消息 | [Netty WebSocket 回显实验](labs/netty-websocket/README.md)，建立连接、核对文本回显并正常关闭。 |
+| gRPC 进程已启动时怎样判断能否接库存流量 | [gRPC Java + grpc_health_probe](labs/grpc-health-probe/README.md)，用标准 Health RPC 核对就绪、存活和恢复。 |
 | 订单服务调用库存时怎样共用请求的超时预算 | [gRPC + Protocol Buffers](labs/grpc-deadline/README.md)，运行 `./mvnw -B -f labs/grpc-deadline/pom.xml clean verify` 验证两跳调用和取消。 |
 | 发货资格检查变慢时怎样查达标次数 | [Micrometer Timer + Actuator + Prometheus](labs/micrometer-actuator-timer/README.md)，查询检查通过和拒绝的次数及耗时桶。 |
 | 告警上线前怎样验证等待、触发与恢复 | [Prometheus 告警规则实验](labs/prometheus-rules/README.md)，用固定样本检查短暂故障、持续故障和等待时间重置。 |
@@ -83,6 +84,8 @@
 使用 Go 1.24+ 运行 `(cd labs/etcd-leader-election && go run .)`，验证 etcd 租约过期后的任务接手和写入保护。
 
 将 Prometheus 3.16.0 和 Alertmanager 0.35.0 加入 `PATH` 后，在仓库根目录运行 `python3 labs/alertmanager-webhook/verify.py`，验证真实抓取到 Webhook 的告警链路。
+
+gRPC 健康检查需要 JDK 17+、Python 3 和 grpc_health_probe 0.4.63。先运行 `./mvnw -B -ntp -f labs/grpc-health-probe/pom.xml clean package`，再运行 `python3 -B labs/grpc-health-probe/verify.py --probe /path/to/grpc_health_probe`。
 
 发货耗时实验需要 JDK 17+、Python 3 和 Prometheus 3.16.0。先运行 `./mvnw -B -ntp -f labs/micrometer-actuator-timer/pom.xml clean package`，再运行 `python3 labs/micrometer-actuator-timer/verify.py /path/to/prometheus`。
 

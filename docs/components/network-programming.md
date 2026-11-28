@@ -53,6 +53,10 @@ gRPC 通过远程方法连接服务。用 [Protocol Buffers](#protocol-buffers) 
 
 运行 [订单查询调用库存实验](../../labs/grpc-deadline/README.md)，用两个本机服务验证完整响应、下游收到的截止时间和客户端超时。
 
+### 搭配 grpc_health_probe 检查库存服务
+
+用 `grpc-services` 注册标准 Health 服务，把 `readiness` 关联到依赖是否可用，把 `liveness` 关联到进程能否继续运行。运行 [gRPC Java + grpc_health_probe](../../labs/grpc-health-probe/README.md) 核对启动、依赖故障和恢复时的探针结果。需要部署时，参照 [Kubernetes 探针](release-tools.md#kubernetes-probes) 填写数字端口和健康服务名。
+
 ## Protocol Buffers
 
 Protocol Buffers 用 `.proto` 定义可跨语言生成代码的消息结构。消息字段按数字编号识别。接入时先定义请求与返回类型，再用 `protoc` 生成对应语言的消息。如果还要通过 [gRPC](#grpc) 调用服务，在 `.proto` 声明服务，并用对应的 gRPC 插件生成 Stub。[Proto3 指南](https://protobuf.dev/programming-guides/proto3/) · [实验接口](../../labs/grpc-deadline/src/test/proto/order_inventory.proto)
