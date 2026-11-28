@@ -185,3 +185,11 @@ Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch �
 | [PostgreSQL 事务 Outbox + Debezium](../labs/debezium-postgres-outbox/README.md) | 普通 CDC 教程读取订单表行变更。发货服务还需要让业务写入与待发布的业务事件在同一个事务内生效。 | PostgreSQL 17.12、Debezium 3.2.7.Final。回滚订单与 Outbox 都是 0 行，提交后各 1 行。实际 Router 输出主题 `outbox.event.shipment`、键 `102`、事件 ID `evt-commit` 和对应 JSON。回调随后收到已提交的 `evt-barrier`，有序记录中没有回滚事件。验证到进程内 SourceRecord。 | [f5d6003](https://github.com/mengxiangsama/middleware-component-lab/commit/f5d6003167b9f1a3d7d01d8eaef2c36d40ee592d) |
 
 本地为 macOS 26.5 ARM64，Java 实验使用 OpenJDK 17.0.16，Pulsar 本机 Broker 与客户端验证使用 OpenJDK 21.0.5，Python 使用 3.13.7。根项目 `./mvnw -B -ntp verify` 通过，11 项通过，原有 3 项需要 RocketMQ Broker 的测试按条件跳过。用官方本机 `promtool 3.16.0` 检查及执行既有告警规则，均成功。
+
+## 2026-11-28 · Grafana k6 库存 API 发布门禁
+
+从 `10b0d4f` 同步并盘点首页、组件目录、既有实验和最近提交。仓库已有 Toxiproxy 客户端超时、Caddy 就绪切换和 Prometheus 业务指标教程。gRPC 标准健康检查仍是可补方向，近期已做过就绪探针主题。优先选此前未收录的 Grafana k6，补齐候选 API 如何通过实际 HTTP 响应与业务断言产生可由发布流水线读取的结果。[官方阈值示例](https://grafana.com/docs/k6/latest/using-k6/thresholds/) · [2.4.0 上游仓库](https://github.com/grafana/k6/tree/v2.4.0)
+
+在 macOS 26.5 ARM64 和 Python 3.13.7 上使用 Grafana k6 2.4.0。官方 macOS ARM64 包的 SHA-256 为 `5715745adf4e5ebc92965b26b7785e54e685a370466448cb587b383330a24f20`，下载后校验通过。带绝对路径执行 `python3 -B labs/k6-http-release-gate/verify.py --k6 /path/to/k6`，再把 k6 放进 `PATH` 复跑。两次都对照服务端记录和 k6 的 JSON 指标。稳定版 20 次 200，失败比例 0%，业务检查通过率 100%，k6 退出 0。候选版 16 次 200 与 4 次 503，失败比例 20%，业务检查通过率 80%，k6 退出 99。两版均完成 20 次迭代且没有丢弃。
+
+再用临时脚本副本把执行上限设为 1 秒，后端在 1.5 秒后返回 HTTP 200。实测完成 2 次，丢弃 18 次，HTTP 失败比例为 0%，迭代阈值仍使 k6 退出 99。验证范围为本地库存接口、真实请求和阈值退出行为。首页、组件目录、发布手册和学习路线都补上了入口。[运行教程](../labs/k6-http-release-gate/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/ac709a95297c0ac9660c6cb03ff721101777f381)
