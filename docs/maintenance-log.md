@@ -201,3 +201,5 @@ Docker 存储在后半段发生元数据 I/O 错误。Apicurio 与 OpenSearch �
 在 macOS 26.5 ARM64、OpenJDK 17.0.16 和 Python 3.13.7 上运行 `./mvnw -B -ntp -f labs/grpc-health-probe/pom.xml clean package`，接着运行 `python3 -B labs/grpc-health-probe/verify.py --probe /path/to/grpc_health_probe`。Java 使用 grpc-java 1.77.0，官方探针为 0.4.63，macOS ARM64 二进制经 SHA-256 校验，摘要为 `95b145830d2b4040c953dcf0c78772389d8b49ef7b7c5a1f74b130d051b3d1b5`。独立运行与复测均通过。就绪和未命名检查依次退出 `4 → 0 → 4 → 0`，存活始终退出 `0`。未知服务名返回 gRPC `NOT_FOUND`，探针退出 `3`。故意让探针返回与预期不同的状态，脚本报告失败并释放实验服务端口。[探针退出码源码](https://github.com/grpc-ecosystem/grpc-health-probe/blob/v0.4.63/main.go#L348-L376)
 
 将教程中的探针片段放入 Deployment，用 kubeconform 0.8.0 和 Kubernetes 1.35.0 严格 Schema 校验通过。把数字端口换成字符串的对照被拒绝。实际 RPC 联调在本机完成，状态变化通过命令触发。Kubernetes 流量摘除和容器重启留给目标部署环境验证。首页、组件目录、网络编程与发布手册、学习路线均补上入口。[运行教程](../labs/grpc-health-probe/README.md) · [提交](https://github.com/mengxiangsama/middleware-component-lab/commit/23204f600564fcd46c605601d2d8623656ec34cc)
+
+从 GitHub 干净检出 `4a20555` 后，以 OpenJDK 17.0.16 构建，用 OpenJDK 17.0.16 和 Amazon Corretto 21.0.5 分别复跑，全部通过。相邻 gRPC 截止时间实验的 1 项回归测试也通过。另用同一个 Java 进程持续运行 21 分 28.8 秒，执行 37 次状态切换和 111 次本地探测。就绪和空名称检查随状态变化，存活检查始终通过。测试进程退出后确认端口已释放。
